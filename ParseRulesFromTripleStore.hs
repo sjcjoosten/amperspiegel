@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies, FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 module ParseRulesFromTripleStore (ParseRule(..),ParseAtom(..),tripleStoreToParseRules,traverseStrings) where
 import Control.Applicative
 import Data.String
@@ -82,7 +83,7 @@ tripleStoreToParseRules transAtom ts
    makeAtom :: v -> m (ParseAtom z z z)
    makeAtom atm
         = (const <$> (ParseString <$> showInternal atm)
-                 <*> (isNone =<< fE "nonTerminal" atm showInternal)) <|>
+                 <*> (isNone "non-terminal" =<< fE "nonTerminal" atm showInternal)) <|>
           (ParseRef <$> showInternal atm
-                    <*> (isOne =<< fE "nonTerminal" atm showInternal))
+                    <*> (isOne "non-terminal, relations names should be unique" =<< fE "nonTerminal" atm showInternal))
 

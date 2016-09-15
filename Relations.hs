@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeFamilies, TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables #-}
 {-# LANGUAGE DeriveTraversable #-}
-module Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),RelTwoWayLookup(..),TripleStore,Triple(..),getNewTuples,checkIfExists,findInMap,RelLookup(..),FullRelLookup(..)) where
+module Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),RelTwoWayLookup(..),TripleStore,Triple(..)
+ ,getNewTuples,checkIfExists,findInMap,RelLookup(..),FullRelLookup(..), fmapE) where
 import Data.Map as Map
 import Data.Set as Set
 import Data.String
@@ -10,27 +11,29 @@ import Data.String
 findInMap :: (Monoid a, Ord k) => k -> Map k a -> a
 findInMap itm mp = Map.findWithDefault mempty itm mp
 
-instance Show r => Show (Rule r) where
+instance (Show r, Show a) => Show (Rule a r) where
   show (Subset l r) = show l++" ⊆ "++show r
-instance Show r => Show (Expression r) where
+instance (Show r, Show a) => Show (Expression a r) where
   show (ExprAtom r) = show r
   show (I) = "I"
   show (Compose e1 e2) = "("++show e1++"⨟"++show e2++")"
   show (Conjunction e1 e2) = "("++show e1++"∩"++show e2++")"
   show (Flp e1) = "Flp "++show e1
+  show (Bot) = "Bot"
+  show (Pair a1 a2) = "Pair "++show a1++" "++show a2
 
 infixl 6 ∩
 infix 4 ⊆
 infixl 8 ⨟
-(⊆) :: Expression r -> Expression r -> Rule r
+(⊆) :: Expression a r -> Expression a r -> Rule r a
 (⊆) a b = Subset a b
 
 -- note: ⨾ sign is U+2A3E, Z NOTATION RELATIONAL COMPOSITION (and not the identically-looking U+2A1F)
-(⨟),(∩) :: Expression r -> Expression r -> Expression r
+(⨟),(∩) :: Expression a r -> Expression a r -> Expression a r
 (⨟) = Compose
 (∩) = Conjunction
 
-instance IsString x => IsString (Expression x) where
+instance IsString x => IsString (Expression a x) where
   fromString = ExprAtom . fromString
 
 class RelLookup r where
@@ -53,14 +56,28 @@ class (RelLookup r, Monoid r) => RelInsert r where
 
 type TripleStore a b = (Map b (Map a (Set b), Map a (Set b)))
 data Triple r a = Triple{relation::r, t_fst::a, t_snd::a} deriving Functor
-data Rule r = Subset{lhs::Expression r,rhs::Expression r} deriving Functor
-data Expression r
+data Rule r a = Subset{lhs::Expression a r,rhs::Expression a r}
+data Expression a r
  = ExprAtom r
  | I
- | Conjunction (Expression r) (Expression r)
- | Compose (Expression r) (Expression r)
- | Flp (Expression r)
+ | Conjunction (Expression a r) (Expression a r)
+ | Compose (Expression a r) (Expression a r)
+ | Flp (Expression a r)
+ | Bot
+ | Pair a a
  deriving (Functor,Foldable,Traversable)
+
+instance Functor (Rule r) where
+   fmap f (Subset l r) = Subset (fmapE f l) (fmapE f r)
+
+fmapE :: (t -> a) -> Expression t r -> Expression a r
+fmapE _ (ExprAtom r) = ExprAtom r
+fmapE _ (I) = I
+fmapE f (Conjunction a b) = Conjunction (fmapE f a) (fmapE f b)
+fmapE f (Compose a b) = Compose (fmapE f a) (fmapE f b)
+fmapE f (Flp x) = Flp (fmapE f x)
+fmapE _ (Bot) = Bot
+fmapE f (Pair a b) = Pair (f a) (f b)
  
 instance (Ord a,Ord b) => RelLookup (TripleStore a b) where
   type RelType (TripleStore a b) = a
@@ -102,10 +119,10 @@ instance (Ord a,Ord b) => RelInsert (TripleStore a b) where
   removeAtoms = Map.difference
 
 getNewTuples :: forall a b r. (Eq a,Eq b,RelTwoWayLookup r, a ~ RelType r, b ~ AtomType r)
-             => Triple a b -> r -> Expression a -> [(b,b)]
+             => Triple a b -> r -> Expression b a -> [(b,b)]
 getNewTuples (Triple a b1' b2') revLk = replace1
  where
-   replace1 :: Expression a -> [(b,b)]
+   replace1 :: Expression b a -> [(b,b)]
    replace1 (ExprAtom a') = if a == a' then [(b1',b2')] else []
    replace1 I = [(b1',b1'),(b2',b2')]
    replace1 (Conjunction e1 e2)
@@ -116,9 +133,11 @@ getNewTuples (Triple a b1' b2') revLk = replace1
       [(b1,b3) | (b2,b3) <- replace1 e2,b1 <- findIn revLk False b2 e1]
    replace1 (Flp e)
     = [(b2,b1) | (b1,b2) <- replace1 e]
+   replace1 Bot = []
+   replace1 (Pair _ _) = []
 
 checkIfExists :: (Eq b, RelTwoWayLookup r, a ~ RelType r, b ~ AtomType r)
-              => r -> (b, b) -> Expression a -> Bool
+              => r -> (b, b) -> Expression b a -> Bool
 -- first several lines are redundant, but give more efficient lookup
 checkIfExists _ (b1,b2) I = b1 == b2
 checkIfExists revLk bs (Conjunction e1 e2)
@@ -127,12 +146,18 @@ checkIfExists revLk (b1,b2) (Compose e1 e2)
  = or [checkIfExists revLk (v1,b2) e2 | v1 <- findIn revLk True b1 e1]
 checkIfExists revLk (b1,b2) (Flp e)
  = checkIfExists revLk (b2,b1) e
+checkIfExists _ _ Bot
+ = False
+checkIfExists _ (b1,b2) (Pair a1 a2)
+ = b1 == a1 && b2 == a2
 checkIfExists revLk (b1,b2) e
  = or [v == b2 | v <- findIn revLk True b1 e]
--- findIn l b e | trace ("Finding from "++show b++" in "++show e++" ("++show l++")") False = undefined 
 findIn :: (Eq b, RelTwoWayLookup r, a ~ RelType r, b ~ AtomType r)
-       => r -> Bool -> b -> Expression a -> [b]
+       => r -> Bool -> b -> Expression b a -> [b]
 findIn _     _ b I = [b]
+findIn _     True  b (Pair a1 a2) = if a1 == b then [a2] else []
+findIn _     False b (Pair a1 a2) = if a2 == b then [a1] else []
+findIn _ _ _ Bot = []
 findIn revLk ltr b (Flp e) = findIn revLk (not ltr) b e
 findIn revLk ltr b (Conjunction e1 e2)
  = [v | v <- findIn revLk ltr b e1

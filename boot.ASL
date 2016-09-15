@@ -23,8 +23,8 @@ CLASSIFY Relation IS Relation /\ StringAndOrigin
 classification :: ClassificationStatement * Classification
   mainConcept :: Classification * Concept
   conceptList :: Classification * ConceptList
-  head :: ConceptList * Concept
-  tail :: ConsConceptList * ConceptList
+  head1 :: ConceptList * Concept
+  tail1 :: ConsConceptList * ConceptList
 declaration :: DeclarationStatement * Declaration
   relation :: Declaration * Relation
   concepts :: Declaration * DeclarationType
@@ -33,8 +33,8 @@ declaration :: DeclarationStatement * Declaration
 syntax :: SyntaxStatement * Syntax
   concept :: Syntax * Concept
   syntaxList :: Syntax * SyntaxList
-  head :: SyntaxList * SyntaxElement
-  tail :: ConsSyntaxList * SyntaxList
+  head2 :: SyntaxList * SyntaxElement
+  tail2 :: ConsSyntaxList * SyntaxList
   string :: QuotedStringElement * QuotedString
 
 VIEW ClassificationStatement = [classification]
@@ -42,12 +42,12 @@ VIEW DeclarationStatement    = [declaration]
 VIEW SyntaxStatement         = [syntax]
 
 VIEW Classification      = ["CLASSIFY",mainConcept,"IS",conceptList]
-VIEW ConsConceptList     = [head,"/\",tail]
-VIEW ConceptList         = [head]
+VIEW ConsConceptList     = [head1,"/\\",tail1]
+VIEW ConceptList         = [head1]
 VIEW DeclarationType     = [fst,"*",snd]
 VIEW Declaration         = [relation,"::",concepts]
 VIEW Syntax              = ["VIEW",concept,"=","[",syntaxList,"]"]
-VIEW ConsSyntaxList      = [head,",",tail]
-VIEW SyntaxList          = [head]
+VIEW ConsSyntaxList      = [head2,",",tail2]
+VIEW SyntaxList          = [head2]
 VIEW QuotedStringElement = [string] -- goes to QuotedString
 VIEW RelationElement     = [relation]

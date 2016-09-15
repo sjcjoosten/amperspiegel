@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies, FlexibleInstances #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE OverloadedStrings #-}
 module TokenAwareParser(Atom,freshTokens,parseText,parseListOf) where
 import Text.Earley
 import Control.Applicative
