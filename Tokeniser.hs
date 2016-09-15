@@ -190,16 +190,11 @@ instance Scannable Text where
                         _ -> Left (InvalidChar (LinePos l c' truncT))
                   _ -> Left ExpectClosingQuote -- expecting closing quote
          incrPos orig@(LinePos l p' v) ps
-           = case lines' ps of
+           = case split (=='\n') ps of
               [] -> orig
               [r] -> LinePos l (p' + Text.length r) v
               o -> LinePos (l + fromIntegral (Prelude.length o) - 1)
                            (Text.length (Prelude.last o)) v
-         lines' :: Text -> [Text]
-         lines' ps | Text.null t = []
-                   | otherwise = h : lines' (Text.tail t)
-             where (h,t) = Text.span (/= '\n') ps
-         {-# INLINE lines' #-}
 
 partitionTokens :: Bool -> [LinePos (PreToken a)] -> [Token (LinePos a, Bool)]
 partitionTokens b (LinePos i j a:as)
