@@ -1,8 +1,3 @@
--- this is the main file. To be run within ghci
--- ghci-8.0.0.20160421 ParseToRelations.hs -XOverloadedStrings
--- scriptToParser "rel1 :: A * B rel2 :: A * C VIEW A = [rel1] VIEW D = [rel2,\"hi\"] CLASSIFY A IS D"
--- ([ParseRule "A" ["rel1" "B"],ParseRule "A" ["rel2" "C","\"hi\""],ParseRule "D" ["rel2" "C","\"hi\""]],"Statement")
-
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns #-} -- for the scanner position
 {-# LANGUAGE OverloadedStrings #-}

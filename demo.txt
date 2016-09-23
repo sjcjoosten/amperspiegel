@@ -1,0 +1,111 @@
+#
+# proposed demo:
+
+# Show that Ampersand scripts represent populations:
+
+cat helloWorld.ASL
+amperspiegel -i helloWorld.ASL
+
+# Parse and show population
+amperspiegel -i helloWorld.ASL -show population
+
+# doesn't work: RULE cannot be parsed.
+# So we want to use amperspiegel to make a new parser
+# Scripts can actually represent parsers
+
+cat helloWorld2.ASL
+amperspiegel -i helloWorld2.ASL -show population
+amperspiegel -i helloWorld2.ASL -asParser -show population
+
+# now we can read in data in our own syntax:
+
+cat fathers.txt
+amperspiegel -i helloWorld2.ASL -asParser -i fathers.txt -show population
+
+# by the way, we did not recognise that Stef is the parent of Bas
+# of course, we never specified this.
+# Unfortunately, amperspiegel does not have a syntax to specify rules:
+amperspiegel -i helloWorld3.ASL
+
+# Fortunately, we can create parsers in amperspiegel.
+# Our default parser is called boot.ASL:
+
+open boot.ASL
+amperspiegel -i boot.ASL -count population
+amperspiegel -i boot.ASL -asParser -i helloWorld2.ASL -asParser -show population
+
+# It's really the same parser! So we cannot parse rules with it (yet):
+amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
+
+# I find it really exciting that I am getting the same error as last time. That's because it's really the same parser!
+
+# So now let's edit boot.ASL, and add support for rules..
+# (uncomment RULE stuff in boot.ASL)
+# let's try again:
+amperspiegel -i boot.ASL -count population
+amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
+
+# Succes! Let's look at the population:
+amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
+
+# Now let's see how our example goes
+amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers.txt
+
+# IF THIS ALL WORKS AND TIME IS LEFT:
+# Let's pick it up a notch
+cat fathers2.txt
+amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt
+# That won't do, Man Bas is the same guy here...
+cat helloWorld4.ASL
+# So now let's use a boot.ASL that has expressions defined:
+amperspiegel -i boot2.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt
+
+# ##################### #
+# Implementation notes: #
+# ##################### #
+#
+# A state assigns a population to each variable.
+# Initially, these are the assignments:
+#   "parser" gets assigned a population describing the built-in parser
+#   "asParser" gets assigned that for the built-in ruleList
+# all other variables get assigned the empty population, in particular:
+#   "rules", which stands for rules that can be applied to a population
+#   "population", which stands for the population we're working on currently
+#
+# The switch -i uses "parser" as a parser to parse each of its arguments  (resulting in a list of populations)
+# Next, the union over the resulting list of populations is taken         (resulting in a population)
+# To this population, "rules" is applied as a rule-set                    (resulting in a population)
+# This result is put in "population" (Resulting in a state)
+#
+# The switch -asParser applies "asParser" on "population", then filters it.
+# Consequently, "population" only contains stuff relevant for parser and rules.
+# It then copies "population" to "parser" and "rules".
+# 
+# -count and -show displays stuff about a variable.
+# That's it! Nothing else is used in this demo.
+
+# Future work:
+ 
+# Note that -asParser uses a built-in ruleList as its set of rules.
+# We can break it down as four separate steps in the obvious way:
+# First step: -apply asParser population
+# Second step: -filter
+# Third step: -apply copy population parser
+# Fourth step: -apply copy population rules
+# Note that "copy" is just a variable without a population.
+# In particular, it does not have any rules defined, so it will copy as-is.
+#
+# Here's how we define our new switches:
+#
+# -apply v1 v2.1 v2.2 ... v2.n v3
+#   applies v1 to the union of v2.*, and puts the result into v3.
+#   When given fewer than 3 arguments, it is read as:
+#      -apply v1 v2 v2
+#   or -apply v1 v1 v1
+# -filter
+#   throw away the irrelevant stuff from "population".
+#   this'll have to change into something configurable later (maybe via a more powerful -apply).
+#
+# Similarly, we might break -i into steps, where something like -load creates a tuple "fileContent" from filename to a big string.
+# It would be really cool if there was a variable "switches"
+# Such that we could define switches such as -asParser and -i in terms of these "primitives"

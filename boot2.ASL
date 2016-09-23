@@ -1,5 +1,6 @@
--- simplified boot.ASL
--- This should define the initially loaded parser
+-- full boot sequence
+-- keep boot.ASL as close to the initial loader as possible
+-- use this file to include many features
 
 relationName :: RelationElement * String
 identifier :: Concept * String
@@ -54,9 +55,5 @@ VIEW QuotedStringElement = [string] -- goes to QuotedString
 VIEW RelationElement     = [relation]
 
 -- For parsing Rules, uncomment this section
-CLASSIFY RuleStatement IS Statement /\ RuleStatement
-rule :: RuleStatement * RuleSubset
-subset :: RuleSubset * Relation
-superset :: RuleSubset * Relation
-VIEW RuleStatement = ["RULE",rule]
-VIEW RuleSubset = [subset,"|-",superset]
+
+rule :: 

@@ -93,10 +93,10 @@ instance Show a => Show (Token a) where
   show (QuotedString a) = show (show a)
   show (NonQuoted a) = show a           
 
-instance IsString (Token Text) where
-  fromString v = case scanPartitioned id (pack v) of
+instance (Scannable a, IsString a) => IsString (Token a) where
+  fromString v = case scanPartitioned id (fromString v) of
        ([v'],LinePos _ _ Success) -> (fmap (runLinePos . fst) v')
-       _ -> QuotedString (pack v)
+       _ -> QuotedString (fromString v)
 
 isQuoted,isUnquoted :: Token t -> Bool
 isQuoted QuotedString{} = True

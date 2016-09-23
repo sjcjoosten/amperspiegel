@@ -36,8 +36,8 @@ instance Show a => Show (Atom a) where
   show (UserAtom a) = show a
   show (Position r c) = "Position "++show r++" "++show c
   show (Fresh i) = "Fresh "++show i
-instance IsString (Atom Text) where
-  fromString v = case scanPartitioned id (pack v) of
+instance (Scannable a, IsString a) => IsString (Atom a) where
+  fromString v = case scanPartitioned id (fromString v) of
        ([v'],LinePos _ _ Success) -> UserAtom (fmap (runLinePos . fst) v')
        _ -> UserAtom (fromString v)
 

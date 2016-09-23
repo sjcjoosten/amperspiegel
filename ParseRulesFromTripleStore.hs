@@ -14,7 +14,7 @@ data ParseAtom a b refId = ParseString b | ParseRef a refId
 
 instance (Show a,Show b,Show refId) => Show (ParseAtom a b refId) where
   show (ParseString b) = show b
-  show (ParseRef a refId) = show a ++" "++ show refId
+  show (ParseRef a refId) = show a ++ " " ++ show refId
 
 instance IsString b => IsString (ParseAtom a b c) where
   fromString = ParseString . fromString
