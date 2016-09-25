@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies, FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-module RuleSetFromTripleStore (tripleStoreToRuleSet) where
+module RuleSetFromTripleStore (tripleStoreToRuleSet,ruleSetToTripleStore) where
 import Relations
 import Data.String
 import Control.Monad.Fail
@@ -32,3 +32,9 @@ tripleStoreToRuleSet transAtom ts
       forOneOrNone ts "compose"  v (fmap (uncurry Compose    ) . makeTuple) $
       forOneOrNone ts "converse" v (fmap Flp . makeExpression) $
       pure I
+
+ruleSetToTripleStore :: forall v r.
+                       ( FullRelLookup r
+                       , AtomType r ~ v)
+                    => [Rule v v] -> r
+ruleSetToTripleStore = undefined

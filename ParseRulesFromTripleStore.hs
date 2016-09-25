@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies, FlexibleInstances #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# LANGUAGE OverloadedStrings #-}
-module ParseRulesFromTripleStore (ParseRule(..),ParseAtom(..),tripleStoreToParseRules,traverseStrings) where
+module ParseRulesFromTripleStore (ParseRule(..),ParseAtom(..),tripleStoreRelations,tripleStoreToParseRules,parseRuleToTripleStore,traverseStrings,fmap12,fmap13,fmap23) where
 import Control.Applicative
 import Data.String
 import Relations
@@ -9,8 +10,24 @@ import Control.Monad.Fail as Fail
 import SimpleHelperMonads
 
 -- A grammar
-data ParseRule a b refId = ParseRule refId [ParseAtom a b refId] deriving Show-- concatenation of strings
-data ParseAtom a b refId = ParseString b | ParseRef a refId
+data ParseRule a b refId = ParseRule refId [ParseAtom a b refId] deriving (Functor,Foldable,Traversable,Show)-- concatenation of strings
+data ParseAtom a b refId = ParseString b | ParseRef a refId deriving (Functor,Foldable,Traversable)
+
+fmap13 :: Applicative m => (t1 -> m a) -> (refId -> m b) -> ParseRule t1 t refId -> m (ParseRule a t b)
+fmap13 f1 f3 (ParseRule r lst) = ParseRule <$> f3 r <*> traverse (fmap13' f1 f3) lst
+fmap13' :: Applicative f => (t -> f a) -> (t1 -> f refId) -> ParseAtom t b t1 -> f (ParseAtom a b refId)
+fmap13' _ _ (ParseString b) = pure (ParseString b)
+fmap13' f1 f3 (ParseRef a rid) = ParseRef <$> f1 a <*> f3 rid
+fmap23 :: Applicative m => (t -> m a) -> (refId -> m b) -> ParseRule t1 t refId -> m (ParseRule t1 a b)
+fmap23 f2 f3 (ParseRule r lst) = ParseRule <$> f3 r <*> traverse (fmap23' f2 f3) lst
+fmap23' :: Functor f => (t -> f b) -> (t1 -> f refId) -> ParseAtom a t t1 -> f (ParseAtom a b refId)
+fmap23' f2 _ (ParseString b) = ParseString <$> f2 b
+fmap23' _ f3 (ParseRef a rid) = ParseRef a <$> f3 rid
+fmap12 :: Applicative m => (t1 -> m a) -> (t -> m b) -> ParseRule t1 t refId -> m (ParseRule a b refId)
+fmap12 f1 f2 (ParseRule r lst) = ParseRule r <$> (traverse (fmap12' f1 f2) lst)
+fmap12' :: Applicative m => (t1 -> m a) -> (t -> m b) -> ParseAtom t1 t refId -> m (ParseAtom a b refId)
+fmap12' _ f2 (ParseString b) = ParseString <$> f2 b
+fmap12' f1 _ (ParseRef a rid) = flip ParseRef rid <$> (f1 a)
 
 instance (Show a,Show b,Show refId) => Show (ParseAtom a b refId) where
   show (ParseString b) = show b
@@ -31,7 +48,14 @@ traverseString :: Applicative f => (a -> f b) -> ParseAtom x a z -> f (ParseAtom
 traverseString f (ParseString a) = ParseString <$> f a
 traverseString _ (ParseRef x i) = pure (ParseRef x i)
 
-    
+tripleStoreRelations :: IsString x => [x]
+tripleStoreRelations
+ = [ "choice" -- :: ParseRule*Expansion
+   , "continuation" -- :: Expansion*Expansion [UNI]
+   , "recogniser" -- :: Expension*Element [UNI]
+   , "nonTerminal" -- :: Reference*ParseRule [UNI,TOT]
+   ]
+   
 -- tripleStoreToParseRules takes a triple store that describes a parser, and turns it into the set of parserules that can be turned into a parser by parseListOf or readListGrammar
 -- Requires the following relations:
   -- choice :: ParseRule*Expansion
@@ -54,14 +78,13 @@ traverseString _ (ParseRef x i) = pure (ParseRef x i)
 tripleStoreToParseRules :: forall z v m y r.
                        ( MonadFail m, Alternative m -- TODO: get rid of these and make functions like isOne, isNone and orElse such that they can be translated into preconditions on the TripleStore... Demanding 'Applicative' is enough if we do this
                        , IsString y -- TODO: ask for IsString (m y), to allow for relation lookups/disambiguation
-                       , IsString z -- is just there for the "Statement" at the end
                        , FullRelLookup r
                        , RelType r ~ y
                        , AtomType r ~ v)
-                    => (v -> z) -> r -> m ([ParseRule z z z],z)
+                    => (v -> z) -> r -> m [ParseRule z z z]
 tripleStoreToParseRules transAtom ts
  = do r<-fA "choice" makeParseRule
-      return (r,"Statement")
+      return r
  where
    fA :: y -> ((v,v) -> m (ParseRule z z z)) -> m [ParseRule z z z]
    fA c f = traversePair f (getRel ts c)
@@ -87,3 +110,8 @@ tripleStoreToParseRules transAtom ts
           (ParseRef <$> showInternal atm
                     <*> (isOne "non-terminal, relations names should be unique" =<< fE "nonTerminal" atm showInternal))
 
+parseRuleToTripleStore :: forall z r.
+                       ( FullRelLookup r
+                       , AtomType r ~ z)
+                       => ([ParseRule z z z],z) -> r
+parseRuleToTripleStore = undefined

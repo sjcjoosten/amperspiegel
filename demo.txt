@@ -3,62 +3,72 @@
 
 # Show that Ampersand scripts represent populations:
 
-cat helloWorld.ASL
-amperspiegel -i helloWorld.ASL
+cat helloWorld1.ASL
+./amperspiegel -i helloWorld1.ASL
 
 # Parse and show population
-amperspiegel -i helloWorld.ASL -show population
+./amperspiegel -i helloWorld1.ASL -show
 
 # doesn't work: RULE cannot be parsed.
-# So we want to use amperspiegel to make a new parser
+# So we want to use ./amperspiegel to make a new parser
 # Scripts can actually represent parsers
 
 cat helloWorld2.ASL
-amperspiegel -i helloWorld2.ASL -show population
-amperspiegel -i helloWorld2.ASL -asParser -show population
+./amperspiegel -i helloWorld2.ASL -show
+# now let's apply some rules to turn it into a parser:
+./amperspiegel -i helloWorld2.ASL -asParser -show
+# it's getting more triples because of these rules:
+./amperspiegel -i helloWorld2.ASL -count
+./amperspiegel -i helloWorld2.ASL -asParser -count
+# let's just look at the relevant triples:
+./amperspiegel -i helloWorld2.ASL -asParser -show parser
 
-# now we can read in data in our own syntax:
+# we can read in data in our own syntax:
 
 cat fathers.txt
-amperspiegel -i helloWorld2.ASL -asParser -i fathers.txt -show population
+./amperspiegel -i helloWorld2.ASL -asParser -i fathers.txt -show
 
 # by the way, we did not recognise that Stef is the parent of Bas
 # of course, we never specified this.
-# Unfortunately, amperspiegel does not have a syntax to specify rules:
-amperspiegel -i helloWorld3.ASL
+# Unfortunately, ./amperspiegel does not have a syntax to specify rules:
+./amperspiegel -i helloWorld3.ASL
 
-# Fortunately, we can create parsers in amperspiegel.
+# Fortunately, we can create parsers in ./amperspiegel.
 # Our default parser is called boot.ASL:
 
 open boot.ASL
-amperspiegel -i boot.ASL -count population
-amperspiegel -i boot.ASL -asParser -i helloWorld2.ASL -asParser -show population
+# it's already rather large:
+./amperspiegel -i boot.ASL -count
+./amperspiegel -i boot.ASL -asParser -count
+./amperspiegel -i boot.ASL -asParser -count parser
+# and we can even use it as a parser to parse our helloWorld2.ASL example:
+./amperspiegel -i boot.ASL -asParser -i helloWorld2.ASL -asParser -show
 
 # It's really the same parser! So we cannot parse rules with it (yet):
-amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
+./amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
 
 # I find it really exciting that I am getting the same error as last time. That's because it's really the same parser!
 
 # So now let's edit boot.ASL, and add support for rules..
 # (uncomment RULE stuff in boot.ASL)
 # let's try again:
-amperspiegel -i boot.ASL -count population
-amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
+./amperspiegel -i boot.ASL -count
+./amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
 
 # Succes! Let's look at the population:
-amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
+./amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
 
 # Now let's see how our example goes
-amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers.txt
+./amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers.txt
 
 # IF THIS ALL WORKS AND TIME IS LEFT:
 # Let's pick it up a notch
 cat fathers2.txt
-amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt
+./amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt
 # That won't do, Man Bas is the same guy here...
 cat helloWorld4.ASL
 # So now let's use a boot.ASL that has expressions defined:
-amperspiegel -i boot2.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt
+./amperspiegel -i boot2.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt
 
 # ##################### #
 # Implementation notes: #
@@ -71,6 +81,7 @@ amperspiegel -i boot2.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt
 # all other variables get assigned the empty population, in particular:
 #   "rules", which stands for rules that can be applied to a population
 #   "population", which stands for the population we're working on currently
+#     Consequently, most switches get "population" as default argument
 #
 # The switch -i uses "parser" as a parser to parse each of its arguments  (resulting in a list of populations)
 # Next, the union over the resulting list of populations is taken         (resulting in a population)

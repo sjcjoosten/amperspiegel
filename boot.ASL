@@ -1,10 +1,7 @@
 -- simplified boot.ASL
 -- This should define the initially loaded parser
 
-relationName :: RelationElement * String
-identifier :: Concept * String
-
-VIEW Concept = [identifier]
+relationName :: RelationElement * UnquotedString
 
 CLASSIFY ClassificationStatement IS Statement /\ ClassificationStatement
 CLASSIFY DeclarationStatement IS Statement /\ DeclarationStatement
@@ -13,7 +10,6 @@ CLASSIFY ConsConceptList IS ConsConceptList /\ ConceptList -- non-empty list, i.
 CLASSIFY ConsSyntaxList IS ConsSyntaxList /\ SyntaxList
 CLASSIFY QuotedStringElement IS QuotedStringElement /\ SyntaxElement
 CLASSIFY RelationElement IS RelationElement /\ SyntaxElement
-CLASSIFY Relation IS Relation /\ StringAndOrigin
 
 -- builtin:
 -- string :: StringAndOrigin * String
@@ -22,21 +18,22 @@ CLASSIFY Relation IS Relation /\ StringAndOrigin
 -- CLASSIFY QuotedString IS QuotedString /\ String
 
 classification :: ClassificationStatement * Classification
-  mainConcept :: Classification * Concept
+  mainConcept :: Classification * String
   conceptList :: Classification * ConceptList
-  head1 :: ConceptList * Concept
+  head1 :: ConceptList * String
   tail1 :: ConsConceptList * ConceptList
 declaration :: DeclarationStatement * Declaration
-  relation :: Declaration * Relation
+  relation :: Declaration * StringAndOrigin
   concepts :: Declaration * DeclarationType
-  fst :: DeclarationType * Concept
-  snd :: DeclarationType * Concept
+  fst :: DeclarationType * String
+  snd :: DeclarationType * String
 syntax :: SyntaxStatement * Syntax
-  concept :: Syntax * Concept
+  concept :: Syntax * String
+  relationName :: RelationElement * UnquotedString
   syntaxList :: Syntax * SyntaxList
   head2 :: SyntaxList * SyntaxElement
   tail2 :: ConsSyntaxList * SyntaxList
-  string :: QuotedStringElement * QuotedString
+  qstring :: QuotedStringElement * QuotedString
 
 VIEW ClassificationStatement = [classification]
 VIEW DeclarationStatement    = [declaration]
@@ -50,9 +47,10 @@ VIEW Declaration         = [relation,"::",concepts]
 VIEW Syntax              = ["VIEW",concept,"=","[",syntaxList,"]"]
 VIEW ConsSyntaxList      = [head2,",",tail2]
 VIEW SyntaxList          = [head2]
-VIEW QuotedStringElement = [string] -- goes to QuotedString
-VIEW RelationElement     = [relation]
+VIEW QuotedStringElement = [qstring] -- goes to QuotedString
+VIEW RelationElement     = [relationName]
 
+{-
 -- For parsing Rules, uncomment this section
 CLASSIFY RuleStatement IS Statement /\ RuleStatement
 rule :: RuleStatement * RuleSubset
@@ -60,3 +58,4 @@ subset :: RuleSubset * Relation
 superset :: RuleSubset * Relation
 VIEW RuleStatement = ["RULE",rule]
 VIEW RuleSubset = [subset,"|-",superset]
+-}

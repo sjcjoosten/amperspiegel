@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables, TypeFamilies, FlexibleInstances #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE OverloadedStrings #-}
-module TokenAwareParser(Atom,freshTokens,parseText,parseListOf) where
+module TokenAwareParser(Atom,freshTokens,parseText,parseListOf,deAtomize,freshTokenSt) where
 import Text.Earley
 import Control.Applicative
 import Control.Monad.Fix
@@ -25,12 +25,17 @@ import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),traverseStrings)
 import Relations
 import SimpleHelperMonads
 import Control.Monad.Fail as Fail
+import Control.Monad.State
 
 data Atom a
  = UserAtom (Token a)
  | Position Int64 Int64
  | Fresh Int
  deriving (Eq,Ord,Functor)
+deAtomize :: (MonadFail m,Show a) => Atom a -> m a
+deAtomize (UserAtom v) = pure$ runToken v
+deAtomize x = Fail.fail ("Don't know what to do with the atom: "++show x)
+
 
 instance Show a => Show (Atom a) where
   show (UserAtom a) = show a
@@ -51,8 +56,11 @@ instance Show y => Show (Triple y (Atom Text)) where
 freshTokens :: FreshnessGenerator (Atom y)
 freshTokens = FreshnessGenerator (\i -> (i+1,Fresh i))
   
+freshTokenSt :: Applicative x => StateT Int x (Atom Text)
+freshTokenSt = StateT (\i -> pure (Fresh i,i+1))
+  
 -- combine an abstract parser with a tokeniser
--- TODO: find a nice way to move some of the functionality from here into the Tokeniser file. The pre-made "String" and "QuotedString" – as well as the way how exactMatch is written – really come across as belonging to the scanner, rather than the parser. A caveat: the "Invalid token" error should be taken out in a proper way.
+-- TODO: find a nice way to move some of the functionality from here into the Tokeniser file. The pre-made "String" and "QuotedString" – as well as the way how exactMatch is written – really come across as belonging to the scanner, rather than the parser.
 parseListOf :: forall y x z. (Eq y,Show y,Scannable y,Ord z,IsString z
                              ,IsString x,Show z)
             => ([ParseRule x y z], z)
@@ -94,7 +102,7 @@ parseListOf (pg,ps)
 -- convenient way to use the parser
 parseText :: forall y a m b t t1. (MonadFail m, Show y, Show b)
           => Either y (t -> (([a], Report String [t1]), LinePos (ScanResult b)))
-          -> (t1 -> String) -> t -> m a
+          -> (t1 -> String -> Maybe String -> m a) -> t -> m a
 parseText parseListOf' showUnexpected t
   = case parseListOf' of
       Left v -> Fail.fail ("Invalid parser. Not a valid token: "++show v)
@@ -113,8 +121,8 @@ parseText parseListOf' showUnexpected t
                (u:_) -- tokens that are left to be scanned
        )
       ,scanResult -- regardless of the scanner, if there were tokens left to be scanned, the error should be about the unexpected token
-      ) -> Fail.fail ("Unexpected: "++showUnexpected u++"\n  Expecting "++showTokens e
-                      ++fromMaybe "" (showPos <$> (traverse scanError scanResult)));
+      ) -> showUnexpected u (showTokens e)
+            $ (showPos <$> (traverse scanError scanResult));
       (_,scanResult) -> Fail.fail (fromMaybe "Ambiguous input"$ showPos <$> traverse scanError scanResult)
       }
   where scanError :: (ScanResult b) -> Maybe String

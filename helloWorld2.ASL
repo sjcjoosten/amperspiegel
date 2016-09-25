@@ -3,7 +3,7 @@ dad :: Person * Man
 name :: Person * String -- string is built-in (has a parser defined for it)
 
 CLASSIFY Man IS Man /\ Person
-CLASSIFY Woman IS Man /\ Person
+CLASSIFY Woman IS Woman /\ Person
 
 VIEW Man = ["Man", name]
 VIEW Woman = ["Woman", name]

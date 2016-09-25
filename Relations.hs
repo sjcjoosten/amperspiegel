@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies, TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables #-}
 {-# LANGUAGE DeriveTraversable #-}
 module Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),RelTwoWayLookup(..),TripleStore,Triple(..)
- ,getNewTuples,checkIfExists,findInMap,RelLookup(..),FullRelLookup(..), fmapE) where
+ ,getNewTuples,checkIfExists,findInMap,RelLookup(..),FullRelLookup(..), fmapE, restrictTo) where
 import Data.Map as Map
 import Data.Set as Set
 import Data.String
@@ -66,6 +66,12 @@ data Expression a r
  | Bot
  | Pair a a
  deriving (Functor,Foldable,Traversable)
+
+restrictTo :: (Ord k) => [k] -> TripleStore k b -> TripleStore k b
+restrictTo rs'
+ = fmap (d2$flip Map.intersection rs)
+ where rs = Map.fromList [(r,()) | r<-rs']
+       d2 f (x,y) = (f x,f y)
 
 instance Functor (Rule r) where
    fmap f (Subset l r) = Subset (fmapE f l) (fmapE f r)
