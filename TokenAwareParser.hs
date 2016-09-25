@@ -7,7 +7,7 @@ import Text.Earley
 import Control.Applicative
 import Control.Monad.Fix
 import Data.Foldable
-import Data.Text.Lazy as Text
+import Data.Text.Lazy (Text)
 import Data.Int as Int
 import Data.Map as Map
 import Data.String
@@ -100,7 +100,7 @@ parseListOf (pg,ps)
 
 -- Convert something scannable to a set of triples
 -- convenient way to use the parser
-parseText :: forall y a m b t t1. (MonadFail m, Show y, Show b)
+parseText :: forall y a m b t t1. (MonadFail m, Show y, Show b, Show a)
           => Either y (t -> (([a], Report String [t1]), LinePos (ScanResult b)))
           -> (t1 -> String -> Maybe String -> m a) -> t -> m a
 parseText parseListOf' showUnexpected t
@@ -123,7 +123,10 @@ parseText parseListOf' showUnexpected t
       ,scanResult -- regardless of the scanner, if there were tokens left to be scanned, the error should be about the unexpected token
       ) -> showUnexpected u (showTokens e)
             $ (showPos <$> (traverse scanError scanResult));
-      (_,scanResult) -> Fail.fail (fromMaybe "Ambiguous input"$ showPos <$> traverse scanError scanResult)
+      ((p,_),scanResult) ->
+        Fail.fail
+          (fromMaybe ("Ambiguous input:\n"++show (length p)++" possible parses: "++show p)
+          $ showPos <$> traverse scanError scanResult)
       }
   where scanError :: (ScanResult b) -> Maybe String
         scanError (Success) = Nothing

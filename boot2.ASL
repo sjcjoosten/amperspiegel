@@ -1,11 +1,5 @@
--- full boot sequence
--- keep boot.ASL as close to the initial loader as possible
--- use this file to include many features
-
-relationName :: RelationElement * String
-identifier :: Concept * String
-
-VIEW Concept = [identifier]
+-- simplified boot.ASL
+-- This should define the initially loaded parser
 
 CLASSIFY ClassificationStatement IS Statement /\ ClassificationStatement
 CLASSIFY DeclarationStatement IS Statement /\ DeclarationStatement
@@ -14,7 +8,6 @@ CLASSIFY ConsConceptList IS ConsConceptList /\ ConceptList -- non-empty list, i.
 CLASSIFY ConsSyntaxList IS ConsSyntaxList /\ SyntaxList
 CLASSIFY QuotedStringElement IS QuotedStringElement /\ SyntaxElement
 CLASSIFY RelationElement IS RelationElement /\ SyntaxElement
-CLASSIFY Relation IS Relation /\ StringAndOrigin
 
 -- builtin:
 -- string :: StringAndOrigin * String
@@ -23,21 +16,22 @@ CLASSIFY Relation IS Relation /\ StringAndOrigin
 -- CLASSIFY QuotedString IS QuotedString /\ String
 
 classification :: ClassificationStatement * Classification
-  mainConcept :: Classification * Concept
+  mainConcept :: Classification * String
   conceptList :: Classification * ConceptList
-  head1 :: ConceptList * Concept
+  head1 :: ConceptList * String
   tail1 :: ConsConceptList * ConceptList
 declaration :: DeclarationStatement * Declaration
-  relation :: Declaration * Relation
+  relation :: Declaration * StringAndOrigin
   concepts :: Declaration * DeclarationType
-  fst :: DeclarationType * Concept
-  snd :: DeclarationType * Concept
+  fst :: DeclarationType * String
+  snd :: DeclarationType * String
 syntax :: SyntaxStatement * Syntax
-  concept :: Syntax * Concept
+  concept :: Syntax * String
+  relationName :: RelationElement * UnquotedString
   syntaxList :: Syntax * SyntaxList
   head2 :: SyntaxList * SyntaxElement
   tail2 :: ConsSyntaxList * SyntaxList
-  string :: QuotedStringElement * QuotedString
+  qstring :: QuotedStringElement * QuotedString
 
 VIEW ClassificationStatement = [classification]
 VIEW DeclarationStatement    = [declaration]
@@ -51,9 +45,27 @@ VIEW Declaration         = [relation,"::",concepts]
 VIEW Syntax              = ["VIEW",concept,"=","[",syntaxList,"]"]
 VIEW ConsSyntaxList      = [head2,",",tail2]
 VIEW SyntaxList          = [head2]
-VIEW QuotedStringElement = [string] -- goes to QuotedString
-VIEW RelationElement     = [relation]
+VIEW QuotedStringElement = [qstring] -- goes to QuotedString
+VIEW RelationElement     = [relationName]
 
 -- For parsing Rules, uncomment this section
-
-rule :: 
+CLASSIFY RuleStatement IS Statement /\ RuleStatement
+CLASSIFY RuleSubset IS TwoExpressionArguments /\ RuleSubset
+CLASSIFY Conjunct IS Conjunct /\ TwoExpressionArguments
+CLASSIFY Compose IS Compose /\ TwoExpressionArguments
+rule :: RuleStatement * RuleSubset
+eFst :: TwoExpressionArguments * Expression
+eSnd :: TwoExpressionArguments * Expression
+conjunct :: Expression * Conjunct
+converse :: Expression * Expression
+compose :: Expression * Compose
+atom :: Expression * UnquotedString -- Stands for a relation
+VIEW RuleStatement = ["RULE",rule]
+VIEW RuleSubset = [eFst,"|-",eSnd]
+VIEW Expression = ["(",conjunct,")"]
+VIEW Expression = ["(",compose,")"]
+VIEW Expression = [converse,"~"]
+VIEW Expression = [atom]
+VIEW Expression = ["."]
+VIEW Conjunct = [eFst,"/\\",eSnd]
+VIEW Compose = [eFst,";",eSnd]

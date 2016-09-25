@@ -54,7 +54,7 @@ data PreToken a = SingleCharacter a
                 | MultiLineComment [a]
                 | EndOfLineComment a
                 | WhiteSpace a
-                deriving Show
+                deriving (Show,Functor)
 -- PreToken allows us to easily reconstruct the original source,
 -- but all the supporting characters are still required
 
@@ -98,18 +98,32 @@ instance (Scannable a, IsString a) => IsString (Token a) where
        ([v'],LinePos _ _ Success) -> (fmap (runLinePos . fst) v')
        _ -> QuotedString (fromString v)
 
-isQuoted,isUnquoted :: Token t -> Bool
+isQuoted :: Token t -> Bool
 isQuoted QuotedString{} = True
 isQuoted NonQuoted{} = False
-isUnquoted = not . isQuoted
+isUnquoted :: Scannable t => Token t -> Bool
+isUnquoted s
+  = case tokenToPreToken s of
+      CharacterSequence _ -> True
+      _ -> False
 
 data NonParsed a = MultiLine [a] | EndOfLine a | NPspace a
 data ScanResult a = Success | ExpectClosingComment | ExpectClosingQuote
-                  | InvalidChar (LinePos a) deriving Show
+                  | InvalidChar (LinePos a) deriving (Functor,Show)
 
 class Scannable a where
   scan :: LinePos a -> ([LinePos (PreToken a)],LinePos (ScanResult a))
-  
+
+instance Scannable a => Scannable (LinePos a,Bool) where
+  scan (LinePos a b (v,r))
+   = let (r1,LinePos c d rm) = scan v
+     in (fmap incr r1, LinePos c d (fmap wrap rm))
+   where
+     wrap v' = (LinePos a b v',r)
+     incr :: LinePos (PreToken a) -> LinePos (PreToken (LinePos a, Bool))
+     incr (LinePos c d x)
+           = if c>0 then LinePos (a+c) d (fmap wrap x)
+             else LinePos a (d+b) (fmap wrap x)
 
 splitPreToken :: PreToken a -> Either (Token a) (NonParsed a)
 splitPreToken (SingleCharacter a   ) = Left (NonQuoted a)
@@ -125,6 +139,7 @@ tokenToPreToken (NonQuoted a)
   = case scan (LinePos 0 0 a) of
      ([p],LinePos _ _ Success) -> runLinePos p
      _ -> error "Invalid NonQuoted token. The token should never have been created this way."
+     -- TODO: this makes it that Token is not a functor
 -- the NonQuoted case should rely on the scanner
 nonParsedToPreToken :: NonParsed a -> PreToken a
 nonParsedToPreToken (MultiLine as) = MultiLineComment as
@@ -150,16 +165,16 @@ instance Scannable Text where
                                  (incrPos (LinePos lineNr (colNr+1) t) h)
    | Text.null p = done Success
    | isSpace (Text.head p) = simple (Text.span isSpace p) WhiteSpace
-   | isCharSeq (Text.head p) = simple (Text.span isCharSeq p)
+   | isSeqChar (Text.head p) = simple (Text.span isSeqChar p)
                                       CharacterSequence
    | otherwise = cont (SingleCharacter (Text.take 1 p))
                       (LinePos lineNr (colNr+1) (Text.drop 1 p))
    where done e = ([],LinePos lineNr colNr e)
+         isSeqChar c = isAlphaNum c || c == '-' || c == '_'
          cont r newTail = let (scanTail,scanRest) = scan newTail
                             in (LinePos lineNr colNr r:scanTail, scanRest)
          simple (h,t) f = cont (f h) (incrPos (LinePos lineNr colNr t) h)
          mlc = MultiLineComment . Text.lines . Text.drop 2 . dropEnd 2
-         isCharSeq c = isAlphaNum c || c == '-' || c == '_'
          completeComment :: Int64 -> Int -> Text -> Text -> Maybe (Text, Text)
          completeComment !pos' 0 str _ = Just (Text.splitAt pos' str)
          completeComment !pos' lvl str remainder
@@ -189,12 +204,15 @@ instance Scannable Text where
                                                 (Text.drop siz t)
                         _ -> Left (InvalidChar (LinePos l c' truncT))
                   _ -> Left ExpectClosingQuote -- expecting closing quote
-         incrPos orig@(LinePos l p' v) ps
-           = case split (=='\n') ps of
-              [] -> orig
-              [r] -> LinePos l (p' + Text.length r) v
-              o -> LinePos (l + fromIntegral (Prelude.length o) - 1)
-                           (Text.length (Prelude.last o)) v
+
+incrPos :: forall a. LinePos a -> Text -> LinePos a
+incrPos orig@(LinePos l p' v) ps
+  = case split (=='\n') ps of
+     [] -> orig
+     [r] -> LinePos l (p' + Text.length r) v
+     o -> LinePos (l + fromIntegral (Prelude.length o) - 1)
+                  (Text.length (Prelude.last o)) v
+
 
 partitionTokens :: Bool -> [LinePos (PreToken a)] -> [Token (LinePos a, Bool)]
 partitionTokens b (LinePos i j a:as)

@@ -66,7 +66,7 @@ clear
 cat fathers.txt
 ./amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers.txt -show
 
-# IF THIS ALL WORKS AND TIME IS LEFT:
+# TODO:
 # Let's pick it up a notch
 cat fathers2.txt
 ./amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt

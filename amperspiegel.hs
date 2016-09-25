@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall -Wno-unused-imports #-}
+{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, LambdaCase #-} -- for the scanner position
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -7,19 +7,18 @@
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 module Main where
-import Data.Text.Lazy (Text,pack,unlines)
+import Data.Text.Lazy (Text,pack)
 import qualified Data.Text.Lazy as Text
 import Data.Text.Lazy.IO as Text (readFile,hPutStrLn,putStrLn)
 import Data.String
 import Data.Set as Set (toList)
-import ParseRulesFromTripleStore(ParseRule(..),tripleStoreToParseRules,parseRuleToTripleStore,fmap23,tripleStoreRelations)
-import Tokeniser(showPos,runToken,Token, LinePos,ScanResult,showPos,runLinePos)
+import ParseRulesFromTripleStore(ParseRule(..),tripleStoreToParseRules,fmap23,tripleStoreRelations)
+import Tokeniser(showPos,runToken,Token, LinePos,showPos)
 import TokenAwareParser(Atom,freshTokenSt,parseText,parseListOf,deAtomize)
 import Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),Triple(..),TripleStore,insertTriple,restrictTo,unionTS)
 import ApplyRuleSet(applySystem)
 import SimpleHelperMonads
 import RuleSetFromTripleStore
-import Control.Monad.Fail as F
 import Data.Map (Map)
 import qualified Data.Map as Map
 import System.Environment
@@ -28,14 +27,15 @@ import Control.Monad.State
 import System.IO (stderr)
 import System.Exit
 import Data.Monoid
-import Text.Earley (Report)
 
 initialstate :: Map Text Population
 initialstate
   = Map.fromList
-     [ ( "parser"
-       , TR (error "default parser not bootstrapped yet (TODO)") (Just mParser) (Just []))
-     ]
+    [ ( "parser"
+      , TR (error "default parser not bootstrapped yet (TODO)") (Just mParser) (Just []))
+    , ( "asParser"
+      , TR (error "default parse-ruleset not bootstrapped yet (TODO)") (Just []) (Just ruleList))
+    ]
 
 main :: IO ()
 main = do as <- getChunks =<< getArgs
@@ -121,7 +121,8 @@ commands = [ ( "i"
              , ( "Turn the population into the parser for -i"
                , \case [] -> do pop <- retrieve "population"
                                 -- trans <- retrieve "asParser" TODO
-                                res <- evalStateT (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.") freshTokenSt ruleList (getList pop)) 0 -- TODO: apply a filter
+                                r <- getRules "asParser"
+                                res <- evalStateT (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.") freshTokenSt r (getList pop)) 0 -- TODO: apply a filter
                                 let res' = fst res
                                 let parser = restrictTo tripleStoreRelations res'
                                 let rules = restrictTo ruleSetRelations res'
