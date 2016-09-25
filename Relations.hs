@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies, TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables #-}
 {-# LANGUAGE DeriveTraversable #-}
 module Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),RelTwoWayLookup(..),TripleStore,Triple(..)
- ,getNewTuples,checkIfExists,findInMap,RelLookup(..),FullRelLookup(..), fmapE, restrictTo) where
+ ,getNewTuples,checkIfExists,findInMap,RelLookup(..),FullRelLookup(..), fmapE, restrictTo, unionTS) where
 import Data.Map as Map
 import Data.Set as Set
 import Data.String
@@ -72,6 +72,10 @@ restrictTo rs'
  = fmap (d2$flip Map.intersection rs)
  where rs = Map.fromList [(r,()) | r<-rs']
        d2 f (x,y) = (f x,f y)
+unionTS :: (Ord k,Ord b)=> TripleStore k b -> TripleStore k b -> TripleStore k b
+unionTS = Map.unionWith (d2 (Map.unionWith Set.union))
+ where d2 f (x1,y1) (x2,y2) = (f x1 x2,f y1 y2)
+
 
 instance Functor (Rule r) where
    fmap f (Subset l r) = Subset (fmapE f l) (fmapE f r)

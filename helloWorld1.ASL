@@ -1,5 +1,7 @@
+
 parent :: Person * Person
 dad :: Person * Man
 
 CLASSIFY Man IS Man /\ Person
 CLASSIFY Woman IS Woman /\ Person
+

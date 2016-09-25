@@ -1,3 +1,4 @@
+
 parent :: Person * Person
 dad :: Person * Man
 name :: Person * String -- string is built-in (has a parser defined for it)
@@ -10,3 +11,4 @@ VIEW Woman = ["Woman", name]
 VIEW Person = ["Father", "of", name, "is", dad]
 
 CLASSIFY Person IS Statement /\ Person -- Parser will parse a list of statements
+

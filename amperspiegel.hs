@@ -15,12 +15,13 @@ import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),tripleStoreToParseRules,parseRuleToTripleStore,fmap23,tripleStoreRelations)
 import Tokeniser(showPos,runToken,Token, LinePos,ScanResult,showPos,runLinePos)
 import TokenAwareParser(Atom,freshTokenSt,parseText,parseListOf,deAtomize)
-import Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),Triple(..),TripleStore,insertTriple,restrictTo)
+import Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),Triple(..),TripleStore,insertTriple,restrictTo,unionTS)
 import ApplyRuleSet(applySystem)
 import SimpleHelperMonads
 import RuleSetFromTripleStore
 import Control.Monad.Fail as F
-import Data.Map as Map (Map,fromList,findWithDefault,insert,empty,lookup,toList)
+import Data.Map (Map)
+import qualified Data.Map as Map
 import System.Environment
 import Data.Foldable
 import Control.Monad.State
@@ -33,7 +34,7 @@ initialstate :: Map Text Population
 initialstate
   = Map.fromList
      [ ( "parser"
-       , Parser (error "default parser not bootstrapped yet (TODO)") mParser)
+       , TR (error "default parser not bootstrapped yet (TODO)") (Just mParser) (Just []))
      ]
 
 main :: IO ()
@@ -52,10 +53,10 @@ main = do as <- getChunks =<< getArgs
                    (_,_ ) -> finishError "First argument should be a command, that is: it should start with '-'"
 
 data Population
- = TR {_getPop::TripleStore (Atom Text) (Atom Text)}
+ = TR {_getPop::TripleStore (Atom Text) (Atom Text)
+      ,popParser :: Maybe FullParser
+      ,popRules :: Maybe FullRules}
  | LST {_getList::[Triple (Atom Text) (Atom Text)]}
- | Parser {_getPop::TripleStore (Atom Text) (Atom Text)
-          ,_popParser::FullParser}
 
 getPop :: Population -> TripleStore (Atom Text) (Atom Text)
 getPop (LST a) = foldl' (\v w -> fst (insertTriple w v)) Map.empty a
@@ -63,6 +64,8 @@ getPop r = _getPop r
 
 type FullParser 
   = [ParseRule (Atom Text) Text Text]
+type FullRules
+  = [Rule (Atom Text) (Atom Text)]
 
 doCommand :: String -> [String] -> StateT (Map Text Population) IO ()
 doCommand cmd
@@ -91,8 +94,12 @@ commands = [ ( "i"
              , ( "parse file as input"
                , (\files -> do txts <- lift$ mapM Text.readFile files
                                p <- getParser "parser"
+                               r <- getRules "rules"
                                trps <- combinePops <$> (traverse (parseText (parseListOf (p,"Statement")) showUnexpected) txts)
-                               add "population" (LST trps)
+                               res <- evalStateT (applySystem
+                                        (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
+                                        freshTokenSt r trps) 0
+                               overwrite "population" (TR (fst res) Nothing Nothing)
                                return ()
                                )))
            , ( "h"
@@ -104,6 +111,9 @@ commands = [ ( "i"
            , ( "showP"
              , ( "display the triples as a set of parse-rules"
                , eachDo (lift . Text.putStrLn . prettyPParser) getParser))
+           , ( "showR"
+             , ( "display the triples as a set of parse-rules"
+               , eachDo (lift . Text.putStrLn . prettyPRules) getRules))
            , ( "count"
              , ( "count the number of triples"
                , eachPop (lift . Prelude.putStrLn . show . length . getList)))
@@ -114,8 +124,10 @@ commands = [ ( "i"
                                 res <- evalStateT (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.") freshTokenSt ruleList (getList pop)) 0 -- TODO: apply a filter
                                 let res' = fst res
                                 let parser = restrictTo tripleStoreRelations res'
-                                add "parser" (TR parser)
-                                add "population" (TR res')
+                                let rules = restrictTo ruleSetRelations res'
+                                overwrite "parser" (TR parser Nothing Nothing)
+                                overwrite "rules" (TR rules Nothing Nothing)
+                                overwrite "population" (TR (unionTS res' rules) Nothing Nothing)
                        _ -> lift$finishError "asParser takes no arguments"
                ))
            ]
@@ -149,6 +161,9 @@ prettyPParser o@(ParseRule t _:_)
              Just v -> let (rs,rm) = mapsplit f r in (v:rs,rm)
              Nothing -> ([],o')
 
+prettyPRules :: FullRules -> Text
+prettyPRules = Text.concat . map (\v -> pack (show v) <> "\n")
+
 prettyPPopulation :: Population -> Text
 prettyPPopulation v
  = Text.unlines [ showPad w1 n <> ": "<>showPad w2 s<>" |--> "<>pack (show t)
@@ -173,7 +188,15 @@ combinePops :: [FreshnessGenerator [Triple (Atom Text) (Atom Text)]]
 combinePops = concat . snd . ($0) . runFg . sequence
 
 add :: Monad b => Text -> Population -> StateT (Map Text Population) b ()
-add s p = modify (Map.insert s p)
+add s p = modify (Map.insertWith extend s p)
+  where extend _ (LST _) = p
+        extend _ (TR po pa ru)
+          = TR po
+               (case popParser p of {Nothing -> pa; v -> v})
+               (case popRules p of {Nothing -> ru; v -> v})
+
+overwrite :: Monad b => Text -> Population -> StateT (Map Text Population) b ()
+overwrite s p = modify (Map.insert s p)
 
 retrieve :: Monad b => Text -> StateT (Map Text Population) b Population
 retrieve s
@@ -186,14 +209,24 @@ getParser :: Text -> StateT (Map Text Population) IO FullParser
 getParser s
  = do mp <- retrieve s
       case mp of
-        (Parser _ v) -> return v
+        (TR{popParser = Just v}) -> return v
         v' -> let v = getPop v' in putBack v =<< (unAtomize =<< tripleStoreToParseRules id v)
  where putBack v p
-         = do add s (Parser v p)
+         = do add s (TR v (Just p) Nothing)
               return p
        unAtomize :: [ParseRule (Atom Text) (Atom Text) (Atom Text)] -> StateT (Map Text Population) IO FullParser
        unAtomize = traverse (fmap23 deAtomize deAtomize)
-       
+
+getRules :: Text -> StateT (Map Text Population) IO FullRules
+getRules s
+ = do mp <- retrieve s
+      case mp of
+        (TR{popRules = Just v}) -> return v
+        v' -> let v = getPop v' in putBack v =<< (tripleStoreToRuleSet return v)
+ where putBack v p
+         = do add s (TR v Nothing (Just p))
+              return p
+    
 finishError :: Text -> IO a
 finishError s = hPutStrLn stderr s >> exitFailure
 
