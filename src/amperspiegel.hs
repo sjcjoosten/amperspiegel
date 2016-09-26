@@ -47,7 +47,7 @@ main = do as <- getChunks =<< getArgs
                    (_,_ ) -> finishError "First argument should be a command, that is: it should start with '-'"
 
 data Population
- = TR  { _getPop   :: (TripleStore (Atom Text) (Atom Text))
+ = TR  { _getPop   :: FullStore
        , popParser :: Maybe FullParser
        , popRules  :: Maybe FullRules}
  | LST { _getList  :: [Triple (Atom Text) (Atom Text)]}
@@ -56,10 +56,9 @@ getPop :: Population -> TripleStore (Atom Text) (Atom Text)
 getPop (LST a) = foldl' (\v w -> fst (insertTriple w v)) Map.empty a
 getPop r = _getPop r
 
-type FullParser 
-  = [ParseRule (Atom Text) Text Text]
-type FullRules
-  = [Rule (Atom Text) (Atom Text)]
+type FullParser = [ParseRule (Atom Text) Text Text]
+type FullRules = [Rule (Atom Text) (Atom Text)]
+type FullStore = TripleStore (Atom Text) (Atom Text)
 
 doCommand :: Text -> [Text] -> StateT (Map Text Population) IO ()
 doCommand cmd
@@ -88,13 +87,10 @@ commands = [ ( "i"
              , ( "parse file as input"
                , (\files -> do txts <- lift$ mapM (Text.readFile . unpack) files
                                p <- getParser "parser"
-                               r <- getRules "rules"
                                trps <- traverse (parseText (parseListOf (p,"Statement")) showUnexpected) txts
-                               res <- evalStateT (applySystem 
-                                        (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
-                                        freshTokenSt r =<< (mconcat <$> sequence trps)) 0
-                               liftIO$ renameWarnings res
-                               overwrite "population" (TR (fst res) Nothing Nothing)
+                               overwrite "population" =<< unFresh (LST . mconcat <$> sequence trps)
+                               res <- apply "rules" ["population"]
+                               overwrite "population" (TR res Nothing Nothing)
                                return ()
                                )))
            , ( "h"
@@ -121,17 +117,12 @@ commands = [ ( "i"
            , ( "asParser"
              , ( "turn the population into the parser for -i"
                , noArgs "asParser" $
-                 do pop <- retrieve "population"
-                    -- trans <- retrieve "asParser" TODO
-                    r <- getRules "asParser"
-                    res <- evalStateT (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.") freshTokenSt r (getList pop)) 0 -- TODO: apply a filter
-                    liftIO$ renameWarnings res
-                    let res' = fst res
-                    let parser = restrictTo tripleStoreRelations res'
-                    let rules = restrictTo ruleSetRelations res'
+                 do res <- apply "asParser" ["population"]
+                    let parser = restrictTo tripleStoreRelations res
+                    let rules = restrictTo ruleSetRelations res
                     overwrite "parser" (TR parser Nothing Nothing)
                     overwrite "rules" (TR rules Nothing Nothing)
-                    overwrite "population" (TR (unionTS res' rules) Nothing Nothing)
+                    overwrite "population" (TR (unionTS parser rules) Nothing Nothing)
                ))
            , ( "apply"
              , ( "apply the rule-system of first argument and put result into final argument (overwrite what was there). The remaining arguments form the population the system is applied to (or to the final argument if there are no remaining arguments given)."
@@ -142,16 +133,22 @@ commands = [ ( "i"
                        from = case drop 1 (init args) of
                                 [] -> [targ]
                                 r -> r
-                   in do pops <- mapM (fmap getList . retrieve) from
-                         let pop = mconcat <$> traverse (freshenUp freshTokenSt) pops
-                         r <- getRules rsys
-                         res <- evalStateT (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
-                                                        freshTokenSt r =<< pop) 0
-                         overwrite targ (TR (fst res) Nothing Nothing)
+                   in do v<- apply rsys from
+                         overwrite targ (TR v Nothing Nothing)
                )
              )
            ]
            where
+             apply :: Text -> [Text] -> StateT (Map Text Population) IO FullStore
+             apply rsys from
+                   = do pops <- mapM (fmap getList . retrieve) from
+                        let pop = mconcat <$> traverse (freshenUp freshTokenSt) pops
+                        r <- getRules rsys
+                        res <- unFresh (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
+                                                       freshTokenSt r =<< pop)
+                        liftIO$ renameWarnings res
+                        return (fst res)
+             unFresh v = evalStateT v 0
              noArgs :: Text
                       -> StateT (Map Text Population) IO ()
                       -> [t]
