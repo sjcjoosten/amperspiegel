@@ -4,7 +4,10 @@ import Control.Monad.Fail as Fail
 import Control.Applicative
 import Control.Monad
 import Relations
+import Data.Text.Lazy (Text,pack)
 
+showT :: Show a => a -> Text
+showT = pack . show
 data FailingMonad a = Failure {runFailure::String} | Result {runFailingMonad::a}
   deriving (Functor,Foldable,Traversable,Show)
 instance Applicative FailingMonad where

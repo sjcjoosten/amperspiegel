@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module TokenAwareParser(Atom,parseText,deAtomize,freshTokenSt,freshenUp,parseListOf) where
+module TokenAwareParser(Atom(..),parseText,deAtomize,freshTokenSt,freshenUp,parseListOf) where
 import Text.Earley
 import Control.Applicative
 import Control.Monad.Fix

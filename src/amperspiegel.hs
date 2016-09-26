@@ -7,11 +7,12 @@ import Data.String (IsString)
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),tripleStoreRelations,tripleStoreToParseRules,fmap23)
 import Tokeniser(showPos,runToken,Token, LinePos,showPos)
-import TokenAwareParser(Atom,freshTokenSt,parseText,deAtomize,freshenUp,parseListOf)
+import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf)
 import Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),Triple(..),TripleStore,insertTriple,restrictTo,unionTS)
 import ApplyRuleSet(applySystem)
 import RuleSetFromTripleStore(ruleSetRelations,tripleStoreToRuleSet)
 import Data.Map (Map)
+import SimpleHelperMonads
 import qualified Data.Map as Map
 import System.Environment
 import Data.Foldable
@@ -91,7 +92,10 @@ commands = [ ( "i"
                                trps <- traverse (parseText (parseListOf (p,"Statement")) showUnexpected) txts
                                res <- evalStateT (applySystem 
                                         (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
-                                        freshTokenSt r =<< (concat <$> sequence trps)) 0
+                                        freshTokenSt r =<< (mconcat <$> sequence trps)) 0
+                               sequenceA_ [ liftIO$Text.hPutStrLn stderr ("Application of rules caused "<>showT v<>" to be equal to "<> showT r)
+                                          | (v,r) <- Map.toList$ snd res
+                                          , case v of {Fresh _ -> False; _ -> True}]
                                overwrite "population" (TR (fst res) Nothing Nothing)
                                return ()
                                )))
@@ -140,7 +144,7 @@ commands = [ ( "i"
                                 [] -> [targ]
                                 r -> r
                    in do pops <- mapM (fmap getList . retrieve) from
-                         let pop = concat <$> traverse (freshenUp freshTokenSt) pops
+                         let pop = mconcat <$> traverse (freshenUp freshTokenSt) pops
                          r <- getRules rsys
                          res <- evalStateT (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
                                                         freshTokenSt r =<< pop) 0
@@ -181,7 +185,7 @@ prettyPParser o@(ParseRule t _:_)
                     res <> "\n" <> prettyPParser tl
  where (res,tl) = mapsplit (\(ParseRule t' lst)
                             -> if t == t' then Just (pp lst) else Nothing) o
-       pp = Text.intercalate ", " . map (pack . show)
+       pp = Text.intercalate ", " . map showT
        mapsplit _ [] = ([],[])
        mapsplit f o'@(a:r)
          = case f a of
@@ -199,7 +203,7 @@ prettyPPopulation v
        max2 (Triple a b _) (al,bl)
          = (max al (length (show a)), max bl (length (show b)))
 showPad :: forall a. Show a => Int -> a -> Text
-showPad w = pad w . pack . show
+showPad w = pad w . showT
 pad :: Int -> Text -> Text
 pad w s
  = let x = w - (fromIntegral . Text.length) s
@@ -207,7 +211,7 @@ pad w s
 
 getList :: Population -> [Triple (Atom Text) (Atom Text)]
 getList (LST v) = v
-getList x = concat . map getTripls . Map.toList $ getPop x
+getList x = mconcat . map getTripls . Map.toList $ getPop x
   where getTripls (a,(mp,_))
           = [(Triple nm a b) | (nm,bs) <- Map.toList mp, b<-Set.toList bs]
 
