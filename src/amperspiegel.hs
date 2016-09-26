@@ -93,9 +93,7 @@ commands = [ ( "i"
                                res <- evalStateT (applySystem 
                                         (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
                                         freshTokenSt r =<< (mconcat <$> sequence trps)) 0
-                               sequenceA_ [ liftIO$Text.hPutStrLn stderr ("Application of rules caused "<>showT v<>" to be equal to "<> showT r)
-                                          | (v,r) <- Map.toList$ snd res
-                                          , case v of {Fresh _ -> False; _ -> True}]
+                               liftIO$ renameWarnings res
                                overwrite "population" (TR (fst res) Nothing Nothing)
                                return ()
                                )))
@@ -127,6 +125,7 @@ commands = [ ( "i"
                     -- trans <- retrieve "asParser" TODO
                     r <- getRules "asParser"
                     res <- evalStateT (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.") freshTokenSt r (getList pop)) 0 -- TODO: apply a filter
+                    liftIO$ renameWarnings res
                     let res' = fst res
                     let parser = restrictTo tripleStoreRelations res'
                     let rules = restrictTo ruleSetRelations res'
@@ -167,6 +166,10 @@ commands = [ ( "i"
                     -> ([Text] -> StateT (Map Text Population) IO ())
              eachDo f g = \case [] -> f =<< g "population"
                                 l  -> mapM_ (\v -> f =<< g v) l
+             renameWarnings (_,res)
+              = sequenceA_ [ Text.hPutStrLn stderr ("Application of rules caused "<>showT v<>" to be equal to "<> showT r)
+                           | (v,r) <- Map.toList res
+                           , case v of {Fresh _ -> False; _ -> True}]
              helpText
               = "These are the switches you can use:\n\n" <>
                    mconcat [ "  " <> pad maxw s <> "  " <> d <>"\n"
