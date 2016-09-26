@@ -1,3 +1,0 @@
-Earley parser includes "Holey" as a type, which may be exactly the mixfix parser we need.
-To use the Earley parser, Pinchot provides a simple language that you use to write a Haskell program that describes a context-free grammar. The resulting value can be used as parser and pretty printer (I think), but it all requires template Haskell, so it may not be what I want.
-Related: BNFC. Does the same (roughly), but as an executable.

@@ -1,3 +1,4 @@
 amperspiegel
 *.hi
 *.o
+dist/
