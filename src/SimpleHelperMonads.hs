@@ -1,28 +1,9 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveTraversable #-}
+{-# OPTIONS_GHC -Wall #-} {-# LANGUAGE BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module SimpleHelperMonads where
 import Control.Monad.Fail as Fail
 import Control.Applicative
 import Control.Monad
 import Relations
-
-newtype FreshnessGenerator a = FreshnessGenerator {runFg::(Int -> (Int,a))} 
-
-instance Show y => (Show (FreshnessGenerator y)) where
-  show f = show (snd (runFg f 0))
-instance Monad FreshnessGenerator where
-  return x = FreshnessGenerator (\i -> (i,x))
-  (FreshnessGenerator a) >>= f
-    = FreshnessGenerator (\i -> let (i',a') = a i
-                                    (FreshnessGenerator f') = f a'
-                                in seq i' $ f' i')
-instance Applicative FreshnessGenerator where
-  pure = return
-  (<*>) = ap
-instance Functor FreshnessGenerator where
-  fmap f x = pure f <*> x
 
 data FailingMonad a = Failure {runFailure::String} | Result {runFailingMonad::a}
   deriving (Functor,Foldable,Traversable,Show)

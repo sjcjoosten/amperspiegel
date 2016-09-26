@@ -1,7 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE BangPatterns #-} -- for the scanner position
-{-# LANGUAGE OverloadedStrings, FlexibleInstances, ScopedTypeVariables, RankNTypes #-}
-{-# LANGUAGE DeriveTraversable #-}
+{-# OPTIONS_GHC -Wall #-} {-# LANGUAGE RankNTypes, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module Tokeniser (Token(runToken)
                  ,LinePos(..),ScanResult(..),Scannable(..)
                  ,isQuoted,isUnquoted,exactMatch

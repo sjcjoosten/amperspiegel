@@ -1,7 +1,5 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE TypeFamilies, TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables #-}
-{-# LANGUAGE DeriveTraversable #-}
-module Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),RelTwoWayLookup(..),TripleStore,Triple(..)
+{-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TupleSections, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
+module Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),TripleStore,Triple(..)
  ,getNewTuples,checkIfExists,findInMap,RelLookup(..),FullRelLookup(..), fmapE, restrictTo, unionTS) where
 import Data.Map as Map
 import Data.Set as Set
@@ -40,14 +38,13 @@ class RelLookup r where
   type RelType r
   type AtomType r
   forEachOf :: r -> RelType r -> AtomType r -> [AtomType r]
-class RelLookup r => RelTwoWayLookup r where
   lkpLeft  :: r -> RelType r -> AtomType r -> [AtomType r]
   lkpLeft = forEachOf
   lkpRight :: r -> RelType r -> AtomType r -> [AtomType r]
   getAtom :: AtomType r -> r -- get both, for all relations
           -> ([(RelType r,[AtomType r])] -- outgoing relations
-             ,[(RelType r,[AtomType r])] -- incoming relations
-             )
+             ,[(RelType r,[AtomType r])])-- incoming relations
+             
 class RelLookup r => FullRelLookup r where
   getRel :: r -> RelType r -> [(AtomType r,[AtomType r])]
 class (RelLookup r, Monoid r) => RelInsert r where
@@ -93,24 +90,20 @@ instance (Ord a,Ord b) => RelLookup (TripleStore a b) where
   type RelType (TripleStore a b) = a
   type AtomType (TripleStore a b) = b
   forEachOf r a b = Set.toList . Map.findWithDefault mempty a . fst . Map.findWithDefault mempty b $ r
+  lkpRight r a b = Set.toList . Map.findWithDefault mempty a . snd . Map.findWithDefault mempty b $ r
+  getAtom b r = (listify m1,listify m2)
+    where (m1,m2) = findInMap b r
+          listify m = Map.toList (fmap Set.toList m)
 instance (Ord a,Ord b) => FullRelLookup (TripleStore a b) where
   getRel mps r = [ (v1,Set.toList resSet)
                  | (v1,(v1Pairs,_)) <- Map.toList mps
                  , let resSet = Map.findWithDefault mempty r v1Pairs
                  , not (Set.null resSet)]
-instance (Ord a,Ord b) => RelTwoWayLookup (TripleStore a b) where
-  lkpRight r a b = Set.toList . Map.findWithDefault mempty a . snd . Map.findWithDefault mempty b $ r
-  getAtom b r = (listify m1,listify m2)
-    where (m1,m2) = findInMap b r
-          listify m = Map.toList (fmap Set.toList m)
+
 instance (Ord a,Ord b) => RelInsert (TripleStore a b) where
   insertTriple (Triple rel' a' b') revLk
     = addRv True (a',rel',b') (addRv False (b',rel',a') (revLk,True))
     where 
-      addRv :: Bool
-            -> (b,a,b)
-            -> (TripleStore a b, Bool)
-            -> (TripleStore a b, Bool)
       addRv _ _ (mp,False) = (mp,False) -- no change needed
       addRv firstNotSecond (a,rel,b) (mp,True) -- TODO: use lenses, but check which approach is faster! (Requires benchmarks)
        = ( if change then Map.insert a newPair mp else mp -- TODO: check whether this if-then-else is actually faster then just leaving the Map.insert
@@ -128,7 +121,8 @@ instance (Ord a,Ord b) => RelInsert (TripleStore a b) where
              newSet = Set.insert b relSet
   removeAtoms = Map.difference
 
-getNewTuples :: forall a b r. (Eq a,Eq b,RelTwoWayLookup r, a ~ RelType r, b ~ AtomType r)
+-- inside out lookup
+getNewTuples :: forall a b r. (Eq a,Eq b,RelLookup r, a ~ RelType r, b ~ AtomType r)
              => Triple a b -> r -> Expression b a -> [(b,b)]
 getNewTuples (Triple a b1' b2') revLk = replace1
  where
@@ -146,29 +140,28 @@ getNewTuples (Triple a b1' b2') revLk = replace1
    replace1 Bot = []
    replace1 (Pair _ _) = []
 
-checkIfExists :: (Eq b, RelTwoWayLookup r, a ~ RelType r, b ~ AtomType r)
+checkIfExists :: (Eq b, RelLookup r, a ~ RelType r, b ~ AtomType r)
               => r -> (b, b) -> Expression b a -> Bool
 -- first several lines are redundant, but give more efficient lookup
-checkIfExists _ (b1,b2) I = b1 == b2
+checkIfExists _ (b1,b2) I            = b1 == b2
+checkIfExists revLk (b1,b2) (Flp e)  = checkIfExists revLk (b2,b1) e
+checkIfExists _ _ Bot                = False
+checkIfExists _ (b1,b2) (Pair a1 a2) = b1 == a1 && b2 == a2
 checkIfExists revLk bs (Conjunction e1 e2)
  = checkIfExists revLk bs e1 && checkIfExists revLk bs e2
 checkIfExists revLk (b1,b2) (Compose e1 e2)
  = or [checkIfExists revLk (v1,b2) e2 | v1 <- findIn revLk True b1 e1]
-checkIfExists revLk (b1,b2) (Flp e)
- = checkIfExists revLk (b2,b1) e
-checkIfExists _ _ Bot
- = False
-checkIfExists _ (b1,b2) (Pair a1 a2)
- = b1 == a1 && b2 == a2
+-- base case (can be used to catch all):
 checkIfExists revLk (b1,b2) e
  = or [v == b2 | v <- findIn revLk True b1 e]
-findIn :: (Eq b, RelTwoWayLookup r, a ~ RelType r, b ~ AtomType r)
+
+findIn :: (Eq b, RelLookup r, a ~ RelType r, b ~ AtomType r)
        => r -> Bool -> b -> Expression b a -> [b]
-findIn _     _ b I = [b]
+findIn _     _ b I                = [b]
 findIn _     True  b (Pair a1 a2) = if a1 == b then [a2] else []
 findIn _     False b (Pair a1 a2) = if a2 == b then [a1] else []
-findIn _ _ _ Bot = []
-findIn revLk ltr b (Flp e) = findIn revLk (not ltr) b e
+findIn _ _ _ Bot                  = []
+findIn revLk ltr b (Flp e)        = findIn revLk (not ltr) b e
 findIn revLk ltr b (Conjunction e1 e2)
  = [v | v <- findIn revLk ltr b e1
       , checkIfExists revLk (if ltr then (b,v) else (v,b)) e2 -- the tuple found must be in e2 too

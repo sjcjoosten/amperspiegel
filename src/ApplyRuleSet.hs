@@ -1,12 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE BangPatterns #-} -- for the scanner position
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE RankNTypes #-}
+{-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies, RankNTypes, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module ApplyRuleSet(applySystem) where
 import Data.Foldable
 import Relations
@@ -15,9 +7,7 @@ import Data.Map as Map
 applySystem :: forall m a b r sys.
                (Monad m, Ord a, Ord b
                ,sys ~ (r, Map.Map b b, [Triple a b])
-               ,a ~ RelType r
-               ,b ~ AtomType r
-               ,RelTwoWayLookup r, RelInsert r)
+               ,a ~ RelType r,b ~ AtomType r, RelInsert r)
             => (forall x. m x) -- fail
             -> m b -- generate fresh constant
             -> [Rule a b] -- set of rules
@@ -36,7 +26,8 @@ applySystem fl fg allRules originalTriples
   makeNewSystem [] = pure (mempty,mempty,originalTriples)
   makeNewSystem (Subset a b:ruls)
    = Data.Foldable.foldr insertInExprM (makeNewSystem ruls) (makeSys a)
-   where makeSys (Conjunction a1 a2) = [a' | a' <- makeSys a1, b' <- makeSys a2, a' == b']
+   where makeSys :: Expression b t -> [(b, b)]
+         makeSys (Conjunction a1 a2) = [a' | a' <- makeSys a1, b' <- makeSys a2, a' == b']
          makeSys (Compose a1 a2) = [(c,d) | (c,v) <- makeSys a1, (v',d) <- makeSys a2, v == v']
          makeSys (Flp a1) = [(c,d) | (d,c) <- makeSys a1]
          makeSys (Pair c d) = [(c,d)]
@@ -82,9 +73,7 @@ applySystem fl fg allRules originalTriples
 insertInExpr :: forall b a r sys m.
                (Monad m, Ord b
                ,(r, Map b b, [Triple a b]) ~ sys
-               ,a ~ RelType r
-               ,b ~ AtomType r
-               ,RelTwoWayLookup r)
+               ,a ~ RelType r,b ~ AtomType r,RelLookup r)
              => (forall x. m x) -- fail
              -> m b -- generate fresh constant
              -> Expression b a 

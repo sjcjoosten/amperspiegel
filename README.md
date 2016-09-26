@@ -108,7 +108,7 @@ amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt
 # That won't do, Man Bas is the same guy here...
 cat helloWorld4.ASL
 # So now let's use a boot.ASL that has expressions defined:
-amperspiegel -i boot2.ASL -asParser -i helloWorld4.ASL -asParser -i fathers2.txt
+amperspiegel -i boot2.ASL -asParser -i helloWorld4.ASL -asParser -i fathers2.txt -show
 ```
 
 For an overview of all switches, use:

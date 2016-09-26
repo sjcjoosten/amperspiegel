@@ -1,11 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE BangPatterns, LambdaCase #-} -- for the scanner position
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -Wall #-} {-# LANGUAGE BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module Main (main) where
 import Data.Text.Lazy (Text,pack,unpack)
 import qualified Data.Text.Lazy as Text
@@ -14,10 +7,9 @@ import Data.String (IsString)
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),tripleStoreToParseRules,fmap23,tripleStoreRelations)
 import Tokeniser(showPos,runToken,Token, LinePos,showPos)
-import TokenAwareParser(Atom,freshTokenSt,parseText,parseListOf,deAtomize)
+import TokenAwareParser(Atom,freshTokenSt,parseText,deAtomize,freshenUp,parseListOf)
 import Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),Triple(..),TripleStore,insertTriple,restrictTo,unionTS)
 import ApplyRuleSet(applySystem)
-import SimpleHelperMonads(FreshnessGenerator,runFg)
 import RuleSetFromTripleStore(ruleSetRelations,tripleStoreToRuleSet)
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -27,6 +19,7 @@ import Control.Monad.State
 import System.IO (stderr)
 import System.Exit (exitFailure)
 import Data.Monoid
+import System.Console.Terminal.Size (size)
 
 initialstate :: Map Text Population
 initialstate
@@ -53,10 +46,10 @@ main = do as <- getChunks =<< getArgs
                    (_,_ ) -> finishError "First argument should be a command, that is: it should start with '-'"
 
 data Population
- = TR {_getPop::TripleStore (Atom Text) (Atom Text)
-      ,popParser :: Maybe FullParser
-      ,popRules :: Maybe FullRules}
- | LST {_getList::[Triple (Atom Text) (Atom Text)]}
+ = TR  { _getPop   :: (TripleStore (Atom Text) (Atom Text))
+       , popParser :: Maybe FullParser
+       , popRules  :: Maybe FullRules}
+ | LST { _getList  :: [Triple (Atom Text) (Atom Text)]}
 
 getPop :: Population -> TripleStore (Atom Text) (Atom Text)
 getPop (LST a) = foldl' (\v w -> fst (insertTriple w v)) Map.empty a
@@ -77,7 +70,7 @@ doCommand cmd
 showUnexpected :: Token (LinePos Text, Bool)
              -> String -> Maybe String
              -> StateT (Map Text Population) IO
-                  (FreshnessGenerator [Triple (Atom Text) (Atom Text)])
+                  (m [Triple (Atom Text) (Atom Text)])
 showUnexpected tk expc mby
  = liftIO . finishError $
    "Parse error, unexpected "<> pack (showPs tk)<>"\n  Expecting: "<>pack expc
@@ -95,10 +88,10 @@ commands = [ ( "i"
                , (\files -> do txts <- lift$ mapM (Text.readFile . unpack) files
                                p <- getParser "parser"
                                r <- getRules "rules"
-                               trps <- combinePops <$> (traverse (parseText (parseListOf (p,"Statement")) showUnexpected) txts)
-                               res <- evalStateT (applySystem
+                               trps <- traverse (parseText (parseListOf (p,"Statement")) showUnexpected) txts
+                               res <- evalStateT (applySystem 
                                         (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
-                                        freshTokenSt r trps) 0
+                                        freshTokenSt r =<< (concat <$> sequence trps)) 0
                                overwrite "population" (TR (fst res) Nothing Nothing)
                                return ()
                                )))
@@ -137,6 +130,23 @@ commands = [ ( "i"
                     overwrite "rules" (TR rules Nothing Nothing)
                     overwrite "population" (TR (unionTS res' rules) Nothing Nothing)
                ))
+           , ( "apply"
+             , ( "apply the rule-system of first argument and put result into final argument (overwrite what was there). The remaining arguments form the population the system is applied to (or to the final argument if there are no remaining arguments given)."
+               , \args' ->
+                   let args = (case args' of {[] -> ["population"];_->args'})
+                       rsys = head args
+                       targ = last args
+                       from = case drop 1 (init args) of
+                                [] -> [targ]
+                                r -> r
+                   in do pops <- mapM (fmap getList . retrieve) from
+                         let pop = concat <$> traverse (freshenUp freshTokenSt) pops
+                         r <- getRules rsys
+                         res <- evalStateT (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
+                                                        freshTokenSt r =<< pop) 0
+                         overwrite targ (TR (fst res) Nothing Nothing)
+               )
+             )
            ]
            where
              noArgs :: Text
@@ -200,10 +210,6 @@ getList (LST v) = v
 getList x = concat . map getTripls . Map.toList $ getPop x
   where getTripls (a,(mp,_))
           = [(Triple nm a b) | (nm,bs) <- Map.toList mp, b<-Set.toList bs]
-
-combinePops :: [FreshnessGenerator [Triple (Atom Text) (Atom Text)]]
-            -> [Triple (Atom Text) (Atom Text)]
-combinePops = concat . snd . ($0) . runFg . sequence
 
 add :: Monad b => Text -> Population -> StateT (Map Text Population) b ()
 add s p = modify (Map.insertWith extend s p)

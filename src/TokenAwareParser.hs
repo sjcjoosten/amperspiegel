@@ -1,29 +1,20 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE ScopedTypeVariables, TypeFamilies, FlexibleInstances #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE OverloadedStrings #-}
-module TokenAwareParser(Atom,freshTokens,parseText,parseListOf,deAtomize,freshTokenSt) where
+{-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
+module TokenAwareParser(Atom,parseText,deAtomize,freshTokenSt,freshenUp,parseListOf) where
 import Text.Earley
 import Control.Applicative
 import Control.Monad.Fix
 import Data.Foldable
 import Data.Text.Lazy (Text)
 import Data.Int as Int
+import Data.IntMap as IntMap
 import Data.Map as Map
 import Data.String
 import Data.Maybe
 import Control.Arrow (first)
 import Data.List(intercalate)
-import Tokeniser(Token(runToken)
-                ,LinePos(..),ScanResult(..),Scannable(..)
-                ,isQuoted,isUnquoted,exactMatch
-                ,scanPartitioned
-                ,partitionedSuccess -- same, but as a maybe type
-                ,showPos
-                )
+import Tokeniser
 import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),traverseStrings)
 import Relations
-import SimpleHelperMonads
 import Control.Monad.Fail as Fail
 import Control.Monad.State
 
@@ -32,10 +23,20 @@ data Atom a
  | Position Int64 Int64
  | Fresh Int
  deriving (Eq,Ord,Functor)
+
 deAtomize :: (MonadFail m,Show a) => Atom a -> m a
 deAtomize (UserAtom v) = pure$ runToken v
 deAtomize x = Fail.fail ("Don't know what to do with the atom: "++show x)
 
+freshenUp :: (Monad m)
+          => m (Atom y)
+          -> [Triple (Atom y) (Atom y)]
+          -> m [Triple (Atom y) (Atom y)]
+freshenUp fg trs
+  = (\fr -> let f = \case{Fresh i -> IntMap.findWithDefault (Fresh 0) i fr;v->v}
+            in [Triple (f r) (f a) (f b) | Triple r a b <-trs])
+    <$> sequence (IntMap.fromList [ (i,fg) | Triple r a b <-trs
+                                           , Fresh i <- [r,a,b] ])
 
 instance Show a => Show (Atom a) where
   show (UserAtom a) = show a
@@ -53,18 +54,16 @@ instance Show y => Show (Triple y (Atom Text)) where
   showList ts = (++) ("makeTriples [" ++ Data.List.intercalate ", " [show (r,a,b) | Triple r a b <- ts] ++ "]")
   show (Triple r a b) = show (r,a,b)
 
-freshTokens :: FreshnessGenerator (Atom y)
-freshTokens = FreshnessGenerator (\i -> (i+1,Fresh i))
-  
-freshTokenSt :: Applicative x => StateT Int x (Atom Text)
+freshTokenSt :: Applicative x => StateT Int x (Atom y)
 freshTokenSt = StateT (\i -> pure (Fresh i,i+1))
-  
+
+
 -- combine an abstract parser with a tokeniser
 -- TODO: find a nice way to move some of the functionality from here into the Tokeniser file. The pre-made "String" and "QuotedString" – as well as the way how exactMatch is written – really come across as belonging to the scanner, rather than the parser.
-parseListOf :: forall y x z. (Eq y,Show y,Scannable y,Ord z,IsString z
-                             ,IsString x,Show z)
+parseListOf :: forall y x z m. (Eq y,Show y,Scannable y,Ord z,IsString z
+                               ,IsString x,Show z,Monad m)
             => ([ParseRule x y z], z)
-            -> Either y (y -> ( ( [FreshnessGenerator [Triple x (Atom y)]]
+            -> Either y (y -> ( ( [StateT Int m [Triple x (Atom y)]]
                                 , Report String [Token (LinePos y, Bool)] )
                               ,LinePos (ScanResult y))
                         )
@@ -76,31 +75,27 @@ parseListOf (pg,ps)
                                                             ,("QuotedString",fmap atomToStruct <$> ifThenJust isQuoted)
                                                             ,("UnquotedString",fmap atomToStruct <$> ifThenJust isUnquoted)
                                                             ,("StringAndOrigin",getPlace)]
-                                                 freshTokens
+                                                 freshTokenSt
                                                  (\a b c -> [Triple a b c])
                                                  (pg',ps)
                                                  )))
  where
-  -- atomToStruct :: Token (t,b) -> FreshnessGenerator (Atom t, [Triple x (Atom (LinePos y))])
   atomToStruct a = pure (UserAtom (fmap fst a),mempty)
   stringOp v = case partitionedSuccess v of
                  Nothing -> Left v
                  Just x -> Right (v,x)
-  -- getPlace :: Token (LinePos y, b) -> Maybe (FreshnessGenerator (Atom (LinePos y), [Triple x (Atom (LinePos y))]))
-  getPlace v = Just (do new <- freshTokens
+  getPlace v = Just (do new <- freshTokenSt
                         return (new,[Triple "string" new (UserAtom (fmap fst v))
                                     ,Triple "origin" new . position' . fst . runToken $ v]))
   position' (LinePos r c _) = Position r c
 
-  -- exactMatch' :: (y, [Token (y, Bool)]) ->  Prod r String (Token (LinePos y, Bool)) [Token (LinePos y)]
   exactMatch' (b,t) = exactMatch (\a->terminal a <?> "Token "++show b) t
   
-  -- ifThenJust :: (a -> Bool) -> a -> Maybe a
   ifThenJust f v = case f v of {True -> Just v;False -> Nothing}
 
 -- Convert something scannable to a set of triples
 -- convenient way to use the parser
-parseText :: forall y a m b t t1. (MonadFail m, Show y, Show b, Show a)
+parseText :: forall y a m b t t1. (MonadFail m, Show y, Show b)
           => Either y (t -> (([a], Report String [t1]), LinePos (ScanResult b)))
           -> (t1 -> String -> Maybe String -> m a) -> t -> m a
 parseText parseListOf' showUnexpected t
@@ -125,7 +120,7 @@ parseText parseListOf' showUnexpected t
             $ (showPos <$> (traverse scanError scanResult));
       ((p,_),scanResult) ->
         Fail.fail
-          (fromMaybe ("Ambiguous input:\n"++show (length p)++" possible parses: "++show p)
+          (fromMaybe ("Ambiguous input:\n"++show (length p)++" possible parses.")
           $ showPos <$> traverse scanError scanResult)
       }
   where scanError :: (ScanResult b) -> Maybe String
