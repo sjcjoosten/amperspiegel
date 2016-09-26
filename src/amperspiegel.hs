@@ -75,7 +75,7 @@ showUnexpected tk expc mby
  = liftIO . finishError $
    "Parse error, unexpected "<> pack (showPs tk)<>"\n  Expecting: "<>pack expc
      <> (case mby of {Nothing -> "";Just v ->"\n  mby(TODO: fix me into something more descriptive):"<>pack v})
- where showPs = showPos . fst . runToken
+ where showPs = showPos unpack . fst . runToken
 
 commands :: [ ( Text
                 , ( Text

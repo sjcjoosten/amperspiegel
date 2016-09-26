@@ -56,7 +56,7 @@ data PreToken a = SingleCharacter a
 -- but all the supporting characters are still required
 
 data LinePos a = LinePos {line:: !Int64, pos:: !Int64, runLinePos:: !a}
-                 deriving (Show, Functor,Ord,Eq, Foldable, Traversable)
+                 deriving (Functor,Ord,Eq, Foldable, Traversable)
 
 -- LaTeX-style tokens always start with a \, so they do not overlap with the other set of tokens.
 -- Quoted strings are parsed without their first and final quote and get a separate constructor.
@@ -106,7 +106,7 @@ isUnquoted s
 
 data NonParsed a = MultiLine [a] | EndOfLine a | NPspace a
 data ScanResult a = Success | ExpectClosingComment | ExpectClosingQuote
-                  | InvalidChar (LinePos a) deriving (Functor,Show)
+                  | InvalidChar (LinePos a) deriving (Functor)
 
 class Scannable a where
   scan :: LinePos a -> ([LinePos (PreToken a)],LinePos (ScanResult a))
@@ -191,13 +191,13 @@ instance Scannable Text where
               in case (Text.null t,Text.head t) of
                   (False,'"') -> Right (append res h,LinePos l (c'+1) (Text.tail t))
                   (False,'\\')
-                   -> let truncT = Text.take 4 t in
+                   -> let truncT = Text.take 9 t in
                       case readLitChar (unpack truncT) of -- \NUL is the longest possible string (or one of them), which is why we can take 4. Truncating is probably asymptotically faster: even though unpack produces a lazy 'rest', we still need to get the length of 'rest' to calculate 'siz'. Note that we cannot get the length of r, since '\^C'='\ETX', and there are more characters like that
                         [(r,rest)]
                          -> let siz = Text.length truncT -
                                       fromIntegral (Prelude.length rest)
                             in completeQuoted l (c'+siz)
-                                                (snoc (append h res) r)
+                                                (append res (snoc h r))
                                                 (Text.drop siz t)
                         _ -> Left (InvalidChar (LinePos l c' truncT))
                   _ -> Left ExpectClosingQuote -- expecting closing quote
@@ -234,5 +234,5 @@ scanPartitioned f inp
  where
     (scanned,scanResult) = scan (LinePos 0 0 inp)
 
-showPos :: Show a => LinePos a -> [Char]
-showPos (LinePos r c a) = show a++" on "++show (r+1)++":"++show (c+1)
+showPos :: (a->String)-> LinePos a -> [Char]
+showPos s (LinePos r c a) = s a++" on "++show (r+1)++":"++show (c+1)

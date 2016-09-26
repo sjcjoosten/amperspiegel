@@ -117,11 +117,11 @@ parseText parseListOf' showUnexpected t
        )
       ,scanResult -- regardless of the scanner, if there were tokens left to be scanned, the error should be about the unexpected token
       ) -> showUnexpected u (showTokens e)
-            $ (showPos <$> (traverse scanError scanResult));
+            $ (showPos id <$> (traverse scanError scanResult));
       ((p,_),scanResult) ->
         Fail.fail
           (fromMaybe ("Ambiguous input:\n"++show (length p)++" possible parses.")
-          $ showPos <$> traverse scanError scanResult)
+          $ showPos id <$> traverse scanError scanResult)
       }
   where scanError :: (ScanResult b) -> Maybe String
         scanError (Success) = Nothing
@@ -130,7 +130,7 @@ parseText parseListOf' showUnexpected t
         scanError (ExpectClosingQuote)
           = Just$ "The quoted string has to be closed by a \""
         scanError (InvalidChar c)
-          = Just$ "Invalid character"++showPos (fmap show c)++" in the quoted string"
+          = Just$ "Invalid character: "++showPos id (fmap show c)++" in the quoted string"
         
         showTokens :: [String] -> String
         showTokens [] = "end of file"
