@@ -35,6 +35,7 @@ just contact me, I'll probably be open to it.
 Here is a script you may try after installing amperspiegel in your path
 
 ```
+cd demo
 # Show that Ampersand scripts represent populations:
 
 clear
@@ -110,6 +111,11 @@ cat helloWorld4.ASL
 amperspiegel -i boot2.ASL -asParser -i helloWorld4.ASL -asParser -i fathers2.txt
 ```
 
+For an overview of all switches, use:
+``
+amperspiegel -h
+``
+
 #
 # Implementation notes
 #
@@ -135,7 +141,7 @@ It then copies "population" to "parser" and "rules".
 Switches -count and -show displays stuff about a variable.
 That's it! Not much else is used in this demo.
 
-# Future work
+## Future work
  
 Note that -asParser uses a built-in ruleList as its set of rules.
 We can break it down as four separate steps in the obvious way:
@@ -151,12 +157,13 @@ Here's how we define our new switches:
 * ``-apply v1 v2.1 v2.2 ... v2.n v3``
   applies v1 to the union of v2.*, and puts the result into v3.
   When given fewer than 3 arguments, it is read as:
-     -apply v1 v2 v2
-  or -apply v1 v1 v1
+  ``-apply v1 v2 v2`` or ``-apply v1 v1 v1``
 * ``-filter``
   throw away the irrelevant stuff from "population".
-  this'll have to change into something configurable later (maybe via a more powerful -apply).
+  this'll have to change into something configurable later
+  (maybe via a more powerful `-apply`).
 
-Similarly, we might break -i into steps, where something like -load creates a tuple "fileContent" from filename to a big string.
-It would be really cool if there was a variable "switches"
-Such that we could define switches such as -asParser and -i in terms of these "primitives"
+Similarly, we might break `-i` into steps, where something like `-load` creates a
+tuple "fileContent" from filename to a big string. It would be really cool if
+there was a variable "switches", such that we could define switches such as
+``-asParser`` and ``-i`` in terms of these "primitives"
