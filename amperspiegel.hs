@@ -6,26 +6,26 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
-module Main where
-import Data.Text.Lazy (Text,pack)
+module Main (main) where
+import Data.Text.Lazy (Text,pack,unpack)
 import qualified Data.Text.Lazy as Text
 import Data.Text.Lazy.IO as Text (readFile,hPutStrLn,putStrLn)
-import Data.String
+import Data.String (IsString)
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),tripleStoreToParseRules,fmap23,tripleStoreRelations)
 import Tokeniser(showPos,runToken,Token, LinePos,showPos)
 import TokenAwareParser(Atom,freshTokenSt,parseText,parseListOf,deAtomize)
 import Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),Triple(..),TripleStore,insertTriple,restrictTo,unionTS)
 import ApplyRuleSet(applySystem)
-import SimpleHelperMonads
-import RuleSetFromTripleStore
+import SimpleHelperMonads(FreshnessGenerator,runFg)
+import RuleSetFromTripleStore(ruleSetRelations,tripleStoreToRuleSet)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import System.Environment
 import Data.Foldable
 import Control.Monad.State
 import System.IO (stderr)
-import System.Exit
+import System.Exit (exitFailure)
 import Data.Monoid
 
 initialstate :: Map Text Population
@@ -45,8 +45,8 @@ main = do as <- getChunks =<< getArgs
              getChunks' (a:as)
                = let (res,spl) = getChunks' as
                  in case a of
-                      ('-':cmd) -> ((cmd,spl):res,[])
-                      _ -> (res,a:spl)
+                      ('-':cmd) -> ((pack cmd,spl):res,[])
+                      _ -> (res,pack a:spl)
              getChunks as
                = case getChunks' as of
                    (r,[]) -> return r
@@ -67,10 +67,10 @@ type FullParser
 type FullRules
   = [Rule (Atom Text) (Atom Text)]
 
-doCommand :: String -> [String] -> StateT (Map Text Population) IO ()
+doCommand :: Text -> [Text] -> StateT (Map Text Population) IO ()
 doCommand cmd
  = Map.findWithDefault
-       (\_ -> lift$ finishError ("Not a valid command: "<>pack cmd<>"\nGet a list of commands using: -h"))
+       (\_ -> lift$ finishError ("Not a valid command: "<>cmd<>"\nGet a list of commands using: -h"))
        cmd lkp'
  where lkp' = fmap snd (Map.fromList commands)
 
@@ -84,15 +84,15 @@ showUnexpected tk expc mby
      <> (case mby of {Nothing -> "";Just v ->"\n  mby(TODO: fix me into something more descriptive):"<>pack v})
  where showPs = showPos . fst . runToken
 
-commands :: [ ( String
-                , ( String
-                  , [String]
+commands :: [ ( Text
+                , ( Text
+                  , [Text]
                      -> StateT (Map Text (Population))
                                IO ()
                   ) ) ]
 commands = [ ( "i"
              , ( "parse file as input"
-               , (\files -> do txts <- lift$ mapM Text.readFile files
+               , (\files -> do txts <- lift$ mapM (Text.readFile . unpack) files
                                p <- getParser "parser"
                                r <- getRules "rules"
                                trps <- combinePops <$> (traverse (parseText (parseListOf (p,"Statement")) showUnexpected) txts)
@@ -104,7 +104,13 @@ commands = [ ( "i"
                                )))
            , ( "h"
              , ( "display this help"
-               , \_ -> lift$ Prelude.putStrLn helpText))
+               , \_ -> lift$ Text.putStrLn helpText))
+           , ( "list"
+             , ( "show a list of all triple-stores"
+               , noArgs "list"$
+                   lift . sequenceA_ . map Text.putStrLn . Map.keys
+                     =<< get
+               ))
            , ( "show"
              , ( "display the triples as a list"
                , eachPop (lift . Text.putStrLn . prettyPPopulation)))
@@ -118,33 +124,43 @@ commands = [ ( "i"
              , ( "count the number of triples"
                , eachPop (lift . Prelude.putStrLn . show . length . getList)))
            , ( "asParser"
-             , ( "Turn the population into the parser for -i"
-               , \case [] -> do pop <- retrieve "population"
-                                -- trans <- retrieve "asParser" TODO
-                                r <- getRules "asParser"
-                                res <- evalStateT (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.") freshTokenSt r (getList pop)) 0 -- TODO: apply a filter
-                                let res' = fst res
-                                let parser = restrictTo tripleStoreRelations res'
-                                let rules = restrictTo ruleSetRelations res'
-                                overwrite "parser" (TR parser Nothing Nothing)
-                                overwrite "rules" (TR rules Nothing Nothing)
-                                overwrite "population" (TR (unionTS res' rules) Nothing Nothing)
-                       _ -> lift$finishError "asParser takes no arguments"
+             , ( "turn the population into the parser for -i"
+               , noArgs "asParser" $
+                 do pop <- retrieve "population"
+                    -- trans <- retrieve "asParser" TODO
+                    r <- getRules "asParser"
+                    res <- evalStateT (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.") freshTokenSt r (getList pop)) 0 -- TODO: apply a filter
+                    let res' = fst res
+                    let parser = restrictTo tripleStoreRelations res'
+                    let rules = restrictTo ruleSetRelations res'
+                    overwrite "parser" (TR parser Nothing Nothing)
+                    overwrite "rules" (TR rules Nothing Nothing)
+                    overwrite "population" (TR (unionTS res' rules) Nothing Nothing)
                ))
            ]
            where
+             noArgs :: Text
+                      -> StateT (Map Text Population) IO ()
+                      -> [t]
+                      -> StateT (Map Text Population) IO ()
+             noArgs s f
+              = \case {[] -> f;_->lift$finishError (s <> " takes no arguments")}
              eachPop :: (Population -> StateT (Map Text Population) IO ())
-                       -> [String] -> StateT (Map Text Population) IO ()
+                       -> [Text] -> StateT (Map Text Population) IO ()
              eachPop f = eachDo f retrieve
              eachDo :: (a -> StateT (Map Text Population) IO ())
                     -> (Text -> StateT (Map Text Population) IO a)
-                    -> ([String] -> StateT (Map Text Population) IO ())
+                    -> ([Text] -> StateT (Map Text Population) IO ())
              eachDo f g = \case [] -> f =<< g "population"
-                                l  -> mapM_ (\v -> f =<< g (pack v)) l
+                                l  -> mapM_ (\v -> f =<< g v) l
              helpText
-              = "These are the switches you can use:\n\n" ++
-                   concat [ "  "++s++"  \t"++d++"\n"
-                          | (s,(d,_)) <- commands]
+              = "These are the switches you can use:\n\n" <>
+                   mconcat [ "  " <> pad maxw s <> "  " <> d <>"\n"
+                           | (s,(d,_)) <- commands]
+              where
+                maxw :: Int
+                maxw = fromIntegral$foldr max 0
+                         (map (Text.length . fst) commands)
 
 prettyPParser :: FullParser -> Text
 prettyPParser [] = ""
@@ -163,20 +179,21 @@ prettyPParser o@(ParseRule t _:_)
              Nothing -> ([],o')
 
 prettyPRules :: FullRules -> Text
-prettyPRules = Text.concat . map (\v -> pack (show v) <> "\n")
+prettyPRules = mconcat . map (\v -> pack (show v) <> "\n")
 
 prettyPPopulation :: Population -> Text
 prettyPPopulation v
  = Text.unlines [ showPad w1 n <> ": "<>showPad w2 s<>" |--> "<>pack (show t)
                 | Triple n s t <- getList v]
- where (w1,w2) = foldr max2  (0,0) (getList v)
+ where (w1,w2) = foldr max2 (0,0) (getList v)
        max2 (Triple a b _) (al,bl)
          = (max al (length (show a)), max bl (length (show b)))
 showPad :: forall a. Show a => Int -> a -> Text
-showPad w s
- = let t = show s
-       x = w - length t
-   in pack (show s <> take x (repeat ' '))
+showPad w = pad w . pack . show
+pad :: Int -> Text -> Text
+pad w s
+ = let x = w - (fromIntegral . Text.length) s
+   in s <> pack (take x (repeat ' '))
 
 getList :: Population -> [Triple (Atom Text) (Atom Text)]
 getList (LST v) = v
