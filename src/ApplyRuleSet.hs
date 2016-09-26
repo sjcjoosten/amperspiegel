@@ -51,7 +51,7 @@ applySystem fl fg allRules originalTriples
   process (revLk', synonyms0, (Triple rel a' b'):rest)
    = if ud then process =<< foldrM (incrementRule tr) sys rules
            else process sys
-   where 
+   where
      sys = (revLk,synonyms2,rest)
      (a,synonyms1) = lkpF a' synonyms0
      (b,synonyms2) = lkpF b' synonyms1

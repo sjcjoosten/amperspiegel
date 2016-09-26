@@ -4,7 +4,6 @@ module Tokeniser (Token(runToken)
                  ,isQuoted,isUnquoted,exactMatch
                  ,scanPartitioned
                  ,partitionedSuccess -- same, but as a maybe type
-                 ,tokenToPreToken,nonParsedToPreToken -- not used, but I still want them around. They may be useful for bi-directionality and for testing.
                  ,showPos
                  ) where
 import Data.Text.Lazy as Text
@@ -137,11 +136,6 @@ tokenToPreToken (NonQuoted a)
      ([p],LinePos _ _ Success) -> runLinePos p
      _ -> error "Invalid NonQuoted token. The token should never have been created this way."
      -- TODO: this makes it that Token is not a functor
--- the NonQuoted case should rely on the scanner
-nonParsedToPreToken :: NonParsed a -> PreToken a
-nonParsedToPreToken (MultiLine as) = MultiLineComment as
-nonParsedToPreToken (EndOfLine a ) = EndOfLineComment a
-nonParsedToPreToken (NPspace a   ) = WhiteSpace a
 
 instance Scannable Text where
   scan (LinePos lineNr colNr p)
@@ -209,7 +203,6 @@ incrPos orig@(LinePos l p' v) ps
      [r] -> LinePos l (p' + Text.length r) v
      o -> LinePos (l + fromIntegral (Prelude.length o) - 1)
                   (Text.length (Prelude.last o)) v
-
 
 partitionTokens :: Bool -> [LinePos (PreToken a)] -> [Token (LinePos a, Bool)]
 partitionTokens b (LinePos i j a:as)

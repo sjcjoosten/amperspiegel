@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TupleSections, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),TripleStore,Triple(..)
- ,getNewTuples,checkIfExists,findInMap,RelLookup(..),FullRelLookup(..), fmapE, restrictTo, unionTS) where
+ ,getNewTuples,checkIfExists,findInMap,RelLookup(..), fmapE, restrictTo, unionTS) where
 import Data.Map as Map
 import Data.Set as Set
 import Data.String
@@ -44,8 +44,6 @@ class RelLookup r where
   getAtom :: AtomType r -> r -- get both, for all relations
           -> ([(RelType r,[AtomType r])] -- outgoing relations
              ,[(RelType r,[AtomType r])])-- incoming relations
-             
-class RelLookup r => FullRelLookup r where
   getRel :: r -> RelType r -> [(AtomType r,[AtomType r])]
 class (RelLookup r, Monoid r) => RelInsert r where
   insertTriple :: Triple (RelType r) (AtomType r) -> r -> (r,Bool) -- insert into the triple store and return whether the new triple store is different
@@ -94,7 +92,6 @@ instance (Ord a,Ord b) => RelLookup (TripleStore a b) where
   getAtom b r = (listify m1,listify m2)
     where (m1,m2) = findInMap b r
           listify m = Map.toList (fmap Set.toList m)
-instance (Ord a,Ord b) => FullRelLookup (TripleStore a b) where
   getRel mps r = [ (v1,Set.toList resSet)
                  | (v1,(v1Pairs,_)) <- Map.toList mps
                  , let resSet = Map.findWithDefault mempty r v1Pairs
@@ -119,7 +116,8 @@ instance (Ord a,Ord b) => RelInsert (TripleStore a b) where
              relSet = findInMap rel mapElem
              change = not (Set.member b relSet)
              newSet = Set.insert b relSet
-  removeAtoms = Map.difference
+  removeAtoms x y = fmap (\(a,b) -> (rm a, rm b)) (Map.difference x y)
+     where rm = fmap (flip Set.difference (Map.keysSet y))
 
 -- inside out lookup
 getNewTuples :: forall a b r. (Eq a,Eq b,RelLookup r, a ~ RelType r, b ~ AtomType r)

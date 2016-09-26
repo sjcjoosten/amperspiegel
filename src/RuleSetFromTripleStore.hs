@@ -13,7 +13,7 @@ tripleStoreToRuleSet :: forall z v m y r.
                        ( MonadFail m
                        , IsString y -- TODO: ask for IsString (m y), to allow for relation lookups/disambiguation
                        , Show y
-                       , FullRelLookup r
+                       , RelLookup r
                        , RelType r ~ y
                        , AtomType r ~ v)
                     => (v -> m z) -> r -> m [Rule z v]

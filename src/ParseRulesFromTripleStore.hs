@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module ParseRulesFromTripleStore (ParseRule(..),ParseAtom(..),tripleStoreRelations,tripleStoreToParseRules,parseRuleToTripleStore,traverseStrings,fmap23) where
+module ParseRulesFromTripleStore (ParseRule(..),ParseAtom(..),tripleStoreRelations,tripleStoreToParseRules,traverseStrings,fmap23) where
 import Control.Applicative
 import Data.String
 import Relations
@@ -76,7 +76,7 @@ tripleStoreRelations
 tripleStoreToParseRules :: forall z v m y r.
                        ( MonadFail m, Alternative m -- TODO: get rid of these and make functions like isOne, isNone and orElse such that they can be translated into preconditions on the TripleStore... Demanding 'Applicative' is enough if we do this
                        , IsString y -- TODO: ask for IsString (m y), to allow for relation lookups/disambiguation
-                       , FullRelLookup r
+                       , RelLookup r
                        , RelType r ~ y
                        , AtomType r ~ v)
                     => (v -> z) -> r -> m [ParseRule z z z]
@@ -107,9 +107,3 @@ tripleStoreToParseRules transAtom ts
                  <*> (isNone "non-terminal" =<< fE "nonTerminal" atm showInternal)) <|>
           (ParseRef <$> showInternal atm
                     <*> (isOne "non-terminal, relations names should be unique" =<< fE "nonTerminal" atm showInternal))
-
-parseRuleToTripleStore :: forall z r.
-                       ( FullRelLookup r
-                       , AtomType r ~ z)
-                       => ([ParseRule z z z],z) -> r
-parseRuleToTripleStore = undefined

@@ -5,7 +5,7 @@ import qualified Data.Text.Lazy as Text
 import Data.Text.Lazy.IO as Text (readFile,hPutStrLn,putStrLn)
 import Data.String (IsString)
 import Data.Set as Set (toList)
-import ParseRulesFromTripleStore(ParseRule(..),tripleStoreToParseRules,fmap23,tripleStoreRelations)
+import ParseRulesFromTripleStore(ParseRule(..),tripleStoreRelations,tripleStoreToParseRules,fmap23)
 import Tokeniser(showPos,runToken,Token, LinePos,showPos)
 import TokenAwareParser(Atom,freshTokenSt,parseText,deAtomize,freshenUp,parseListOf)
 import Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),Triple(..),TripleStore,insertTriple,restrictTo,unionTS)
