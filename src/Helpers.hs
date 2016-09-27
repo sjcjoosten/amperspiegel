@@ -1,10 +1,34 @@
-{-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TupleSections, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),TripleStore,Triple(..)
- ,getNewTuples,checkIfExists,findInMap,RelLookup(..), fmapE, restrictTo, unionTS) where
-import Data.Map as Map
-import Data.Set as Set
-import Data.String
+{-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies,BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
+module Helpers (Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),TripleStore,Triple(..)
+ ,getNewTuples,checkIfExists,findInMap,RelLookup(..), fmapE, restrictTo, unionTS,showT,isOne,isNone,isOneOrNone,forOne,forNone,forOneOrNone
+ ,tlength,tnull,twords
+ ,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Fail, module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
+ ,Map,Set) where
+import Control.Monad.Fail as Fail
+import Control.Applicative
+import Control.Monad
+import Control.Monad.Fix
+import Data.Foldable
+import Data.String (IsString(..))
+import Data.Maybe
+import Data.Map (Map)
+import Data.Set (Set)
+import qualified Data.Map as Map
+import qualified Data.Set as Set
+import System.Environment
+import Control.Monad.State hiding (fail)
+import Data.Text.Lazy (Text,pack,unpack,intercalate,split,unlines,take,drop,break,splitAt,lines,head,tail,span,snoc,dropEnd,isSuffixOf,isPrefixOf,stripPrefix)
+import Data.Text.Lazy.IO
+import Data.Text.Lazy as Text (length,null,words)
+import Data.Char (readLitChar,isAlphaNum,isSpace)
+import Control.Arrow (first)
 
+tnull :: Text -> Bool
+tnull = Text.null
+tlength :: Text -> Int
+tlength = fromIntegral . Text.length
+twords :: Text -> [Text]
+twords = Text.words
 
 findInMap :: (Monoid a, Ord k) => k -> Map k a -> a
 findInMap itm mp = Map.findWithDefault mempty itm mp
@@ -170,3 +194,34 @@ findIn revLk False b (Compose e1 e2)
  = mconcat [findIn revLk False v e1 | v <- findIn revLk False b e2]
 findIn revLk True  b (ExprAtom a) = lkpLeft  revLk a b
 findIn revLk False b (ExprAtom a) = lkpRight revLk a b
+
+
+showT :: Show a => a -> Text
+showT = pack . show
+
+forOne :: (RelLookup r, MonadFail f)
+       => String -> r -> RelType r -> f (AtomType r) -> f (AtomType r)
+forOne s r a b = (isOne s . forEachOf r a) =<< b
+forNone :: (RelLookup r, MonadFail f)
+        => String -> r -> RelType r -> AtomType r -> f ()
+forNone s r a b = isNone s $ forEachOf r a b
+forOneOrNone :: (RelLookup r, MonadFail f, Show(RelType r))
+        => r -> RelType r -> f (AtomType r) -> (f (AtomType r) -> f b) -> f b -> f b
+forOneOrNone r a b' fOne bNone
+ = do b <- b'
+      case forEachOf r a b of
+         [one] -> fOne (pure one)
+         [] -> bNone
+         lst -> Fail.fail ("Expecting one or none items in "++show a++", got "++show (Prelude.length lst))
+
+isOne :: MonadFail f => String -> [a] -> f a
+isOne _ [a] = pure a
+isOne s lst = Fail.fail ("Expecting one "++s++", got "++show (Prelude.length lst))
+isNone :: MonadFail f => String -> [a] -> f ()
+isNone _ [] = pure ()
+isNone s lst = Fail.fail ("Expecting no "++s++", got "++show (Prelude.length lst))
+isOneOrNone :: MonadFail f => String -> a -> [a] -> f a
+isOneOrNone _ _ [a] = pure a
+isOneOrNone _ deflt [] = pure deflt
+isOneOrNone s _ lst = Fail.fail ("Expecting at most one "++s++", got "++show (Prelude.length lst))
+

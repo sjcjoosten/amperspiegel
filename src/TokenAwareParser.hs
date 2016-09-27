@@ -1,32 +1,22 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module TokenAwareParser(Atom(..),parseText,deAtomize,freshTokenSt,freshenUp,parseListOf) where
 import Text.Earley
-import Control.Applicative
-import Control.Monad.Fix
-import Data.Foldable
-import Data.Text.Lazy (Text)
-import Data.Int as Int
 import Data.IntMap as IntMap
 import Data.Map as Map
-import Data.String
-import Data.Maybe
-import Control.Arrow (first)
 import Data.List(intercalate)
 import Tokeniser
 import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),traverseStrings)
-import Relations
-import Control.Monad.Fail as Fail
-import Control.Monad.State
+import Helpers
 
 data Atom a
  = UserAtom (Token a)
- | Position Int64 Int64
+ | Position Int Int
  | Fresh Int
  deriving (Eq,Ord,Functor)
 
 deAtomize :: (MonadFail m,Show a) => Atom a -> m a
 deAtomize (UserAtom v) = pure$ runToken v
-deAtomize x = Fail.fail ("Don't know what to do with the atom: "++show x)
+deAtomize x = Helpers.fail ("Don't know what to do with the atom: "++show x)
 
 freshenUp :: (Monad m)
           => m (Atom y)
@@ -100,7 +90,7 @@ parseText :: forall y a m b t t1. (MonadFail m, Show y, Show b)
           -> (t1 -> String -> Maybe String -> m a) -> t -> m a
 parseText parseListOf' showUnexpected t
   = case parseListOf' of
-      Left v -> Fail.fail ("Invalid parser. Not a valid token: "++show v)
+      Left v -> Helpers.fail ("Invalid parser. Not a valid token: "++show v)
       Right v -> case v t of{
       (([r] -- returns all possible parses. A succes means there is just one.
        ,Report _
@@ -119,7 +109,7 @@ parseText parseListOf' showUnexpected t
       ) -> showUnexpected u (showTokens e)
             $ (showPos id <$> (traverse scanError scanResult));
       ((p,_),scanResult) ->
-        Fail.fail
+        Helpers.fail
           (fromMaybe ("Ambiguous input:\n"++show (length p)++" possible parses.")
           $ showPos id <$> traverse scanError scanResult)
       }

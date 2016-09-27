@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies, RankNTypes, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module ApplyRuleSet(applySystem) where
-import Data.Foldable
-import Relations
+import Helpers
 import Data.Map as Map
 
 applySystem :: forall m a b r sys.
@@ -25,7 +24,7 @@ applySystem fl fg allRules originalTriples
   makeNewSystem :: [Rule a b] -> m sys
   makeNewSystem [] = pure (mempty,mempty,originalTriples)
   makeNewSystem (Subset a b:ruls)
-   = Data.Foldable.foldr insertInExprM (makeNewSystem ruls) (makeSys a)
+   = Helpers.foldr insertInExprM (makeNewSystem ruls) (makeSys a)
    where makeSys :: Expression b t -> [(b, b)]
          makeSys (Conjunction a1 a2) = [a' | a' <- makeSys a1, b' <- makeSys a2, a' == b']
          makeSys (Compose a1 a2) = [(c,d) | (c,v) <- makeSys a1, (v',d) <- makeSys a2, v == v']
@@ -38,7 +37,7 @@ applySystem fl fg allRules originalTriples
   relevantMap :: Map.Map a [Rule a b]
   relevantMap
    = (Map.fromListWith (++) [(a,[rl]) | rl<-allRules
-                                      , a<-Data.Foldable.toList (lhs rl)])
+                                      , a<-Helpers.toList (lhs rl)])
   lkp a = Map.findWithDefault a a
   lkpF v m = let newv=lkp v m
              in if v == newv then (newv,m) else

@@ -1,9 +1,6 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module RuleSetFromTripleStore (tripleStoreToRuleSet,ruleSetRelations) where
-import Relations
-import Data.String
-import Control.Monad.Fail
-import SimpleHelperMonads
+import Helpers
 
 ruleSetRelations :: IsString x => [x]
 ruleSetRelations

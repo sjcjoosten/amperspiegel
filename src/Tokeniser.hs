@@ -6,12 +6,7 @@ module Tokeniser (Token(runToken)
                  ,partitionedSuccess -- same, but as a maybe type
                  ,showPos
                  ) where
-import Data.Text.Lazy as Text
-import Data.Char as Char
-import Data.Int as Int
-import Data.String
-import Control.Applicative
-import Control.Arrow (first)
+import Helpers
 
 -- Tokenizer.
 -- We want expressions like "3+-4" to be interpretable as "(+) 3 (- 4)",
@@ -54,7 +49,7 @@ data PreToken a = SingleCharacter a
 -- PreToken allows us to easily reconstruct the original source,
 -- but all the supporting characters are still required
 
-data LinePos a = LinePos {line:: !Int64, pos:: !Int64, runLinePos:: !a}
+data LinePos a = LinePos {line:: !Int, pos:: !Int, runLinePos:: !a}
                  deriving (Functor,Ord,Eq, Foldable, Traversable)
 
 -- LaTeX-style tokens always start with a \, so they do not overlap with the other set of tokens.
@@ -75,7 +70,7 @@ exactMatch terminal mpt = go mpt
         = m b (\v' -> [v']) a'
       go (NonQuoted (a',b) : as)
         = m b (\v' -> (:) v') a' <*> go as
-      go _ = Control.Applicative.empty -- Invalid token / no match!
+      go _ = Helpers.empty -- Invalid token / no match!
       m :: Bool -> (Token (LinePos y) -> a)
         -> y -> t a
       m b' f a'
@@ -139,60 +134,59 @@ tokenToPreToken (NonQuoted a)
 
 instance Scannable Text where
   scan (LinePos lineNr colNr p)
-   | isPrefixOf "{-" p = case completeComment 2 1 p (Text.drop 2 p) of
+   | isPrefixOf "{-" p = case completeComment 2 1 p (Helpers.drop 2 p) of
                            Nothing -> done ExpectClosingComment
                            Just (h,t) -> simple (h,t) mlc
-   | isPrefixOf "--" p = simple (Text.break ((==) '\n') p)
-                                (EndOfLineComment . Text.drop 2)
+   | isPrefixOf "--" p = simple (Helpers.break ((==) '\n') p)
+                                (EndOfLineComment . Helpers.drop 2)
    | isPrefixOf "\"" p = case completeQuoted lineNr (colNr + 1)
-                                             Text.empty (Text.tail p) of
+                                             "" (Helpers.tail p) of
                               Left e -> done e
                               Right (h,t) -> cont (QuotedString_Pre h) t
    | isPrefixOf "\\" p = let isSep v = elem v sepChars
                              sepChars :: String
                              sepChars = "[]{}()<>,;.\\ \t\r\n"
-                             (h,t) = Text.break isSep (Text.tail p)
-                         in cont (LaTeXString (append (Text.take 1 p) h))
+                             (h,t) = Helpers.break isSep (Helpers.tail p)
+                         in cont (LaTeXString (mappend (Helpers.take 1 p) h))
                                  (incrPos (LinePos lineNr (colNr+1) t) h)
-   | Text.null p = done Success
-   | isSpace (Text.head p) = simple (Text.span isSpace p) WhiteSpace
-   | isSeqChar (Text.head p) = simple (Text.span isSeqChar p)
+   | tnull p = done Success
+   | isSpace (Helpers.head p) = simple (Helpers.span isSpace p) WhiteSpace
+   | isSeqChar (Helpers.head p) = simple (Helpers.span isSeqChar p)
                                       CharacterSequence
-   | otherwise = cont (SingleCharacter (Text.take 1 p))
-                      (LinePos lineNr (colNr+1) (Text.drop 1 p))
+   | otherwise = cont (SingleCharacter (Helpers.take 1 p))
+                      (LinePos lineNr (colNr+1) (Helpers.drop 1 p))
    where done e = ([],LinePos lineNr colNr e)
          isSeqChar c = isAlphaNum c || c == '-' || c == '_'
          cont r newTail = let (scanTail,scanRest) = scan newTail
                             in (LinePos lineNr colNr r:scanTail, scanRest)
          simple (h,t) f = cont (f h) (incrPos (LinePos lineNr colNr t) h)
-         mlc = MultiLineComment . Text.lines . Text.drop 2 . dropEnd 2
-         completeComment :: Int64 -> Int -> Text -> Text -> Maybe (Text, Text)
-         completeComment !pos' 0 str _ = Just (Text.splitAt pos' str)
+         mlc = MultiLineComment . Helpers.lines . Helpers.drop 2 . dropEnd 2
+         completeComment :: Int -> Int -> Text -> Text -> Maybe (Text, Text)
+         completeComment !pos' 0 str _ = Just (Helpers.splitAt (fromIntegral pos') str)
          completeComment !pos' lvl str remainder
-           | Text.null remainder = Nothing -- expecting closing comment - }
-           | otherwise = let (h,t) = Text.break ((==) '-') remainder
+           | tnull remainder = Nothing -- expecting closing comment - }
+           | otherwise = let (h,t) = Helpers.break ((==) '-') remainder
               in case (isSuffixOf "{" h,stripPrefix "-}" t) of
-                 (True,_) -> completeComment (pos'+Text.length h+1)
-                                             (lvl+1) str (Text.drop 1 t)
-                 (_,Just r)->completeComment (pos'+Text.length h+2)
+                 (True,_) -> completeComment (pos'+tlength h+1)
+                                             (lvl+1) str (Helpers.drop 1 t)
+                 (_,Just r)->completeComment (pos'+tlength h+2)
                                              (lvl-1) str r
-                 (_,_)    -> completeComment (pos'+Text.length h+1)
-                                             lvl str (Text.drop 1 t)
+                 (_,_)    -> completeComment (pos'+tlength h+1)
+                                             lvl str (Helpers.drop 1 t)
          completeQuoted !l !c res remainder
-           = let (h,t) = Text.break (\v -> v == '\\' || v == '"'
+           = let (h,t) = Helpers.break (\v -> v == '\\' || v == '"'
                                     || v == '\n') remainder
-                 c' = c + (Text.length h)
-              in case (Text.null t,Text.head t) of
-                  (False,'"') -> Right (append res h,LinePos l (c'+1) (Text.tail t))
+                 c' = c + (tlength h)
+              in case (tnull t,Helpers.head t) of
+                  (False,'"') -> Right (mappend res h,LinePos l (c'+1) (Helpers.tail t))
                   (False,'\\')
-                   -> let truncT = Text.take 9 t in
+                   -> let truncT = Helpers.take 9 t in
                       case readLitChar (unpack truncT) of -- \NUL is the longest possible string (or one of them), which is why we can take 4. Truncating is probably asymptotically faster: even though unpack produces a lazy 'rest', we still need to get the length of 'rest' to calculate 'siz'. Note that we cannot get the length of r, since '\^C'='\ETX', and there are more characters like that
                         [(r,rest)]
-                         -> let siz = Text.length truncT -
-                                      fromIntegral (Prelude.length rest)
+                         -> let siz = tlength truncT - Prelude.length rest
                             in completeQuoted l (c'+siz)
-                                                (append res (snoc h r))
-                                                (Text.drop siz t)
+                                                (mappend res (snoc h r))
+                                                (Helpers.drop (fromIntegral siz) t)
                         _ -> Left (InvalidChar (LinePos l c' truncT))
                   _ -> Left ExpectClosingQuote -- expecting closing quote
 
@@ -200,9 +194,9 @@ incrPos :: forall a. LinePos a -> Text -> LinePos a
 incrPos orig@(LinePos l p' v) ps
   = case split (=='\n') ps of
      [] -> orig
-     [r] -> LinePos l (p' + Text.length r) v
+     [r] -> LinePos l (p' + tlength r) v
      o -> LinePos (l + fromIntegral (Prelude.length o) - 1)
-                  (Text.length (Prelude.last o)) v
+                  (tlength (Prelude.last o)) v
 
 partitionTokens :: Bool -> [LinePos (PreToken a)] -> [Token (LinePos a, Bool)]
 partitionTokens b (LinePos i j a:as)

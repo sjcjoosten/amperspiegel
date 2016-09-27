@@ -1,10 +1,6 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module ParseRulesFromTripleStore (ParseRule(..),ParseAtom(..),tripleStoreRelations,tripleStoreToParseRules,traverseStrings,fmap23) where
-import Control.Applicative
-import Data.String
-import Relations
-import Control.Monad.Fail as Fail
-import SimpleHelperMonads
+import Helpers
 
 -- A grammar
 data ParseRule a b refId = ParseRule refId [ParseAtom a b refId] deriving (Functor,Foldable,Traversable,Show)-- concatenation of strings

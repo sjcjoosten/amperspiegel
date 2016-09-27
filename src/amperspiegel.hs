@@ -1,26 +1,18 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module Main (main) where
-import Data.Text.Lazy (Text,pack,unpack)
-import qualified Data.Text.Lazy as Text
-import Data.Text.Lazy.IO as Text (readFile,hPutStrLn,putStrLn)
+import Helpers
 import Data.String (IsString)
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),tripleStoreRelations,tripleStoreToParseRules,fmap23)
 import Tokeniser(showPos,runToken,Token, LinePos,showPos)
 import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf)
-import Relations(Rule(..),(⨟),(⊆),(∩),Expression(..),Triple(..),TripleStore,insertTriple,restrictTo,unionTS)
 import ApplyRuleSet(applySystem)
 import RuleSetFromTripleStore(ruleSetRelations,tripleStoreToRuleSet)
-import Data.Map (Map)
-import SimpleHelperMonads
 import qualified Data.Map as Map
-import System.Environment
-import Data.Foldable
-import Control.Monad.State
 import System.IO (stderr)
 import System.Exit (exitFailure)
 import Data.Monoid
-import System.Console.Terminal.Size (size)
+import System.Console.Terminal.Size (size,width)
 
 initialstate :: Map Text Population
 initialstate
@@ -85,7 +77,7 @@ commands :: [ ( Text
                   ) ) ]
 commands = [ ( "i"
              , ( "parse file as input"
-               , (\files -> do txts <- lift$ mapM (Text.readFile . unpack) files
+               , (\files -> do txts <- lift$ mapM (Helpers.readFile . unpack) files
                                p <- getParser "parser"
                                trps <- traverse (parseText (parseListOf (p,"Statement")) showUnexpected) txts
                                overwrite "population" =<< unFresh (LST . mconcat <$> sequence trps)
@@ -95,22 +87,22 @@ commands = [ ( "i"
                                )))
            , ( "h"
              , ( "display this help"
-               , \_ -> lift$ Text.putStrLn helpText))
+               , \_ -> liftIO (Helpers.putStrLn . helpText =<< size)))
            , ( "list"
              , ( "show a list of all triple-stores"
                , noArgs "list"$
-                   lift . sequenceA_ . map Text.putStrLn . Map.keys
+                   lift . sequenceA_ . map Helpers.putStrLn . Map.keys
                      =<< get
                ))
            , ( "show"
              , ( "display the triples as a list"
-               , eachPop (lift . Text.putStrLn . prettyPPopulation)))
+               , eachPop (lift . Helpers.putStrLn . prettyPPopulation)))
            , ( "showP"
              , ( "display the triples as a set of parse-rules"
-               , eachDo (lift . Text.putStrLn . prettyPParser) getParser))
+               , eachDo (lift . Helpers.putStrLn . prettyPParser) getParser))
            , ( "showR"
              , ( "display the triples as a set of parse-rules"
-               , eachDo (lift . Text.putStrLn . prettyPRules) getRules))
+               , eachDo (lift . Helpers.putStrLn . prettyPRules) getRules))
            , ( "count"
              , ( "count the number of triples"
                , eachPop (lift . Prelude.putStrLn . show . length . getList)))
@@ -126,13 +118,11 @@ commands = [ ( "i"
                ))
            , ( "apply"
              , ( "apply the rule-system of first argument and put result into final argument (overwrite what was there). The remaining arguments form the population the system is applied to (or to the final argument if there are no remaining arguments given)."
-               , \args' ->
-                   let args = (case args' of {[] -> ["population"];_->args'})
-                       rsys = head args
-                       targ = last args
-                       from = case drop 1 (init args) of
-                                [] -> [targ]
-                                r -> r
+               , \args ->
+                   let (rsys,from,targ) = case args of
+                         [] -> ("population",["population"],"population")
+                         [x] -> (x,[x],x)
+                         (x:xs) -> (x,init xs,last xs)
                    in do v<- apply rsys from
                          overwrite targ (TR v Nothing Nothing)
                )
@@ -164,28 +154,35 @@ commands = [ ( "i"
              eachDo f g = \case [] -> f =<< g "population"
                                 l  -> mapM_ (\v -> f =<< g v) l
              renameWarnings (_,res)
-              = sequenceA_ [ Text.hPutStrLn stderr ("Application of rules caused "<>showT v<>" to be equal to "<> showT r)
+              = sequenceA_ [ Helpers.hPutStrLn stderr ("Application of rules caused "<>showT v<>" to be equal to "<> showT r)
                            | (v,r) <- Map.toList res
                            , case v of {Fresh _ -> False; _ -> True}]
-             helpText
-              = "These are the switches you can use:\n\n" <>
-                   mconcat [ "  " <> pad maxw s <> "  " <> d <>"\n"
+             helpText Nothing
+              = mconcat [ s <> "\t" <> d <> "\n" | (s,(d,_)) <- commands ]
+             helpText (Just wdw)
+              = "These are the switches you can use: "<> "\n\n" <>
+                   mconcat [ pad maxw ("  " <> s) <> wrap 0 (twords d) <>"\n"
                            | (s,(d,_)) <- commands]
               where
                 maxw :: Int
-                maxw = fromIntegral$foldr max 0
-                         (map (Text.length . fst) commands)
+                maxw = 3 + foldr max 0 (map (tlength . fst) commands)
+                wrap _ [] = ""
+                wrap cur (w:r)
+                 = case tlength w + 1 of
+                     v | cur + v > lim -> "\n " <> pad maxw "" <> w <> wrap v r
+                     v -> " "<>w<>wrap (cur + v) r
+                lim = max 20 (width wdw - maxw)
+                
 
 prettyPParser :: FullParser -> Text
 prettyPParser [] = ""
 prettyPParser o@(ParseRule t _:_)
  = t <> " := " <>
-   Text.intercalate ("\n  "<>pack (take (fromIntegral$Text.length t)
-                                        (repeat ' '))<>"| ")
-                    res <> "\n" <> prettyPParser tl
+   Helpers.intercalate ("\n  "<>pad (tlength t) ""<>"| ")
+                       res <> "\n" <> prettyPParser tl
  where (res,tl) = mapsplit (\(ParseRule t' lst)
                             -> if t == t' then Just (pp lst) else Nothing) o
-       pp = Text.intercalate ", " . map showT
+       pp = Helpers.intercalate ", " . map showT
        mapsplit _ [] = ([],[])
        mapsplit f o'@(a:r)
          = case f a of
@@ -197,8 +194,8 @@ prettyPRules = mconcat . map (\v -> pack (show v) <> "\n")
 
 prettyPPopulation :: Population -> Text
 prettyPPopulation v
- = Text.unlines [ showPad w1 n <> ": "<>showPad w2 s<>" |--> "<>pack (show t)
-                | Triple n s t <- getList v]
+ = Helpers.unlines [ showPad w1 n <> ": "<>showPad w2 s<>" |--> "<>showT t
+                   | Triple n s t <- getList v]
  where (w1,w2) = foldr max2 (0,0) (getList v)
        max2 (Triple a b _) (al,bl)
          = (max al (length (show a)), max bl (length (show b)))
@@ -206,8 +203,8 @@ showPad :: forall a. Show a => Int -> a -> Text
 showPad w = pad w . showT
 pad :: Int -> Text -> Text
 pad w s
- = let x = w - (fromIntegral . Text.length) s
-   in s <> pack (take x (repeat ' '))
+ = let x = w - (tlength) s
+   in s <> pack (Prelude.take x (repeat ' '))
 
 getList :: Population -> [Triple (Atom Text) (Atom Text)]
 getList (LST v) = v
