@@ -34,7 +34,7 @@ just contact me, I'll probably be open to it.
 
 Here is a script you may try after installing amperspiegel in your path
 
-<script src="demo/demo.sh"></script>
+{% include demo/demo.sh %}
 
 For an overview of all switches, use:
 ``
