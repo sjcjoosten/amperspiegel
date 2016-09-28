@@ -1,15 +1,18 @@
-# This file is based on the travis.yml file of stack. 
-# (https://github.com/commercialhaskell/stack/blob/master/.travis.yml)
-#
-language: php
+# Copy these contents into the root directory of your Github project in a file
+# named .travis.yml
+
+# Use new container infrastructure to enable caching
 sudo: false
 
-cache:
-    directories:
-        - $HOME/.ghc
-        - $HOME/.cabal
-        - $HOME/.stack
+# Choose a lightweight base image; we provide our own build tools.
+language: c
 
+# Caching so the next build will be fast too.
+cache:
+  directories:
+  - $HOME/.ghc
+  - $HOME/.cabal
+  - $HOME/.stack
 
 # The different configurations we want to test. We have BUILD=cabal which uses
 # cabal-install, and BUILD=stack which uses Stack. More documentation on each
