@@ -123,3 +123,6 @@ script:
         (cd dist && cabal install --enable-tests --force-reinstalls "$SRC_TGZ")
       ;;
   esac
+  cd test
+  chmod +x test_all.sh
+  test_all.sh
