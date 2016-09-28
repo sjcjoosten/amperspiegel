@@ -145,4 +145,4 @@ The switch -apply from below already works. The switch -filter does not.
 
 ## Future work
  
-See the [issues page](https://github.com/sjcjoosten/amperspiegel/issues?utf8=%E2%9C%93&q=is%3Aopen%20label%3A%22Must%20have%22%20label%3A%22Want%20to%20have%22%20). 
+See the [issues page](https://github.com/sjcjoosten/amperspiegel/issues?utf8=%E2%9C%93&q=is%3Aopen). 
