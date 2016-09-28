@@ -2,3 +2,4 @@ amperspiegel
 *.hi
 *.o
 dist/
+/.stack-work
