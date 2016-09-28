@@ -124,5 +124,4 @@ script:
       ;;
   esac
   cd test
-  chmod +x test_all.sh
-  test_all.sh
+  sh test_all.sh
