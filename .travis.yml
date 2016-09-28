@@ -108,7 +108,8 @@ script:
 - |
   case "$BUILD" in
     stack)
-    stack --no-terminal $ARGS test
+      stack --no-terminal $ARGS test
+      stack install
       ;;
     cabal)
       cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 -Werror"
