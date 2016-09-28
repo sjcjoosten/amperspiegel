@@ -32,9 +32,8 @@ just contact me, I'll probably be open to it.
 # GETTING STARTED
 #
 
-Here is a script you may try after installing amperspiegel in your path
+[Here is a script you may try after installing amperspiegel in your path](demo/demo.sh)
 
-{% include demo/demo.sh %}
 
 For an overview of all switches, use:
 ``
