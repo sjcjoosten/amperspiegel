@@ -1,0 +1,1 @@
+amperspiegel -i ../base/boot.ASL -asParser -i stringEquality.ASL -asParser -i ../demo/fathers.txt -show

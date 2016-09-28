@@ -11,10 +11,6 @@ VIEW Person = ["Father", "of", name, "is", dad]
 
 CLASSIFY Person IS Statement /\ Person -- Parser will parse a list of statements
 
-RULE dad |- parent
- -- names identify the person (name is INJ)
-RULE (name;name~) |- = -- symbol for identity relation is . for now
-
+-- we trigger some errors
+RULE dad |- =
 RULE name |- =
-
-RULE dad |- = -- should trigger some errors

@@ -48,5 +48,24 @@ VIEW SyntaxList          = [head2]
 VIEW QuotedStringElement = [qstring] -- goes to QuotedString
 VIEW RelationElement     = [relationName]
 
-
--- For parsing very simple rules, see boot2.ASL
+-- For parsing Rules, uncomment this section
+CLASSIFY RuleStatement IS Statement /\ RuleStatement
+CLASSIFY RuleSubset IS TwoExpressionArguments /\ RuleSubset
+CLASSIFY Conjunct IS Conjunct /\ TwoExpressionArguments
+CLASSIFY Compose IS Compose /\ TwoExpressionArguments
+rule :: RuleStatement * RuleSubset
+eFst :: TwoExpressionArguments * Expression
+eSnd :: TwoExpressionArguments * Expression
+conjunct :: Expression * Conjunct
+converse :: Expression * Expression
+compose :: Expression * Compose
+atom :: Expression * UnquotedString -- Stands for a relation
+VIEW RuleStatement = ["RULE",rule]
+VIEW RuleSubset = [eFst,"|-",eSnd]
+VIEW Expression = ["(",conjunct,")"]
+VIEW Expression = ["(",compose,")"]
+VIEW Expression = [converse,"~"]
+VIEW Expression = [atom]
+VIEW Expression = ["="]
+VIEW Conjunct = [eFst,"/\\",eSnd]
+VIEW Compose = [eFst,";",eSnd]
