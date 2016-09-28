@@ -2,7 +2,7 @@
 # INSTALLATION
 # 
 
-The software is tested with GHC-8.0.1
+The software is tested with GHC-8.0.1 [![Build Status](https://travis-ci.org/sjcjoosten/amperspiegel.svg?branch=master)](https://travis-ci.org/sjcjoosten/amperspiegel)
 Newer versions are likely to work too
 Installation works via cabal, which comes as part of both
 stack and the ghc-package.
