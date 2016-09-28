@@ -32,7 +32,7 @@ matrix:
     compiler: ": #GHC 8.0.1"
     addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1], sources: [hvr-ghc]}}
 
-  - env: BUILD=stack ARGS="--resolver lts-7 --stack-yaml stack.lts7.yaml osx"
+  - env: BUILD=stack ARGS="--resolver lts-7"
     compiler: ": #stack 8.0.1 osx"
     os: osx
     
@@ -41,7 +41,7 @@ matrix:
     compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
 
-  - env: BUILD=stack ARGS="--resolver nightly osx"
+  - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly osx"
     os: osx
   
