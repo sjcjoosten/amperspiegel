@@ -141,29 +141,8 @@ It then copies "population" to "parser" and "rules".
 Switches -count and -show displays stuff about a variable.
 That's it! Not much else is used in this demo.
 
+The switch -apply from below already works. The switch -filter does not.
+
 ## Future work
  
-Note that -asParser uses a built-in ruleList as its set of rules.
-We can break it down as four separate steps in the obvious way:
-First step: -apply asParser population
-Second step: -filter
-Third step: -apply copy population parser
-Fourth step: -apply copy population rules
-Note that "copy" is just a variable without a population.
-In particular, it does not have any rules defined, so it will copy as-is.
-
-Here's how we define our new switches:
-
-* ``-apply v1 v2.1 v2.2 ... v2.n v3``
-  applies v1 to the union of v2.*, and puts the result into v3.
-  When given fewer than 3 arguments, it is read as:
-  ``-apply v1 v2 v2`` or ``-apply v1 v1 v1``
-* ``-filter``
-  throw away the irrelevant stuff from "population".
-  this'll have to change into something configurable later
-  (maybe via a more powerful `-apply`).
-
-Similarly, we might break `-i` into steps, where something like `-load` creates a
-tuple "fileContent" from filename to a big string. It would be really cool if
-there was a variable "switches", such that we could define switches such as
-``-asParser`` and ``-i`` in terms of these "primitives"
+See the [issues page](https://github.com/sjcjoosten/amperspiegel/issues?utf8=%E2%9C%93&q=is%3Aopen%20label%3A%22Must%20have%22%20label%3A%22Want%20to%20have%22%20). 
