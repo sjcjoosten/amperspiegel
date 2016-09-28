@@ -1,4 +1,4 @@
-
+#!/bin/bash
 
 rc=0
 for f in *.test

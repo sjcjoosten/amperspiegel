@@ -1,3 +1,4 @@
+#!/bin/bash
 # Run this in your terminal, make sure "demo" is your current directory
 # Show that Ampersand scripts represent populations:
 
