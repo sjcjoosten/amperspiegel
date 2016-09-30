@@ -37,13 +37,6 @@ should just contact me, I'll probably be open to it.
 
 [Here is a script you may try after installing amperspiegel in your path](demo/demo.sh)
 
-<<<<<<< HEAD
-<script src="https://gist.github.com/sjcjoosten/acb75a86c85e904949e777df1c6766f4.js"></script>
-#include "demo/demo.sh"
-[demo](demo/demo.sh)
-=======
->>>>>>> 162a695f6b7c0f95eb19e2c438f21f2c30a64d83
-
 For an overview of all switches, use:
 ``
 amperspiegel -h
