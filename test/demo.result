@@ -144,9 +144,21 @@ Woman := "Woman", "name" "String"
 Man Han
 Father of Bas is Man Stef
 
+"name"  : Fresh 0 |--> "Han"
+"dad"   : Fresh 1 |--> Fresh 2
+"name"  : Fresh 1 |--> "Bas"
+"parent": Fresh 1 |--> Fresh 2
+"name"  : Fresh 2 |--> "Stef"
+
 
 Man Bas
 Father of Bas is Man Stef
+
+"name"  : Fresh 0 |--> "Bas"
+"dad"   : Fresh 1 |--> Fresh 2
+"name"  : Fresh 1 |--> "Bas"
+"parent": Fresh 1 |--> Fresh 2
+"name"  : Fresh 2 |--> "Stef"
 
 parent :: Person * Person
 dad :: Person * Man
@@ -166,7 +178,6 @@ RULE dad |- parent
 RULE (name;name~) |- = -- symbol for identity relation is . for now
 
 RULE name |- =
-
 "dad"   : "Bas"  |--> "Stef"
 "name"  : "Bas"  |--> "Bas"
 "parent": "Bas"  |--> "Stef"

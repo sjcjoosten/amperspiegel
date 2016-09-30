@@ -1,4 +1,5 @@
 amperspiegel
+amperspiegel.sublime-project
 *.hi
 *.o
 dist/

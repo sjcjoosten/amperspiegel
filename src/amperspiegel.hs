@@ -22,7 +22,7 @@ initialstate
     , ( "asParser"
       , TR (error "default parse-ruleset not bootstrapped yet (TODO)") (Just []) (Just ruleList))
     ]
-
+ 
 main :: IO ()
 main = do as <- getChunks =<< getArgs
           evalStateT (forM_ as (uncurry doCommand))

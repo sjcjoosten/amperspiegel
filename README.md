@@ -1,9 +1,12 @@
+Current status of the build, including test scripts:
+[![Build Status](https://travis-ci.org/sjcjoosten/amperspiegel.svg?branch=master)](https://travis-ci.org/sjcjoosten/amperspiegel)
+
 #
 # INSTALLATION
 # 
 
-The software is tested with GHC-8.0.1 [![Build Status](https://travis-ci.org/sjcjoosten/amperspiegel.svg?branch=master)](https://travis-ci.org/sjcjoosten/amperspiegel)
-Newer versions are likely to work too
+The software is tested with GHC-8.0.1.
+Newer versions are likely to work too.
 Installation works via cabal, which comes as part of both
 stack and the ghc-package.
 
@@ -23,10 +26,10 @@ already installed with ghc.
 # LICENSE
 # 
 
-I put a GPL-3 license to get you started on using this software. For the license
-see the file LICENSE. I am the only contributer (as of Sept 2016). This means
-that if you need a less restrictive license (like BSD / Apache 2.0) you should
-just contact me, I'll probably be open to it.
+I put a GPL-3 license to get you started on using and modifying this software.
+For the license see the file LICENSE. I am the only contributer (as of Sept 2016).
+This means that if you need a less restrictive license (like BSD / Apache 2.0) you
+should just contact me, I'll probably be open to it.
 
 #
 # GETTING STARTED
@@ -34,7 +37,9 @@ just contact me, I'll probably be open to it.
 
 Here is a script you may try after installing amperspiegel in your path
 
-{% include demo/demo.sh %}
+<script src="https://gist.github.com/sjcjoosten/acb75a86c85e904949e777df1c6766f4.js"></script>
+#include "demo/demo.sh"
+[demo](demo/demo.sh)
 
 For an overview of all switches, use:
 ``

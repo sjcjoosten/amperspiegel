@@ -16,4 +16,3 @@ RULE dad |- parent
 RULE (name;name~) |- = -- symbol for identity relation is . for now
 
 RULE name |- =
-

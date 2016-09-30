@@ -59,16 +59,16 @@ amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
 # (uncomment RULE stuff in boot.ASL)
 # let's try again:
 # clear
-amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL
+amperspiegel -i boot2.ASL -asParser -i helloWorld3.ASL
 
 # Succes!
 # Now let's see how our example goes
 cat fathers.txt
-amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers.txt -show
+amperspiegel -i boot2.ASL -asParser -i helloWorld3.ASL -asParser -i fathers.txt -show
 
 # Let's pick it up a notch
 cat fathers2.txt
-amperspiegel -i boot.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt
+amperspiegel -i boot2.ASL -asParser -i helloWorld3.ASL -asParser -i fathers2.txt -show
 # That won't do, Man Bas is the same guy here...
 cat helloWorld4.ASL
 # So now let's use the full-fledged boot.ASL that has expressions defined:
