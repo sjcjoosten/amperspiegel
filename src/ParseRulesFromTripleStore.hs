@@ -70,12 +70,12 @@ tripleStoreRelations
   -- In other words: it is your own responsibility that the intersection of x and y is empty. This is why we require I[Element] = I[Reference] (+) I[String]
 -- TODO: write this function in an &-INTERFACE-like syntax
 tripleStoreToParseRules :: forall z v m y r.
-                       ( MonadFail m, Alternative m -- TODO: get rid of these and make functions like isOne, isNone and orElse such that they can be translated into preconditions on the TripleStore... Demanding 'Applicative' is enough if we do this
+                       ( MonadFail m -- TODO: get rid of these and make functions like isOne, isNone and orElse such that they can be translated into preconditions on the TripleStore... Demanding 'Applicative' is enough if we do this
                        , IsString y -- TODO: ask for IsString (m y), to allow for relation lookups/disambiguation
                        , RelLookup r
-                       , RelType r ~ y
+                       , RelType r ~ y, Show y
                        , AtomType r ~ v)
-                    => (v -> z) -> r -> m [ParseRule z z z]
+                    => (v -> m z) -> r -> m [ParseRule z z z]
 tripleStoreToParseRules transAtom ts
  = do r<-fA "choice" makeParseRule
       return r
@@ -86,20 +86,12 @@ tripleStoreToParseRules transAtom ts
                 -> [(v, [v])] -> m [ParseRule z z z]
    traversePair _ [] = pure []
    traversePair f ((src',tgts):as) = (++) <$> sequenceA [f (src', tgt') | tgt'<-tgts] <*> traversePair f as
-   fE :: y -> v -> (v -> m a) -> m [a]
-   fE r a f = traverse f (forEachOf ts r a)
-   showInternal :: v -> m z
-   showInternal = pure . transAtom
    makeParseRule :: (v, v) -> m (ParseRule z z z)
-   makeParseRule (s,t) = ParseRule <$> (showInternal s)
-                                   <*> (makeListOf makeAtom t)
-   makeListOf :: (v -> m a) -> v -> m [a]
-   makeListOf head_fn cl
-        = ($) <$> (isOneOrNone "recogniser" id =<< fE "recogniser" cl (fmap (:) . head_fn))
-              <*> (isOneOrNone "continuation" [] =<< fE "continuation" cl (makeListOf head_fn))
+   makeParseRule (s,t) = ParseRule <$> transAtom s <*> makeList t
+   makeList :: v -> m [ParseAtom z z z]
+   makeList cl
+        = forOneOrNone ts "recogniser" cl (fmap (:) . makeAtom) (pure id) <*>
+          forOneOrNone ts "continuation" cl makeList (pure [])
    makeAtom :: v -> m (ParseAtom z z z)
    makeAtom atm
-        = (const <$> (ParseString <$> showInternal atm)
-                 <*> (isNone "non-terminal" =<< fE "nonTerminal" atm showInternal)) <|>
-          (ParseRef <$> showInternal atm
-                    <*> (isOne "non-terminal, relations names should be unique" =<< fE "nonTerminal" atm showInternal))
+        = forOneOrNone ts "nonTerminal" atm (\v -> ParseRef <$> transAtom atm <*> transAtom v) (ParseString <$> transAtom atm)

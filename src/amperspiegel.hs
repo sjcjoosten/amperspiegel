@@ -4,19 +4,18 @@ import Helpers
 import Data.String (IsString)
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),tripleStoreRelations,tripleStoreToParseRules,fmap23)
-import Tokeniser(showPos,runToken,Token, LinePos,showPos)
-import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf)
+import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token, LinePos,showPos)
 import ApplyRuleSet(applySystem)
 import RuleSetFromTripleStore(ruleSetRelations,tripleStoreToRuleSet)
-import qualified Data.Map as Map
 import System.IO (stderr)
 import System.Exit (exitFailure)
 import Data.Monoid
 import System.Console.Terminal.Size (size,width)
+import qualified Data.Map as Map
 
 initialstate :: Map Text Population
 initialstate
-  = Map.fromList
+  = fromListWith const
     [ ( "parser"
       , TR (error "default parser not bootstrapped yet (TODO)") (Just mParser) (Just []))
     , ( "asParser"
@@ -45,7 +44,7 @@ data Population
  | LST { _getList  :: [Triple (Atom Text) (Atom Text)]}
 
 getPop :: Population -> TripleStore (Atom Text) (Atom Text)
-getPop (LST a) = foldl' (\v w -> fst (insertTriple w v)) Map.empty a
+getPop (LST a) = foldl' (\v w -> fst (insertTriple w v)) mempty a
 getPop r = _getPop r
 
 type FullParser = [ParseRule (Atom Text) Text Text]
@@ -54,10 +53,10 @@ type FullStore = TripleStore (Atom Text) (Atom Text)
 
 doCommand :: Text -> [Text] -> StateT (Map Text Population) IO ()
 doCommand cmd
- = Map.findWithDefault
+ = findWithDefault
        (\_ -> lift$ finishError ("Not a valid command: "<>cmd<>"\nGet a list of commands using: -h"))
        cmd lkp'
- where lkp' = fmap snd (Map.fromList commands)
+ where lkp' = fmap snd (fromListWith const commands)
 
 showUnexpected :: Token (LinePos Text, Bool)
              -> String -> Maybe String
@@ -91,7 +90,7 @@ commands = [ ( "i"
            , ( "list"
              , ( "show a list of all triple-stores"
                , noArgs "list"$
-                   lift . sequenceA_ . map Helpers.putStrLn . Map.keys
+                   lift . sequenceA_ . map Helpers.putStrLn . keys
                      =<< get
                ))
            , ( "show"
@@ -213,7 +212,7 @@ getList x = mconcat . map getTripls . Map.toList $ getPop x
           = [(Triple nm a b) | (nm,bs) <- Map.toList mp, b<-Set.toList bs]
 
 add :: Monad b => Text -> Population -> StateT (Map Text Population) b ()
-add s p = modify (Map.insertWith extend s p)
+add s p = modify (insertWith extend s p)
   where extend _ (LST _) = p
         extend _ (TR po pa ru)
           = TR po
@@ -221,21 +220,19 @@ add s p = modify (Map.insertWith extend s p)
                (case popRules p of {Nothing -> ru; v -> v})
 
 overwrite :: Monad b => Text -> Population -> StateT (Map Text Population) b ()
-overwrite s p = modify (Map.insert s p)
+overwrite s p = modify (insert s p)
 
 retrieve :: Monad b => Text -> StateT (Map Text Population) b Population
 retrieve s
  = do mp <- get
-      case Map.lookup s mp of
-        Nothing -> return (LST [])
-        Just v  -> return v
+      return $ findWithDefault (LST []) s mp
 
 getParser :: Text -> StateT (Map Text Population) IO FullParser
 getParser s
  = do mp <- retrieve s
       case mp of
         (TR{popParser = Just v}) -> return v
-        v' -> let v = getPop v' in putBack v =<< (unAtomize =<< tripleStoreToParseRules id v)
+        v' -> let v = getPop v' in putBack v =<< (unAtomize =<< tripleStoreToParseRules pure v)
  where putBack v p
          = do add s (TR v (Just p) Nothing)
               return p

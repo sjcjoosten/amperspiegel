@@ -1,23 +1,22 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies, RankNTypes, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module ApplyRuleSet(applySystem) where
 import Helpers
-import Data.Map as Map
 
 applySystem :: forall m a b r sys.
                (Monad m, Ord a, Ord b
-               ,sys ~ (r, Map.Map b b, [Triple a b])
+               ,sys ~ (r, Map b b, [Triple a b])
                ,a ~ RelType r,b ~ AtomType r, RelInsert r)
             => (forall x. m x) -- fail
             -> m b -- generate fresh constant
             -> [Rule a b] -- set of rules
             -> [Triple a b] -- set of initial triples
             -> m ( r -- new triple set
-                 , Map.Map b b -- atoms proven to be equivalent
+                 , Map b b -- atoms proven to be equivalent
                  )
 applySystem fl fg allRules originalTriples
  = process =<< (makeNewSystem allRules)
  where
-  relevant v = Map.findWithDefault [] v relevantMap ++ iRules
+  relevant v = findInMap v relevantMap ++ iRules
   -- rules with just I on lhs are always relevant, but never included in relevantMap
   iRules = [rl | rl@(Subset I _) <- allRules]
   
@@ -34,17 +33,17 @@ applySystem fl fg allRules originalTriples
          makeSys I = []
          makeSys (ExprAtom _) = []
          insertInExprM v w = insertInExpr fl fg b v =<< w
-  relevantMap :: Map.Map a [Rule a b]
+  relevantMap :: Map a [Rule a b]
   relevantMap
-   = (Map.fromListWith (++) [(a,[rl]) | rl<-allRules
+   = (fromListWith (++) [(a,[rl]) | rl<-allRules
                                       , a<-Helpers.toList (lhs rl)])
-  lkp a = Map.findWithDefault a a
+  lkp a = findWithDefault a a
   lkpF v m = let newv=lkp v m
              in if v == newv then (newv,m) else
-                let (r,m2) = lkpF newv (Map.insert v r m)
+                let (r,m2) = lkpF newv (insert v r m)
                 in (r,m2)
 
-  process :: sys -> m (r, Map.Map b b)
+  process :: sys -> m (r, Map b b)
   process (v,rename,[])
    = pure$ (removeAtoms v rename, rename)
   process (revLk', synonyms0, (Triple rel a' b'):rest)
@@ -83,7 +82,7 @@ insertInExpr fl fg = insertInExpr'
  where
   insertInExpr' I (b1',b2') sys@(mps,m,trs)
    = if b1' == b2' then pure sys else -- ignore b2 from now on, use b1 instead
-     pure (mps,Map.insert b2 b1 m,trs++new1++new2) -- it could be safe to do the new things first (they are tuples that were essentially already there, but just require renaming, so they shouldn't introduce much new stuff)
+     pure (mps,insert b2 b1 m,trs++new1++new2) -- it could be safe to do the new things first (they are tuples that were essentially already there, but just require renaming, so they shouldn't introduce much new stuff)
    where (b1,b2) = if b1' < b2' then (b1',b2') else (b2',b1')
          (m1,m2) = getAtom b2 mps
          new1 = [Triple a b1 v | (a,s) <- m1, v<-s]

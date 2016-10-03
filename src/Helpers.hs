@@ -1,9 +1,10 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies,BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module Helpers (Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),TripleStore,Triple(..)
- ,getNewTuples,checkIfExists,findInMap,RelLookup(..), fmapE, restrictTo, unionTS,showT,isOne,isNone,isOneOrNone,forOne,forNone,forOneOrNone
- ,tlength,tnull,twords
- ,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Fail, module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
- ,Map,Set) where
+ ,getNewTuples,checkIfExists,findInMap,RelLookup(..), fmapE
+ ,restrictTo, unionTS,showT,forOne,forOneOrNone
+ ,twords,tlength,tnull
+ ,module Data.Map,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Fail, module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
+ ,Set) where
 import Control.Monad.Fail as Fail
 import Control.Applicative
 import Control.Monad
@@ -11,7 +12,7 @@ import Control.Monad.Fix
 import Data.Foldable
 import Data.String (IsString(..))
 import Data.Maybe
-import Data.Map (Map)
+import Data.Map (Map,fromListWith,findWithDefault,insert,keys,keysSet,insertWith)
 import Data.Set (Set)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -31,7 +32,7 @@ twords :: Text -> [Text]
 twords = Text.words
 
 findInMap :: (Monoid a, Ord k) => k -> Map k a -> a
-findInMap itm mp = Map.findWithDefault mempty itm mp
+findInMap = Map.findWithDefault mempty
 
 instance (Show r, Show a) => Show (Rule a r) where
   show (Subset l r) = show l++" ⊆ "++show r
@@ -111,14 +112,14 @@ fmapE f (Pair a b) = Pair (f a) (f b)
 instance (Ord a,Ord b) => RelLookup (TripleStore a b) where
   type RelType (TripleStore a b) = a
   type AtomType (TripleStore a b) = b
-  forEachOf r a b = Set.toList . Map.findWithDefault mempty a . fst . Map.findWithDefault mempty b $ r
-  lkpRight r a b = Set.toList . Map.findWithDefault mempty a . snd . Map.findWithDefault mempty b $ r
+  forEachOf r a b = Set.toList . findInMap a . fst . findInMap b $ r
+  lkpRight r a b = Set.toList . findInMap a . snd . findInMap b $ r
   getAtom b r = (listify m1,listify m2)
     where (m1,m2) = findInMap b r
           listify m = Map.toList (fmap Set.toList m)
   getRel mps r = [ (v1,Set.toList resSet)
                  | (v1,(v1Pairs,_)) <- Map.toList mps
-                 , let resSet = Map.findWithDefault mempty r v1Pairs
+                 , let resSet = findInMap r v1Pairs
                  , not (Set.null resSet)]
 
 instance (Ord a,Ord b) => RelInsert (TripleStore a b) where
@@ -127,7 +128,7 @@ instance (Ord a,Ord b) => RelInsert (TripleStore a b) where
     where 
       addRv _ _ (mp,False) = (mp,False) -- no change needed
       addRv firstNotSecond (a,rel,b) (mp,True) -- TODO: use lenses, but check which approach is faster! (Requires benchmarks)
-       = ( if change then Map.insert a newPair mp else mp -- TODO: check whether this if-then-else is actually faster then just leaving the Map.insert
+       = ( if change then insert a newPair mp else mp -- TODO: check whether this if-then-else is actually faster then just leaving the Map.insert
          , change
          )
        where mapElem,newElem :: Map a (Set b)
@@ -136,7 +137,7 @@ instance (Ord a,Ord b) => RelInsert (TripleStore a b) where
              (mapElem,newPair)
               = if firstNotSecond then (fst mapPair, (newElem,snd mapPair))
                                   else (snd mapPair, (fst mapPair,newElem))
-             newElem = Map.insert rel newSet mapElem
+             newElem = insert rel newSet mapElem
              relSet = findInMap rel mapElem
              change = not (Set.member b relSet)
              newSet = Set.insert b relSet
@@ -199,29 +200,14 @@ findIn revLk False b (ExprAtom a) = lkpRight revLk a b
 showT :: Show a => a -> Text
 showT = pack . show
 
-forOne :: (RelLookup r, MonadFail f)
-       => String -> r -> RelType r -> f (AtomType r) -> f (AtomType r)
-forOne s r a b = (isOne s . forEachOf r a) =<< b
-forNone :: (RelLookup r, MonadFail f)
-        => String -> r -> RelType r -> AtomType r -> f ()
-forNone s r a b = isNone s $ forEachOf r a b
+forOne :: (RelLookup r, MonadFail f) => String -> r -> RelType r -> (AtomType r) -> f (AtomType r)
+forOne s r a b = ((\case {[a']->pure a';_->Fail.fail ("Expecting one "++s)})
+                 . forEachOf r a) b
 forOneOrNone :: (RelLookup r, MonadFail f, Show(RelType r))
-        => r -> RelType r -> f (AtomType r) -> (f (AtomType r) -> f b) -> f b -> f b
-forOneOrNone r a b' fOne bNone
- = do b <- b'
-      case forEachOf r a b of
-         [one] -> fOne (pure one)
-         [] -> bNone
-         lst -> Fail.fail ("Expecting one or none items in "++show a++", got "++show (Prelude.length lst))
-
-isOne :: MonadFail f => String -> [a] -> f a
-isOne _ [a] = pure a
-isOne s lst = Fail.fail ("Expecting one "++s++", got "++show (Prelude.length lst))
-isNone :: MonadFail f => String -> [a] -> f ()
-isNone _ [] = pure ()
-isNone s lst = Fail.fail ("Expecting no "++s++", got "++show (Prelude.length lst))
-isOneOrNone :: MonadFail f => String -> a -> [a] -> f a
-isOneOrNone _ _ [a] = pure a
-isOneOrNone _ deflt [] = pure deflt
-isOneOrNone s _ lst = Fail.fail ("Expecting at most one "++s++", got "++show (Prelude.length lst))
+        => r -> RelType r -> AtomType r -> (AtomType r -> f b) -> f b -> f b
+forOneOrNone r a b fOne bNone
+ = case forEachOf r a b of
+     [one] -> fOne one
+     [] -> bNone
+     lst -> Fail.fail ("Expecting one or none items in "++show a++", got "++show (Prelude.length lst))
 

@@ -19,8 +19,7 @@ executable amperspiegel
                        Helpers,
                        ParseRulesFromTripleStore,
                        RuleSetFromTripleStore,
-                       TokenAwareParser,
-                       Tokeniser
+                       TokenAwareParser
   other-extensions:    BangPatterns, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts, TypeFamilies, RankNTypes, DeriveFoldable, TypeSynonymInstances
   build-depends:       base >=4.9 && <4.10,
                        containers >=0.5 && <0.6,
