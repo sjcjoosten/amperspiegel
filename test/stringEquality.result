@@ -1,4 +1,4 @@
-"dad" : "Bas" |--> "Bas"
-"name": "Bas" |--> "Bas"
-"name": "Han" |--> "Han"
+"dad" : "Bas" ↦ "Bas"
+"name": "Bas" ↦ "Bas"
+"name": "Han" ↦ "Han"
 

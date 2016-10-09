@@ -2,13 +2,14 @@
 module Helpers (Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),TripleStore,Triple(..)
  ,getNewTuples,checkIfExists,findInMap,RelLookup(..), fmapE
  ,restrictTo, unionTS,showT,forOne,forOneOrNone
- ,twords,tlength,tnull
- ,module Data.Map,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Fail, module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
+ ,twords,tlength,tnull,ifThenJust
+ ,module Data.Monoid,module Data.Map,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Fail, module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
  ,Set) where
 import Control.Monad.Fail as Fail
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Fix
+import Data.Monoid
 import Data.Foldable
 import Data.String (IsString(..))
 import Data.Maybe
@@ -33,6 +34,9 @@ twords = Text.words
 
 findInMap :: (Monoid a, Ord k) => k -> Map k a -> a
 findInMap = Map.findWithDefault mempty
+
+ifThenJust :: (a -> Bool) -> a -> Maybe a
+ifThenJust f v = case f v of {True -> Just v;False -> Nothing}
 
 instance (Show r, Show a) => Show (Rule a r) where
   show (Subset l r) = show l++" ⊆ "++show r

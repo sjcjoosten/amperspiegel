@@ -4,12 +4,11 @@ import Helpers
 import Data.String (IsString)
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),tripleStoreRelations,tripleStoreToParseRules,fmap23)
-import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token, LinePos,showPos)
+import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns)
 import ApplyRuleSet(applySystem)
 import RuleSetFromTripleStore(ruleSetRelations,tripleStoreToRuleSet)
 import System.IO (stderr)
 import System.Exit (exitFailure)
-import Data.Monoid
 import System.Console.Terminal.Size (size,width)
 import qualified Data.Map as Map
 
@@ -78,7 +77,7 @@ commands = [ ( "i"
              , ( "parse file as input"
                , (\files -> do txts <- lift$ mapM (Helpers.readFile . unpack) files
                                p <- getParser "parser"
-                               trps <- traverse (parseText (parseListOf (p,"Statement")) showUnexpected) txts
+                               trps <- traverse (parseText show (parseListOf builtIns (p,"Statement")) showUnexpected) txts
                                overwrite "population" =<< unFresh (LST . mconcat <$> sequence trps)
                                res <- apply "rules" ["population"]
                                overwrite "population" (TR res Nothing Nothing)
@@ -171,7 +170,6 @@ commands = [ ( "i"
                      v | cur + v > lim -> "\n " <> pad maxw "" <> w <> wrap v r
                      v -> " "<>w<>wrap (cur + v) r
                 lim = max 20 (width wdw - maxw)
-                
 
 prettyPParser :: FullParser -> Text
 prettyPParser [] = ""
@@ -193,7 +191,7 @@ prettyPRules = mconcat . map (\v -> pack (show v) <> "\n")
 
 prettyPPopulation :: Population -> Text
 prettyPPopulation v
- = Helpers.unlines [ showPad w1 n <> ": "<>showPad w2 s<>" |--> "<>showT t
+ = Helpers.unlines [ showPad w1 n <> ": "<>showPad w2 s<>" \8614 "<>showT t
                    | Triple n s t <- getList v]
  where (w1,w2) = foldr max2 (0,0) (getList v)
        max2 (Triple a b _) (al,bl)
@@ -285,6 +283,7 @@ mParser
      ,ParseRule "Statement"       ["syntax" "Syntax"]
      ]
 
+-- asParser
 ruleList :: (IsString x) => [Rule x y]
 ruleList
   = [ "conceptList" ⊆ "conceptLists"
@@ -297,27 +296,11 @@ ruleList
     , "syntaxList" ⨟ "tail2" ⊆ "syntaxLists"
     , "qstring" ⊆ I
     , "relationName" ⊆ I
-    , "string" ⨟ Flp "string" ⊆ I -- this rule means every relation has a unique name. Unfortunately, there is no other way to disambiguate declarations.
+    , "string" ⨟ Flp "string" ⊆ I -- this rule means every relation has a unique name.
+      -- Unfortunately, there is no other way to disambiguate declarations.
     , "declaration" ⨟ "relation" ⨟ "string" ⊆ "relationName"
     , "declaration" ⨟ "concepts" ⨟ "snd" ⊆ "nonTerminal"
     , Flp "subConcepts" ⨟ Flp "concept" ⨟ "syntaxList" ⊆ "choice"
     , "head2" ⊆ "recogniser"
     , "tail2" ⊆ "continuation"
-    -- 'wrong' rule: lists must be infinite (causes infinite loop):
-    -- , "tail" ⊆ "tail" ⨟ ("tail" ⨟ Flp "tail" ∩ I) -- TODO: make this terminate by somehow using isomorphisms
-    -- TODO: find out whether the order of rules can influence the end-result (apart from termination and fresh-variable-ordering)
-    -- not needed:
-    -- , Flp "relation" ⨟ "relation" ⊆ I
-    -- , Flp "declaration" ⨟ "declaration" ⊆ I
-    -- , "syntaxList" ⨟ Flp "syntaxList" ⊆ I
-    -- , "concept" ⨟ Flp "concept" ⊆ I
-    -- , "declaration" ⨟ Flp "declaration" ⊆ I
-    -- , Flp "head" ⨟ "head" ⊆ I
-    -- , Flp "tail" ⨟ "tail" ⊆ I
-    -- ,   "relationName" ⨟ Flp "relationName" ∩ I ⊆ "declaration" ⨟ Flp "declaration"
-    -- ,   "declaration" ⨟ "concepts" ⨟ "fst" ⊆ Flp "head" ⨟ Flp "syntaxLists" ⨟ "concept"
-    -- ,   Flp "head" ⨟ Flp "syntaxLists" ⨟ "concept" ⊆ "declaration" ⨟ "concepts" ⨟ "fst"
-    -- , "relationName" ⊆ "declaration" ⨟ "relation" ⨟ "string"
     ]
-    
-

@@ -1,5 +1,5 @@
-{-# OPTIONS_GHC -Wall #-} {-# LANGUAGE RankNTypes, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module TokenAwareParser(Atom(..),parseText,deAtomize,freshTokenSt,freshenUp,parseListOf,showPos,runToken,Token, LinePos) where
+{-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TupleSections,RankNTypes, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
+module TokenAwareParser(Atom(..),parseText,deAtomize,freshTokenSt,freshenUp,parseListOf,showPos,runToken,Token,LinePos,builtIns) where
 import Text.Earley
 import Data.IntMap as IntMap
 import Data.Map as Map
@@ -45,80 +45,70 @@ instance Show y => Show (Triple y (Atom Text)) where
 freshTokenSt :: Applicative x => StateT Int x (Atom y)
 freshTokenSt = StateT (\i -> pure (Fresh i,i+1))
 
-
 -- combine an abstract parser with a tokeniser
--- TODO: find a nice way to move some of the functionality from here into the Tokeniser file. The pre-made "String" and "QuotedString" – as well as the way how exactMatch is written – really come across as belonging to the scanner, rather than the parser.
-parseListOf :: forall y x z m. (Eq y,Show y,Scannable y,Ord z,IsString z
-                               ,IsString x,Show z,Monad m)
-            => ([ParseRule x y z], z)
+parseListOf :: forall y x z m. (Eq y,Show y,Scannable y,Ord z
+                               ,Show z,Monad m)
+            => [(z, Token (LinePos y, Bool) -> Maybe (StateT Int m (Atom (LinePos y), [Triple x (Atom (LinePos y))])))]
+            -> ([ParseRule x y z], z)
             -> Either y (y -> ( ( [StateT Int m [Triple x (Atom y)]]
                                 , Report String [Token (LinePos y, Bool)] )
                               ,LinePos (ScanResult y))
                         )
-parseListOf (pg,ps)
+parseListOf bi (pg,ps)
  = do pg'<-traverse (traverseStrings stringOp) pg
       Right$ scanPartitioned
             (first (Prelude.map (fmap (fmap (fmap (fmap runLinePos))))) .
-             fullParses (parser (readListGrammar exactMatch' [("String",fmap atomToStruct <$> Just)
-                                                            ,("QuotedString",fmap atomToStruct <$> ifThenJust isQuoted)
-                                                            ,("UnquotedString",fmap atomToStruct <$> ifThenJust isUnquoted)
-                                                            ,("StringAndOrigin",getPlace)]
-                                                 freshTokenSt
-                                                 (\a b c -> [Triple a b c])
-                                                 (pg',ps)
-                                                 )))
+             fullParses (parser (readListGrammar show exactMatch' bi freshTokenSt (\a b c -> [Triple a b c]) (pg',ps))))
  where
-  atomToStruct a = pure (UserAtom (fmap fst a),mempty)
-  stringOp v = case partitionedSuccess v of
-                 Nothing -> Left v
-                 Just x -> Right (v,x)
-  getPlace v = Just (do new <- freshTokenSt
-                        return (new,[Triple "string" new (UserAtom (fmap fst v))
-                                    ,Triple "origin" new . position' . fst . runToken $ v]))
-  position' (LinePos r c _) = Position r c
-
+  stringOp v
+    = case scan (LinePos 0 0 v) of
+          (r,LinePos _ _ Success) -> Right (v,Prelude.map (fmap (first runLinePos))
+                                   (partitionTokens False r))
+          _ -> Left v
   exactMatch' (b,t) = exactMatch (\a->terminal a <?> "Token "++show b) t
-  
-  ifThenJust f v = case f v of {True -> Just v;False -> Nothing}
+
+builtIns :: (IsString x, IsString y, Applicative m)
+         => [(x, Token (LinePos s, Bool) -> Maybe
+                             (StateT Int m (Atom (LinePos s), [Triple y (Atom (LinePos s))])))]
+builtIns
+ = [("String",fmap atomToStruct . Just)
+   ,("QuotedString",fmap atomToStruct . ifThenJust isQuoted)
+   ,("UnquotedString",fmap atomToStruct . ifThenJust isUnquoted)
+   ,("StringAndOrigin",(\v -> Just (
+      (\new -> (new,[Triple "string" new (UserAtom (fmap fst v))
+                    ,Triple "origin" new . position' . fst . runToken $ v])) <$> freshTokenSt)))]
+ where
+  atomToStruct a = StateT (\i -> pure ((UserAtom (fmap fst a),mempty),i))
+  position' (LinePos r c _) = Position r c
 
 -- Convert something scannable to a set of triples
 -- convenient way to use the parser
-parseText :: forall y a m b t t1. (MonadFail m, Show y, Show b)
-          => Either y (t -> (([a], Report String [t1]), LinePos (ScanResult b)))
+parseText :: forall y a m b t t1. (MonadFail m, Show y)
+          => (b -> String) -> Either y (t -> (([a], Report String [t1]), LinePos (ScanResult b)))
           -> (t1 -> String -> Maybe String -> m a) -> t -> m a
-parseText parseListOf' showUnexpected t
+parseText showC parseListOf' showUnexpected t
   = case parseListOf' of
       Left v -> Helpers.fail ("Invalid parser. Not a valid token: "++show v)
       Right v -> case v t of{
-      (([r] -- returns all possible parses. A succes means there is just one.
-       ,Report _
-               _  -- tokens that are expected at this point
-               [] -- tokens that are left to be scanned
-       )
-      ,LinePos _ _
-               Success -- result of the scanner. When unsuccesful, the succesfully scanned part is still sent to the parser
+      ( ( [r] -- returns all possible parses. A succes means there is just one.
+        , Report _ _ []) -- no tokens are left to be scanned
+      , LinePos _ _ Success -- result of the scanner. When unsuccesful, the succesfully scanned part is still sent to the parser
       ) -> return r;
-      ((_
-       ,Report _
-               e  -- tokens that are expected at this point
-               (u:_) -- tokens that are left to be scanned
-       )
+      ((_, Report _ e (u:_)) -- expected: e, found: u
       ,scanResult -- regardless of the scanner, if there were tokens left to be scanned, the error should be about the unexpected token
-      ) -> showUnexpected u (showTokens e)
-            $ (showPos id <$> (traverse scanError scanResult));
+      ) -> showUnexpected u (showTokens e) $ (showPos id <$> (traverse scanError scanResult));
       ((p,_),scanResult) ->
-        Helpers.fail
-          (fromMaybe ("Ambiguous input:\n"++show (length p)++" possible parses.")
+        Helpers.fail (fromMaybe ("Ambiguous input:\n"++show (length p)++" possible parses.")
           $ showPos id <$> traverse scanError scanResult)
       }
   where scanError :: (ScanResult b) -> Maybe String
         scanError (Success) = Nothing
         scanError (ExpectClosingComment)
-          = Just$ "The opened comment has to be closed by a -}"
+          = Just$ "The opened comment {- has to be closed by a -}"
         scanError (ExpectClosingQuote)
           = Just$ "The quoted string has to be closed by a \""
         scanError (InvalidChar c)
-          = Just$ "Invalid character: "++showPos id (fmap show c)++" in the quoted string"
+          = Just$ "Invalid character: "<>showPos id (fmap showC c)<>" in the quoted string"
         
         showTokens :: [String] -> String
         showTokens [] = "end of file"
@@ -126,17 +116,17 @@ parseText parseListOf' showUnexpected t
         showTokens [a,b] = a ++" or "++b
         showTokens (h:lst) = h ++ ", "++showTokens lst
 
-
 -- | Abstract grammar generator. Generates a Earley-grammar for a parserule-list (along with a designated element). Note that this function will never match undefined ParseRules. I.e. ([somesetofrules],notInTheSetOfRules) returns a parser that only matches the empty string
 readListGrammar :: forall m a e b c r x y z res.
-                (Ord z, Applicative m,Monoid res,e~String,Show z)
-                => (x -> Prod r String a b) -- ^ Recognise exactly the token "x"
+                (Ord z, Applicative m, Monoid res)
+                => (z -> e)
+                -> (x -> Prod r e a b) -- ^ Recognise exactly the token "x"
                 -> [(z, a -> Maybe (m (c, res)))] -- ^ Any predefined elements
                 -> m c -- ^ will generate a fresh constant of type c
                 -> (y -> c -> c -> res) -- ^ the result to produce
                 -> ([ParseRule y x z], z)
-                -> Grammar r (Prod r String a (m res))
-readListGrammar matchToken builtIn getFresh buildFn (grammar,gelem)
+                -> Grammar r (Prod r e a (m res))
+readListGrammar shw matchToken builtIn getFresh buildFn (grammar,gelem)
  = (\s -> (fmap mconcat <$> (traverse (fmap snd) <$> many s))) <$> statement
  where
    statement :: Grammar r (Prod r e a (m (c,res)))
@@ -162,10 +152,9 @@ readListGrammar matchToken builtIn getFresh buildFn (grammar,gelem)
       <$> getFresh <*> l
    iniMap :: Map.Map z (Prod r e a (m (c, res)))
    iniMap = Map.fromListWith (<|>) (fmap builtInToProd builtIn)
-   builtInToProd (z,f) = (z,terminal f <?> show z)
-   r :: y
-     -> Prod r e a (m (c, res))
-     -> Prod r e a (m (c -> res))
+   builtInToProd :: (z, t -> Maybe a1) -> (z, Prod r1 e t a1)
+   builtInToProd (z,f) = (z, terminal f <?> shw z)
+   r :: y -> Prod r e a (m (c, res)) -> Prod r e a (m (c -> res))
    r w1 x1
     = fmap (\(v1,lst1) -> (\new -> mappend (buildFn w1 new v1) lst1)) <$> x1
 
@@ -208,7 +197,7 @@ data PreToken a = SingleCharacter a
                 | MultiLineComment [a]
                 | EndOfLineComment a
                 | WhiteSpace a
-                deriving (Show,Functor)
+                deriving (Show,Functor,Eq,Ord)
 -- PreToken allows us to easily reconstruct the original source,
 -- but all the supporting characters are still required
 
@@ -219,31 +208,28 @@ data LinePos a = LinePos {_line :: !Int, _col :: !Int, runLinePos:: !a}
 -- Quoted strings are parsed without their first and final quote and get a separate constructor.
 -- This gives us two kinds of tokens:
 
-data Token a = QuotedString {runToken::a} | NonQuoted {runToken::a}
+data Token a = QuotedString {runToken::a} | NonQuoted {_pre::PreToken a,runToken::a}
              deriving (Eq, Ord, Functor)
 
 exactMatch :: forall t y. (Eq y, Alternative t)
-           => (forall v. (Token (LinePos y, Bool) -> Maybe v)
-               -> t v)
+           => (forall v. (Token (LinePos y, Bool) -> Maybe v) -> t v)
            -> [Token (y, Bool)] -> t [Token (LinePos y)]
 exactMatch end mpt = go mpt
     where
       go :: [Token (y, Bool)] -> t [Token (LinePos y)]
-      go [NonQuoted (a',b)]
-        = m b (\v' -> [v']) a'
-      go (NonQuoted (a',b) : as)
+      go [NonQuoted _ (a',b)] = m b (\v' -> [v']) a'
+      go (NonQuoted _ (a',b) : as)
         = m b (\v' -> (:) v') a' <*> go as
       go _ = Helpers.empty -- Invalid token / no match!
-      m :: Bool -> (Token (LinePos y) -> a)
-        -> y -> t a
+      m :: Bool -> (Token (LinePos y) -> a) -> y -> t a
       m b' f a'
-        = end (\case NonQuoted (v,b) | runLinePos v == a' && (not b' || b)
-                       -> Just (f (NonQuoted v))
+        = end (\case NonQuoted p (v,b) | runLinePos v == a' && (not b' || b)
+                       -> Just (f (NonQuoted (fmap fst p) v))
                      _ -> Nothing)
 
 instance Show a => Show (Token a) where
   show (QuotedString a) = show (show a)
-  show (NonQuoted a) = show a           
+  show (NonQuoted _ a) = show a           
 
 instance (Scannable a, IsString a) => IsString (Token a) where
   fromString v = case scanPartitioned id (fromString v) of
@@ -253,7 +239,7 @@ instance (Scannable a, IsString a) => IsString (Token a) where
 isQuoted :: Token t -> Bool
 isQuoted QuotedString{} = True
 isQuoted NonQuoted{} = False
-isUnquoted :: Scannable t => Token t -> Bool
+isUnquoted :: Token t -> Bool
 isUnquoted s
   = case tokenToPreToken s of
       CharacterSequence _ -> True
@@ -278,20 +264,17 @@ instance Scannable a => Scannable (LinePos a,Bool) where
              else LinePos a (d+b) (fmap wrap x)
 
 splitPreToken :: PreToken a -> Either (Token a) (NonParsed a)
-splitPreToken (SingleCharacter a   ) = Left (NonQuoted a)
-splitPreToken (CharacterSequence a ) = Left (NonQuoted a)
-splitPreToken (QuotedString_Pre a  ) = Left (QuotedString a)
-splitPreToken (LaTeXString a       ) = Left (NonQuoted a)
-splitPreToken (MultiLineComment as ) = Right (MultiLine as)
-splitPreToken (EndOfLineComment a  ) = Right (EndOfLine a)
-splitPreToken (WhiteSpace a        ) = Right (NPspace a)
-tokenToPreToken :: Scannable a => Token a -> PreToken a
+splitPreToken o = case o of
+   SingleCharacter a   -> Left (NonQuoted o a)
+   CharacterSequence a -> Left (NonQuoted o a)
+   QuotedString_Pre a  -> Left (QuotedString a)
+   LaTeXString a       -> Left (NonQuoted o a)
+   MultiLineComment lst -> Right (MultiLine lst)
+   EndOfLineComment a   -> Right (EndOfLine a)
+   WhiteSpace a -> Right (NPspace a)
+tokenToPreToken :: Token a -> PreToken a
 tokenToPreToken (QuotedString a) = QuotedString_Pre a
-tokenToPreToken (NonQuoted a)
-  = case scan (LinePos 0 0 a) of
-     ([p],LinePos _ _ Success) -> runLinePos p
-     _ -> error "Invalid NonQuoted token. The token should never have been created this way."
-     -- TODO: this makes it that Token is not a functor
+tokenToPreToken (NonQuoted o _) = o
 
 instance Scannable Text where
   scan (LinePos lineNr colNr p)
@@ -366,21 +349,13 @@ partitionTokens b (LinePos i j a:as)
      Right _ -> partitionTokens False as
 partitionTokens _ [] = []
 
-partitionedSuccess :: Scannable y => y -> Maybe [Token (y, Bool)]
-partitionedSuccess a = case scan (LinePos 0 0 a) of
-          (scanned,LinePos _ _ Success)
-            -> Just (Prelude.map (fmap (first runLinePos))
-                                 (partitionTokens False scanned))
-          _ -> Nothing
-
 scanPartitioned :: Scannable a
                 => ([Token (LinePos a, Bool)] -> t)
-                -> a
-                -> (t, LinePos (ScanResult a))
+                -> a -> (t, LinePos (ScanResult a))
 scanPartitioned f inp
  = (f (partitionTokens False scanned),scanResult)
  where
     (scanned,scanResult) = scan (LinePos 0 0 inp)
 
-showPos :: (a->String)-> LinePos a -> [Char]
-showPos s (LinePos r c a) = s a++" on "++show (r+1)++":"++show (c+1)
+showPos :: (IsString x,Monoid x) => (a->x)-> LinePos a -> x
+showPos s (LinePos r c a) = s a <> " on " <> (fromString$ show (r+1)) <> ":" <> (fromString$ show (c+1))
