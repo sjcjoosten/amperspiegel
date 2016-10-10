@@ -200,6 +200,9 @@ findIn revLk False b (Compose e1 e2)
 findIn revLk True  b (ExprAtom a) = lkpLeft  revLk a b
 findIn revLk False b (ExprAtom a) = lkpRight revLk a b
 
+infixr 5 ↦, ∋
+(∋) rel (a,b) = Triple rel a b
+(↦) = (,)
 
 showT :: Show a => a -> Text
 showT = pack . show

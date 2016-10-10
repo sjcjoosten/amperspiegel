@@ -194,7 +194,7 @@ prettyPRules = mconcat . map (\v -> pack (show v) <> "\n")
 
 prettyPPopulation :: Population -> Text
 prettyPPopulation v
- = Helpers.unlines [ showPad w1 n <> "∋ "<>showPad w2 s<>" \8614 "<>showT t
+ = Helpers.unlines [ showPad w1 n <> "\8715 "<>showPad w2 s<>" \8614 "<>showT t
                    | Triple n s t <- l]
  where (w1,w2) = foldr max2 (0,0) l
        l = getList v
