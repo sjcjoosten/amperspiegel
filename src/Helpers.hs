@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies,BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module Helpers (Rule(..),(⨟),(⊆),(∩),Expression(..),RelInsert(..),TripleStore,Triple(..)
+module Helpers (Rule(..),(⨟),(⊆),(∩),(↦),(∋),Expression(..),RelInsert(..),TripleStore,Triple(..)
  ,getNewTuples,checkIfExists,findInMap,RelLookup(..), fmapE
  ,restrictTo, unionTS,showT,forOne,forOneOrNone
  ,twords,tlength,tnull,ifThenJust
