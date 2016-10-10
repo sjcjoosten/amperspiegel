@@ -5,32 +5,32 @@ dad :: Person * Man
 CLASSIFY Man IS Man /\ Person
 CLASSIFY Woman IS Woman /\ Person
 
-"declaration"   : Fresh 0  ↦ Fresh 1
-"concepts"      : Fresh 1  ↦ Fresh 3
-"relation"      : Fresh 1  ↦ Fresh 2
-"origin"        : Fresh 2  ↦ Position 1 0
-"string"        : Fresh 2  ↦ "parent"
-"fst"           : Fresh 3  ↦ "Person"
-"snd"           : Fresh 3  ↦ "Person"
-"declaration"   : Fresh 4  ↦ Fresh 5
-"concepts"      : Fresh 5  ↦ Fresh 7
-"relation"      : Fresh 5  ↦ Fresh 6
-"origin"        : Fresh 6  ↦ Position 2 0
-"string"        : Fresh 6  ↦ "dad"
-"fst"           : Fresh 7  ↦ "Person"
-"snd"           : Fresh 7  ↦ "Man"
-"classification": Fresh 8  ↦ Fresh 9
-"conceptList"   : Fresh 9  ↦ Fresh 10
-"mainConcept"   : Fresh 9  ↦ "Man"
-"head1"         : Fresh 10 ↦ "Man"
-"tail1"         : Fresh 10 ↦ Fresh 11
-"head1"         : Fresh 11 ↦ "Person"
-"classification": Fresh 12 ↦ Fresh 13
-"conceptList"   : Fresh 13 ↦ Fresh 14
-"mainConcept"   : Fresh 13 ↦ "Woman"
-"head1"         : Fresh 14 ↦ "Woman"
-"tail1"         : Fresh 14 ↦ Fresh 15
-"head1"         : Fresh 15 ↦ "Person"
+"declaration"   ∋ Fresh 0  ↦ Fresh 1
+"concepts"      ∋ Fresh 1  ↦ Fresh 3
+"relation"      ∋ Fresh 1  ↦ Fresh 2
+"origin"        ∋ Fresh 2  ↦ Position 1 0
+"string"        ∋ Fresh 2  ↦ "parent"
+"fst"           ∋ Fresh 3  ↦ "Person"
+"snd"           ∋ Fresh 3  ↦ "Person"
+"declaration"   ∋ Fresh 4  ↦ Fresh 5
+"concepts"      ∋ Fresh 5  ↦ Fresh 7
+"relation"      ∋ Fresh 5  ↦ Fresh 6
+"origin"        ∋ Fresh 6  ↦ Position 2 0
+"string"        ∋ Fresh 6  ↦ "dad"
+"fst"           ∋ Fresh 7  ↦ "Person"
+"snd"           ∋ Fresh 7  ↦ "Man"
+"classification"∋ Fresh 8  ↦ Fresh 9
+"conceptList"   ∋ Fresh 9  ↦ Fresh 10
+"mainConcept"   ∋ Fresh 9  ↦ "Man"
+"head1"         ∋ Fresh 10 ↦ "Man"
+"tail1"         ∋ Fresh 10 ↦ Fresh 11
+"head1"         ∋ Fresh 11 ↦ "Person"
+"classification"∋ Fresh 12 ↦ Fresh 13
+"conceptList"   ∋ Fresh 13 ↦ Fresh 14
+"mainConcept"   ∋ Fresh 13 ↦ "Woman"
+"head1"         ∋ Fresh 14 ↦ "Woman"
+"tail1"         ∋ Fresh 14 ↦ Fresh 15
+"head1"         ∋ Fresh 15 ↦ "Person"
 
 
 parent :: Person * Person
@@ -55,41 +55,41 @@ Statement := "Man", "name" "String"
            | "Father", "of", "name" "String", "is", "dad" "Man"
 Woman := "Woman", "name" "String"
 
-"choice"      : "Man"       ↦ Fresh 22
-"choice"      : "Person"    ↦ Fresh 22
-"choice"      : "Person"    ↦ Fresh 28
-"choice"      : "Person"    ↦ Fresh 34
-"choice"      : "Statement" ↦ Fresh 22
-"choice"      : "Statement" ↦ Fresh 28
-"choice"      : "Statement" ↦ Fresh 34
-"choice"      : "Woman"     ↦ Fresh 28
-"nonTerminal" : "dad"       ↦ "Man"
-"nonTerminal" : "name"      ↦ "String"
-"nonTerminal" : "parent"    ↦ "Person"
-"continuation": Fresh 22    ↦ Fresh 24
-"recogniser"  : Fresh 22    ↦ "\"Man\""
-"recogniser"  : Fresh 24    ↦ "name"
-"continuation": Fresh 28    ↦ Fresh 30
-"recogniser"  : Fresh 28    ↦ "\"Woman\""
-"recogniser"  : Fresh 30    ↦ "name"
-"continuation": Fresh 34    ↦ Fresh 36
-"recogniser"  : Fresh 34    ↦ "\"Father\""
-"continuation": Fresh 36    ↦ Fresh 38
-"recogniser"  : Fresh 36    ↦ "\"of\""
-"continuation": Fresh 38    ↦ Fresh 40
-"recogniser"  : Fresh 38    ↦ "name"
-"continuation": Fresh 40    ↦ Fresh 42
-"recogniser"  : Fresh 40    ↦ "\"is\""
-"recogniser"  : Fresh 42    ↦ "dad"
+"choice"      ∋ "Man"       ↦ Fresh 22
+"choice"      ∋ "Person"    ↦ Fresh 22
+"choice"      ∋ "Person"    ↦ Fresh 28
+"choice"      ∋ "Person"    ↦ Fresh 34
+"choice"      ∋ "Statement" ↦ Fresh 22
+"choice"      ∋ "Statement" ↦ Fresh 28
+"choice"      ∋ "Statement" ↦ Fresh 34
+"choice"      ∋ "Woman"     ↦ Fresh 28
+"nonTerminal" ∋ "dad"       ↦ "Man"
+"nonTerminal" ∋ "name"      ↦ "String"
+"nonTerminal" ∋ "parent"    ↦ "Person"
+"continuation"∋ Fresh 22    ↦ Fresh 24
+"recogniser"  ∋ Fresh 22    ↦ "\"Man\""
+"recogniser"  ∋ Fresh 24    ↦ "name"
+"continuation"∋ Fresh 28    ↦ Fresh 30
+"recogniser"  ∋ Fresh 28    ↦ "\"Woman\""
+"recogniser"  ∋ Fresh 30    ↦ "name"
+"continuation"∋ Fresh 34    ↦ Fresh 36
+"recogniser"  ∋ Fresh 34    ↦ "\"Father\""
+"continuation"∋ Fresh 36    ↦ Fresh 38
+"recogniser"  ∋ Fresh 36    ↦ "\"of\""
+"continuation"∋ Fresh 38    ↦ Fresh 40
+"recogniser"  ∋ Fresh 38    ↦ "name"
+"continuation"∋ Fresh 40    ↦ Fresh 42
+"recogniser"  ∋ Fresh 40    ↦ "\"is\""
+"recogniser"  ∋ Fresh 42    ↦ "dad"
 
 
 Man Han
 Father of Bas is Man Stef
 
-"name": Fresh 0 ↦ "Han"
-"dad" : Fresh 1 ↦ Fresh 2
-"name": Fresh 1 ↦ "Bas"
-"name": Fresh 2 ↦ "Stef"
+"name"∋ Fresh 0 ↦ "Han"
+"dad" ∋ Fresh 1 ↦ Fresh 2
+"name"∋ Fresh 1 ↦ "Bas"
+"name"∋ Fresh 2 ↦ "Stef"
 
 
 parent :: Person * Person
@@ -144,21 +144,21 @@ Woman := "Woman", "name" "String"
 Man Han
 Father of Bas is Man Stef
 
-"name"  : Fresh 0 ↦ "Han"
-"dad"   : Fresh 1 ↦ Fresh 2
-"name"  : Fresh 1 ↦ "Bas"
-"parent": Fresh 1 ↦ Fresh 2
-"name"  : Fresh 2 ↦ "Stef"
+"name"  ∋ Fresh 0 ↦ "Han"
+"dad"   ∋ Fresh 1 ↦ Fresh 2
+"name"  ∋ Fresh 1 ↦ "Bas"
+"parent"∋ Fresh 1 ↦ Fresh 2
+"name"  ∋ Fresh 2 ↦ "Stef"
 
 
 Man Bas
 Father of Bas is Man Stef
 
-"name"  : Fresh 0 ↦ "Bas"
-"dad"   : Fresh 1 ↦ Fresh 2
-"name"  : Fresh 1 ↦ "Bas"
-"parent": Fresh 1 ↦ Fresh 2
-"name"  : Fresh 2 ↦ "Stef"
+"name"  ∋ Fresh 0 ↦ "Bas"
+"dad"   ∋ Fresh 1 ↦ Fresh 2
+"name"  ∋ Fresh 1 ↦ "Bas"
+"parent"∋ Fresh 1 ↦ Fresh 2
+"name"  ∋ Fresh 2 ↦ "Stef"
 
 parent :: Person * Person
 dad :: Person * Man
@@ -178,8 +178,8 @@ RULE dad |- parent
 RULE (name;name~) |- = -- symbol for identity relation is . for now
 
 RULE name |- =
-"dad"   : "Bas"  ↦ "Stef"
-"name"  : "Bas"  ↦ "Bas"
-"parent": "Bas"  ↦ "Stef"
-"name"  : "Stef" ↦ "Stef"
+"dad"   ∋ "Bas"  ↦ "Stef"
+"name"  ∋ "Bas"  ↦ "Bas"
+"parent"∋ "Bas"  ↦ "Stef"
+"name"  ∋ "Stef" ↦ "Stef"
 

@@ -19,8 +19,11 @@ initialstate
       , TR (error "default parser not bootstrapped yet (TODO)") (Just mParser) (Just []))
     , ( "asParser"
       , TR (error "default parse-ruleset not bootstrapped yet (TODO)") (Just []) (Just ruleList))
+    -- , ( "interact"
+    --   TODO
+    --   )
     ]
- 
+
 main :: IO ()
 main = do as <- getChunks =<< getArgs
           evalStateT (forM_ as (uncurry doCommand))
@@ -191,9 +194,10 @@ prettyPRules = mconcat . map (\v -> pack (show v) <> "\n")
 
 prettyPPopulation :: Population -> Text
 prettyPPopulation v
- = Helpers.unlines [ showPad w1 n <> ": "<>showPad w2 s<>" \8614 "<>showT t
-                   | Triple n s t <- getList v]
- where (w1,w2) = foldr max2 (0,0) (getList v)
+ = Helpers.unlines [ showPad w1 n <> "∋ "<>showPad w2 s<>" \8614 "<>showT t
+                   | Triple n s t <- l]
+ where (w1,w2) = foldr max2 (0,0) l
+       l = getList v
        max2 (Triple a b _) (al,bl)
          = (max al (length (show a)), max bl (length (show b)))
 showPad :: forall a. Show a => Int -> a -> Text

@@ -1,5 +1,4 @@
--- simplified boot.ASL
--- This should define the initially loaded parser
+-- A richer parser, to enable the use of built-in features
 
 CLASSIFY ClassificationStatement IS Statement /\ ClassificationStatement
 CLASSIFY DeclarationStatement IS Statement /\ DeclarationStatement
