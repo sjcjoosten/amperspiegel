@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TypeFamilies,BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module Helpers (Rule(..),(⨟),(⊆),(∩),(↦),(∋),Expression(..),RelInsert(..),TripleStore,Triple(..)
+module Helpers (Rule(..),(↦),(∋),Expression(..),RelInsert(..),TripleStore,Triple(..)
  ,getNewTuples,checkIfExists,findInMap,RelLookup(..), fmapE
  ,restrictTo, unionTS,showT,forOne,forOneOrNone
  ,twords,tlength,tnull,ifThenJust
@@ -37,31 +37,6 @@ findInMap = Map.findWithDefault mempty
 
 ifThenJust :: (a -> Bool) -> a -> Maybe a
 ifThenJust f v = case f v of {True -> Just v;False -> Nothing}
-
-instance (Show r, Show a) => Show (Rule a r) where
-  show (Subset l r) = show l++" ⊆ "++show r
-instance (Show r, Show a) => Show (Expression a r) where
-  show (ExprAtom r) = show r
-  show (I) = "I"
-  show (Compose e1 e2) = "("++show e1++"⨟"++show e2++")"
-  show (Conjunction e1 e2) = "("++show e1++"∩"++show e2++")"
-  show (Flp e1) = "Flp "++show e1
-  show (Bot) = "Bot"
-  show (Pair a1 a2) = "Pair "++show a1++" "++show a2
-
-infixl 6 ∩
-infix 4 ⊆
-infixl 8 ⨟
-(⊆) :: Expression a r -> Expression a r -> Rule r a
-(⊆) a b = Subset a b
-
--- note: ⨾ sign is U+2A3E, Z NOTATION RELATIONAL COMPOSITION (and not the identically-looking U+2A1F)
-(⨟),(∩) :: Expression a r -> Expression a r -> Expression a r
-(⨟) = Compose
-(∩) = Conjunction
-
-instance IsString x => IsString (Expression a x) where
-  fromString = ExprAtom . fromString
 
 class RelLookup r where
   type RelType r
@@ -201,7 +176,9 @@ findIn revLk True  b (ExprAtom a) = lkpLeft  revLk a b
 findIn revLk False b (ExprAtom a) = lkpRight revLk a b
 
 infixr 5 ↦, ∋
+(∋) :: forall r a. r -> (a, a) -> Triple r a
 (∋) rel (a,b) = Triple rel a b
+(↦) :: forall a b. a -> b -> (a, b)
 (↦) = (,)
 
 showT :: Show a => a -> Text

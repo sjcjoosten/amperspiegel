@@ -173,7 +173,17 @@ prettyPParser o@(ParseRule t _:_)
              Nothing -> ([],o')
 
 prettyPRules :: FullRules -> Text
-prettyPRules = mconcat . map (\v -> pack (show v) <> "\n")
+prettyPRules = mconcat . map (\v -> pRule v <> "\n")
+  where pRule (Subset l r) = pExp l<>" |- "<>pExp r
+        pExp :: Expression (Atom Text) (Atom Text) -> Text
+        pExp (ExprAtom r) = showT r
+        pExp I            = "="
+        pExp (Compose e1 e2) = "("<>pExp e1<>";"<>pExp e2<>")"
+        pExp (Conjunction e1 e2) = "("<>pExp e1<>" /\\ "<>pExp e2<>")"
+        pExp (Flp e1) = pExp e1<>"~"
+        pExp Bot = "Bot"
+        pExp (Pair a1 a2) = "Pair "<>showT a1<>" "<>showT a2
+
 
 prettyPPopulation :: Population -> Text
 prettyPPopulation v
