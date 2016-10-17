@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TupleSections,RankNTypes, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module TokenAwareParser(Atom(..),parseText,deAtomize,freshTokenSt,freshenUp,parseListOf,showPos,runToken,Token,LinePos,builtIns) where
+module TokenAwareParser(Atom(..),parseText,deAtomize,freshTokenSt,freshenUp,parseListOf,showPos,runToken,Token,LinePos,builtIns,makeQuoted) where
 import Text.Earley
 import Data.IntMap as IntMap
 import Data.Map as Map
@@ -11,6 +11,9 @@ data Atom a
  | Position Int Int
  | Fresh Int
  deriving (Eq,Ord,Functor)
+
+makeQuoted :: a -> Atom a
+makeQuoted = UserAtom . QuotedString
 
 deAtomize :: (MonadFail m,Show a) => Atom a -> m a
 deAtomize (UserAtom v) = pure$ runToken v

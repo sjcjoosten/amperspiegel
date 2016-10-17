@@ -3,7 +3,7 @@ module Main (main) where
 import Helpers
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),tripleStoreRelations,tripleStoreToParseRules,fmap23)
-import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns)
+import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
 import ApplyRuleSet(applySystem)
 import RuleSetFromTripleStore(ruleSetRelations,tripleStoreToRuleSet)
 import System.IO (stderr)
@@ -35,6 +35,7 @@ popFromLst = TR . foldl' (\v w -> fst (insertTriple w v)) mempty
 type FullParser = [ParseRule (Atom Text) Text Text]
 type FullRules = [Rule (Atom Text) (Atom Text)]
 type FullStore = TripleStore (Atom Text) (Atom Text)
+type SpiegelState a = StateT (Map Text Population) IO a
 
 doCommand :: Text -> [Text] -> StateT (Map Text Population) IO ()
 doCommand cmd
@@ -111,6 +112,12 @@ commands = [ ( "i"
                          overwrite targ (TR v)
                )
              )
+           , ( "collect"
+             , ( "collect the current state of amperspiegel and put the result into the population(s) named as argument"
+               , oneArg "collect"
+                   (\arg -> overwrite arg . popFromLst . popsToPop =<< get)
+               )
+             )
            ]
            where
              apply :: Text -> [Text] -> StateT (Map Text Population) IO FullStore
@@ -122,19 +129,17 @@ commands = [ ( "i"
                                                        freshTokenSt r =<< pop)
                         liftIO$ renameWarnings res
                         return (fst res)
-             unFresh v = evalStateT v 0
-             noArgs :: Text
-                      -> StateT (Map Text Population) IO ()
-                      -> [t]
-                      -> StateT (Map Text Population) IO ()
+             noArgs :: Text -> SpiegelState () -> [t] -> SpiegelState ()
              noArgs s f
               = \case {[] -> f;_->lift$finishError (s <> " takes no arguments")}
-             eachPop :: (Population -> StateT (Map Text Population) IO ())
-                       -> [Text] -> StateT (Map Text Population) IO ()
+             oneArg :: Text -> (t -> SpiegelState ()) -> [t] -> SpiegelState ()
+             oneArg s f
+              = \case {[i] -> f i;v->lift$finishError (s <> " takes one argument (given: "<>showT (length v)<>")")}
+             eachPop :: (Population -> SpiegelState ()) -> [Text] -> SpiegelState ()
              eachPop f = eachDo f retrieve
-             eachDo :: (a -> StateT (Map Text Population) IO ())
-                    -> (Text -> StateT (Map Text Population) IO a)
-                    -> ([Text] -> StateT (Map Text Population) IO ())
+             eachDo :: (a -> SpiegelState ())
+                    -> (Text -> SpiegelState a)
+                    -> ([Text] -> SpiegelState ())
              eachDo f g = \case [] -> f =<< g "population"
                                 l  -> mapM_ (\v -> f =<< g v) l
              renameWarnings (_,res)
@@ -156,6 +161,21 @@ commands = [ ( "i"
                      v | cur + v > lim -> "\n " <> pad maxw "" <> w <> wrap v r
                      v -> " "<>w<>wrap (cur + v) r
                 lim = max 20 (width wdw - maxw)
+
+unFresh :: Monad m => StateT Int m a -> m a
+unFresh v = evalStateT v 0
+
+popsToPop :: Map Text Population -> [Triple (Atom Text) (Atom Text)]
+popsToPop = concat . runIdentity . unFresh . traverse mkContains . Map.toList
+  where mkContains (nm,p)
+          = do fr <- freshTokenSt
+               tps <- freshenUp freshTokenSt (getList p)
+               return (concatMap (\(Triple n s t) ->
+                        [ Triple "contains" (makeQuoted nm) fr
+                        , Triple "name" fr n
+                        , Triple "source" fr s
+                        , Triple "target" fr t
+                        ]) tps)
 
 prettyPParser :: FullParser -> Text
 prettyPParser [] = ""
@@ -183,7 +203,6 @@ prettyPRules = mconcat . map (\v -> pRule v <> "\n")
         pExp (Flp e1) = pExp e1<>"~"
         pExp Bot = "Bot"
         pExp (Pair a1 a2) = "Pair "<>showT a1<>" "<>showT a2
-
 
 prettyPPopulation :: Population -> Text
 prettyPPopulation v

@@ -3,7 +3,7 @@ module Helpers (Rule(..),(↦),(∋),Expression(..),RelInsert(..),TripleStore,Tr
  ,getNewTuples,checkIfExists,findInMap,RelLookup(..), fmapE
  ,restrictTo, unionTS,showT,forOne,forOneOrNone
  ,twords,tlength,tnull,ifThenJust
- ,module Data.Monoid,module Data.Map,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Fail, module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
+ ,module Control.Monad.Identity,module Data.Monoid,module Data.Map,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Fail, module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
  ,Set) where
 import Control.Monad.Fail as Fail
 import Control.Applicative
@@ -19,6 +19,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import System.Environment
 import Control.Monad.State hiding (fail)
+import Control.Monad.Identity hiding (fail)
 import Data.Text.Lazy (Text,pack,unpack,intercalate,split,unlines,take,drop,break,splitAt,lines,head,tail,span,snoc,dropEnd,isSuffixOf,isPrefixOf,stripPrefix)
 import Data.Text.Lazy.IO
 import Data.Text.Lazy as Text (length,null,words)
