@@ -132,9 +132,11 @@ commands = [ ( "i"
              noArgs :: Text -> SpiegelState () -> [t] -> SpiegelState ()
              noArgs s f
               = \case {[] -> f;_->lift$finishError (s <> " takes no arguments")}
-             oneArg :: Text -> (t -> SpiegelState ()) -> [t] -> SpiegelState ()
+             oneArg :: Text -> (Text -> SpiegelState ()) -> [Text] -> SpiegelState ()
              oneArg s f
-              = \case {[i] -> f i;v->lift$finishError (s <> " takes one argument (given: "<>showT (length v)<>")")}
+              = \case [] -> f "population";
+                      [i] -> f i
+                      v->lift$finishError (s <> " takes one argument (given: "<>showT (length v)<>")")
              eachPop :: (Population -> SpiegelState ()) -> [Text] -> SpiegelState ()
              eachPop f = eachDo f retrieve
              eachDo :: (a -> SpiegelState ())
@@ -168,14 +170,13 @@ unFresh v = evalStateT v 0
 popsToPop :: Map Text Population -> [Triple (Atom Text) (Atom Text)]
 popsToPop = concat . runIdentity . unFresh . traverse mkContains . Map.toList
   where mkContains (nm,p)
-          = do fr <- freshTokenSt
-               tps <- freshenUp freshTokenSt (getList p)
-               return (concatMap (\(Triple n s t) ->
-                        [ Triple "contains" (makeQuoted nm) fr
-                        , Triple "name" fr n
-                        , Triple "source" fr s
-                        , Triple "target" fr t
-                        ]) tps)
+          = do tps <- freshenUp freshTokenSt (getList p)
+               concat <$> (traverse (\(Triple n s t) ->
+                                 (\fr -> [ Triple "contains" (makeQuoted nm) fr
+                                         , Triple "name" fr n
+                                         , Triple "source" fr s
+                                         , Triple "target" fr t
+                                         ]) <$> freshTokenSt) tps)
 
 prettyPParser :: FullParser -> Text
 prettyPParser [] = ""

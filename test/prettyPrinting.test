@@ -1,2 +1,4 @@
 amperspiegel -showP parser
 amperspiegel -showR asParser
+amperspiegel -collect -show
+
