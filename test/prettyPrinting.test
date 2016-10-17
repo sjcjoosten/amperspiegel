@@ -1,4 +1,4 @@
 amperspiegel -showP parser
 amperspiegel -showR asParser
 amperspiegel -collect -show
-
+amperspiegel -collect -apply x x parser -showP parser -distribute -list -showP parser

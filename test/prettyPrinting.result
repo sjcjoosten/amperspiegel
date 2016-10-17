@@ -263,685 +263,709 @@ SyntaxStatement := "syntax" "Syntax"
 "contains"∋ "\"parser\""   ↦ Fresh 371
 "contains"∋ "\"parser\""   ↦ Fresh 372
 "contains"∋ "\"parser\""   ↦ Fresh 373
-"name"    ∋ Fresh 118      ↦ "rule"
+"relation"∋ Fresh 118      ↦ "rule"
 "source"  ∋ Fresh 118      ↦ Fresh 0
 "target"  ∋ Fresh 118      ↦ Fresh 1
-"name"    ∋ Fresh 119      ↦ "eFst"
+"relation"∋ Fresh 119      ↦ "eFst"
 "source"  ∋ Fresh 119      ↦ Fresh 1
 "target"  ∋ Fresh 119      ↦ Fresh 2
-"name"    ∋ Fresh 120      ↦ "eSnd"
+"relation"∋ Fresh 120      ↦ "eSnd"
 "source"  ∋ Fresh 120      ↦ Fresh 1
 "target"  ∋ Fresh 120      ↦ Fresh 3
-"name"    ∋ Fresh 121      ↦ "atom"
+"relation"∋ Fresh 121      ↦ "atom"
 "source"  ∋ Fresh 121      ↦ Fresh 2
 "target"  ∋ Fresh 121      ↦ "conceptList"
-"name"    ∋ Fresh 122      ↦ "atom"
+"relation"∋ Fresh 122      ↦ "atom"
 "source"  ∋ Fresh 122      ↦ Fresh 3
 "target"  ∋ Fresh 122      ↦ "conceptLists"
-"name"    ∋ Fresh 123      ↦ "rule"
+"relation"∋ Fresh 123      ↦ "rule"
 "source"  ∋ Fresh 123      ↦ Fresh 4
 "target"  ∋ Fresh 123      ↦ Fresh 5
-"name"    ∋ Fresh 124      ↦ "eFst"
+"relation"∋ Fresh 124      ↦ "eFst"
 "source"  ∋ Fresh 124      ↦ Fresh 5
 "target"  ∋ Fresh 124      ↦ Fresh 6
-"name"    ∋ Fresh 125      ↦ "eSnd"
+"relation"∋ Fresh 125      ↦ "eSnd"
 "source"  ∋ Fresh 125      ↦ Fresh 5
 "target"  ∋ Fresh 125      ↦ Fresh 10
-"name"    ∋ Fresh 126      ↦ "compose"
+"relation"∋ Fresh 126      ↦ "compose"
 "source"  ∋ Fresh 126      ↦ Fresh 6
 "target"  ∋ Fresh 126      ↦ Fresh 7
-"name"    ∋ Fresh 127      ↦ "eFst"
+"relation"∋ Fresh 127      ↦ "eFst"
 "source"  ∋ Fresh 127      ↦ Fresh 7
 "target"  ∋ Fresh 127      ↦ Fresh 8
-"name"    ∋ Fresh 128      ↦ "eSnd"
+"relation"∋ Fresh 128      ↦ "eSnd"
 "source"  ∋ Fresh 128      ↦ Fresh 7
 "target"  ∋ Fresh 128      ↦ Fresh 9
-"name"    ∋ Fresh 129      ↦ "atom"
+"relation"∋ Fresh 129      ↦ "atom"
 "source"  ∋ Fresh 129      ↦ Fresh 8
 "target"  ∋ Fresh 129      ↦ "conceptLists"
-"name"    ∋ Fresh 130      ↦ "atom"
+"relation"∋ Fresh 130      ↦ "atom"
 "source"  ∋ Fresh 130      ↦ Fresh 9
 "target"  ∋ Fresh 130      ↦ "tail1"
-"name"    ∋ Fresh 131      ↦ "atom"
+"relation"∋ Fresh 131      ↦ "atom"
 "source"  ∋ Fresh 131      ↦ Fresh 10
 "target"  ∋ Fresh 131      ↦ "conceptLists"
-"name"    ∋ Fresh 132      ↦ "rule"
+"relation"∋ Fresh 132      ↦ "rule"
 "source"  ∋ Fresh 132      ↦ Fresh 11
 "target"  ∋ Fresh 132      ↦ Fresh 12
-"name"    ∋ Fresh 133      ↦ "eFst"
+"relation"∋ Fresh 133      ↦ "eFst"
 "source"  ∋ Fresh 133      ↦ Fresh 12
 "target"  ∋ Fresh 133      ↦ Fresh 13
-"name"    ∋ Fresh 134      ↦ "eSnd"
+"relation"∋ Fresh 134      ↦ "eSnd"
 "source"  ∋ Fresh 134      ↦ Fresh 12
 "target"  ∋ Fresh 134      ↦ Fresh 21
-"name"    ∋ Fresh 135      ↦ "compose"
+"relation"∋ Fresh 135      ↦ "compose"
 "source"  ∋ Fresh 135      ↦ Fresh 13
 "target"  ∋ Fresh 135      ↦ Fresh 14
-"name"    ∋ Fresh 136      ↦ "eFst"
+"relation"∋ Fresh 136      ↦ "eFst"
 "source"  ∋ Fresh 136      ↦ Fresh 14
 "target"  ∋ Fresh 136      ↦ Fresh 15
-"name"    ∋ Fresh 137      ↦ "eSnd"
+"relation"∋ Fresh 137      ↦ "eSnd"
 "source"  ∋ Fresh 137      ↦ Fresh 14
 "target"  ∋ Fresh 137      ↦ Fresh 20
-"name"    ∋ Fresh 138      ↦ "compose"
+"relation"∋ Fresh 138      ↦ "compose"
 "source"  ∋ Fresh 138      ↦ Fresh 15
 "target"  ∋ Fresh 138      ↦ Fresh 16
-"name"    ∋ Fresh 139      ↦ "eFst"
+"relation"∋ Fresh 139      ↦ "eFst"
 "source"  ∋ Fresh 139      ↦ Fresh 16
 "target"  ∋ Fresh 139      ↦ Fresh 17
-"name"    ∋ Fresh 140      ↦ "eSnd"
+"relation"∋ Fresh 140      ↦ "eSnd"
 "source"  ∋ Fresh 140      ↦ Fresh 16
 "target"  ∋ Fresh 140      ↦ Fresh 19
-"name"    ∋ Fresh 141      ↦ "converse"
+"relation"∋ Fresh 141      ↦ "converse"
 "source"  ∋ Fresh 141      ↦ Fresh 17
 "target"  ∋ Fresh 141      ↦ Fresh 18
-"name"    ∋ Fresh 142      ↦ "atom"
+"relation"∋ Fresh 142      ↦ "atom"
 "source"  ∋ Fresh 142      ↦ Fresh 18
 "target"  ∋ Fresh 142      ↦ "mainConcept"
-"name"    ∋ Fresh 143      ↦ "atom"
+"relation"∋ Fresh 143      ↦ "atom"
 "source"  ∋ Fresh 143      ↦ Fresh 19
 "target"  ∋ Fresh 143      ↦ "conceptLists"
-"name"    ∋ Fresh 144      ↦ "atom"
+"relation"∋ Fresh 144      ↦ "atom"
 "source"  ∋ Fresh 144      ↦ Fresh 20
 "target"  ∋ Fresh 144      ↦ "head1"
-"name"    ∋ Fresh 145      ↦ "atom"
+"relation"∋ Fresh 145      ↦ "atom"
 "source"  ∋ Fresh 145      ↦ Fresh 21
 "target"  ∋ Fresh 145      ↦ "subConcepts"
-"name"    ∋ Fresh 146      ↦ "rule"
+"relation"∋ Fresh 146      ↦ "rule"
 "source"  ∋ Fresh 146      ↦ Fresh 22
 "target"  ∋ Fresh 146      ↦ Fresh 23
-"name"    ∋ Fresh 147      ↦ "eFst"
+"relation"∋ Fresh 147      ↦ "eFst"
 "source"  ∋ Fresh 147      ↦ Fresh 23
 "target"  ∋ Fresh 147      ↦ Fresh 24
-"name"    ∋ Fresh 148      ↦ "eSnd"
+"relation"∋ Fresh 148      ↦ "eSnd"
 "source"  ∋ Fresh 148      ↦ Fresh 23
 "target"  ∋ Fresh 148      ↦ Fresh 28
-"name"    ∋ Fresh 149      ↦ "compose"
+"relation"∋ Fresh 149      ↦ "compose"
 "source"  ∋ Fresh 149      ↦ Fresh 24
 "target"  ∋ Fresh 149      ↦ Fresh 25
-"name"    ∋ Fresh 150      ↦ "eFst"
+"relation"∋ Fresh 150      ↦ "eFst"
 "source"  ∋ Fresh 150      ↦ Fresh 25
 "target"  ∋ Fresh 150      ↦ Fresh 26
-"name"    ∋ Fresh 151      ↦ "eSnd"
+"relation"∋ Fresh 151      ↦ "eSnd"
 "source"  ∋ Fresh 151      ↦ Fresh 25
 "target"  ∋ Fresh 151      ↦ Fresh 27
-"name"    ∋ Fresh 152      ↦ "atom"
+"relation"∋ Fresh 152      ↦ "atom"
 "source"  ∋ Fresh 152      ↦ Fresh 26
 "target"  ∋ Fresh 152      ↦ "subConcepts"
-"name"    ∋ Fresh 153      ↦ "atom"
+"relation"∋ Fresh 153      ↦ "atom"
 "source"  ∋ Fresh 153      ↦ Fresh 27
 "target"  ∋ Fresh 153      ↦ "subConcepts"
-"name"    ∋ Fresh 154      ↦ "atom"
+"relation"∋ Fresh 154      ↦ "atom"
 "source"  ∋ Fresh 154      ↦ Fresh 28
 "target"  ∋ Fresh 154      ↦ "subConcepts"
-"name"    ∋ Fresh 155      ↦ "rule"
+"relation"∋ Fresh 155      ↦ "rule"
 "source"  ∋ Fresh 155      ↦ Fresh 29
 "target"  ∋ Fresh 155      ↦ Fresh 30
-"name"    ∋ Fresh 156      ↦ "eFst"
+"relation"∋ Fresh 156      ↦ "eFst"
 "source"  ∋ Fresh 156      ↦ Fresh 30
 "target"  ∋ Fresh 156      ↦ Fresh 31
-"name"    ∋ Fresh 157      ↦ "eSnd"
+"relation"∋ Fresh 157      ↦ "eSnd"
 "source"  ∋ Fresh 157      ↦ Fresh 30
 "target"  ∋ Fresh 157      ↦ Fresh 39
-"name"    ∋ Fresh 158      ↦ "conjunct"
+"relation"∋ Fresh 158      ↦ "conjunct"
 "source"  ∋ Fresh 158      ↦ Fresh 31
 "target"  ∋ Fresh 158      ↦ Fresh 32
-"name"    ∋ Fresh 159      ↦ "eFst"
+"relation"∋ Fresh 159      ↦ "eFst"
 "source"  ∋ Fresh 159      ↦ Fresh 32
 "target"  ∋ Fresh 159      ↦ Fresh 33
-"name"    ∋ Fresh 160      ↦ "eSnd"
+"relation"∋ Fresh 160      ↦ "eSnd"
 "source"  ∋ Fresh 160      ↦ Fresh 32
 "target"  ∋ Fresh 160      ↦ Fresh 38
-"name"    ∋ Fresh 161      ↦ "compose"
+"relation"∋ Fresh 161      ↦ "compose"
 "source"  ∋ Fresh 161      ↦ Fresh 33
 "target"  ∋ Fresh 161      ↦ Fresh 34
-"name"    ∋ Fresh 162      ↦ "eFst"
+"relation"∋ Fresh 162      ↦ "eFst"
 "source"  ∋ Fresh 162      ↦ Fresh 34
 "target"  ∋ Fresh 162      ↦ Fresh 35
-"name"    ∋ Fresh 163      ↦ "eSnd"
+"relation"∋ Fresh 163      ↦ "eSnd"
 "source"  ∋ Fresh 163      ↦ Fresh 34
 "target"  ∋ Fresh 163      ↦ Fresh 37
-"name"    ∋ Fresh 164      ↦ "converse"
+"relation"∋ Fresh 164      ↦ "converse"
 "source"  ∋ Fresh 164      ↦ Fresh 35
 "target"  ∋ Fresh 164      ↦ Fresh 36
-"name"    ∋ Fresh 165      ↦ "atom"
+"relation"∋ Fresh 165      ↦ "atom"
 "source"  ∋ Fresh 165      ↦ Fresh 36
 "target"  ∋ Fresh 165      ↦ "mainConcept"
-"name"    ∋ Fresh 166      ↦ "atom"
+"relation"∋ Fresh 166      ↦ "atom"
 "source"  ∋ Fresh 166      ↦ Fresh 37
 "target"  ∋ Fresh 166      ↦ "mainConcept"
-"name"    ∋ Fresh 167      ↦ "atom"
+"relation"∋ Fresh 167      ↦ "atom"
 "source"  ∋ Fresh 167      ↦ Fresh 39
 "target"  ∋ Fresh 167      ↦ "subConcepts"
-"name"    ∋ Fresh 168      ↦ "rule"
+"relation"∋ Fresh 168      ↦ "rule"
 "source"  ∋ Fresh 168      ↦ Fresh 40
 "target"  ∋ Fresh 168      ↦ Fresh 41
-"name"    ∋ Fresh 169      ↦ "eFst"
+"relation"∋ Fresh 169      ↦ "eFst"
 "source"  ∋ Fresh 169      ↦ Fresh 41
 "target"  ∋ Fresh 169      ↦ Fresh 42
-"name"    ∋ Fresh 170      ↦ "eSnd"
+"relation"∋ Fresh 170      ↦ "eSnd"
 "source"  ∋ Fresh 170      ↦ Fresh 41
 "target"  ∋ Fresh 170      ↦ Fresh 50
-"name"    ∋ Fresh 171      ↦ "conjunct"
+"relation"∋ Fresh 171      ↦ "conjunct"
 "source"  ∋ Fresh 171      ↦ Fresh 42
 "target"  ∋ Fresh 171      ↦ Fresh 43
-"name"    ∋ Fresh 172      ↦ "eFst"
+"relation"∋ Fresh 172      ↦ "eFst"
 "source"  ∋ Fresh 172      ↦ Fresh 43
 "target"  ∋ Fresh 172      ↦ Fresh 44
-"name"    ∋ Fresh 173      ↦ "eSnd"
+"relation"∋ Fresh 173      ↦ "eSnd"
 "source"  ∋ Fresh 173      ↦ Fresh 43
 "target"  ∋ Fresh 173      ↦ Fresh 49
-"name"    ∋ Fresh 174      ↦ "compose"
+"relation"∋ Fresh 174      ↦ "compose"
 "source"  ∋ Fresh 174      ↦ Fresh 44
 "target"  ∋ Fresh 174      ↦ Fresh 45
-"name"    ∋ Fresh 175      ↦ "eFst"
+"relation"∋ Fresh 175      ↦ "eFst"
 "source"  ∋ Fresh 175      ↦ Fresh 45
 "target"  ∋ Fresh 175      ↦ Fresh 46
-"name"    ∋ Fresh 176      ↦ "eSnd"
+"relation"∋ Fresh 176      ↦ "eSnd"
 "source"  ∋ Fresh 176      ↦ Fresh 45
 "target"  ∋ Fresh 176      ↦ Fresh 48
-"name"    ∋ Fresh 177      ↦ "converse"
+"relation"∋ Fresh 177      ↦ "converse"
 "source"  ∋ Fresh 177      ↦ Fresh 46
 "target"  ∋ Fresh 177      ↦ Fresh 47
-"name"    ∋ Fresh 178      ↦ "atom"
+"relation"∋ Fresh 178      ↦ "atom"
 "source"  ∋ Fresh 178      ↦ Fresh 47
 "target"  ∋ Fresh 178      ↦ "concept"
-"name"    ∋ Fresh 179      ↦ "atom"
+"relation"∋ Fresh 179      ↦ "atom"
 "source"  ∋ Fresh 179      ↦ Fresh 48
 "target"  ∋ Fresh 179      ↦ "concept"
-"name"    ∋ Fresh 180      ↦ "atom"
+"relation"∋ Fresh 180      ↦ "atom"
 "source"  ∋ Fresh 180      ↦ Fresh 50
 "target"  ∋ Fresh 180      ↦ "subConcepts"
-"name"    ∋ Fresh 181      ↦ "rule"
+"relation"∋ Fresh 181      ↦ "rule"
 "source"  ∋ Fresh 181      ↦ Fresh 51
 "target"  ∋ Fresh 181      ↦ Fresh 52
-"name"    ∋ Fresh 182      ↦ "eFst"
+"relation"∋ Fresh 182      ↦ "eFst"
 "source"  ∋ Fresh 182      ↦ Fresh 52
 "target"  ∋ Fresh 182      ↦ Fresh 53
-"name"    ∋ Fresh 183      ↦ "eSnd"
+"relation"∋ Fresh 183      ↦ "eSnd"
 "source"  ∋ Fresh 183      ↦ Fresh 52
 "target"  ∋ Fresh 183      ↦ Fresh 54
-"name"    ∋ Fresh 184      ↦ "atom"
+"relation"∋ Fresh 184      ↦ "atom"
 "source"  ∋ Fresh 184      ↦ Fresh 53
 "target"  ∋ Fresh 184      ↦ "syntaxList"
-"name"    ∋ Fresh 185      ↦ "atom"
+"relation"∋ Fresh 185      ↦ "atom"
 "source"  ∋ Fresh 185      ↦ Fresh 54
 "target"  ∋ Fresh 185      ↦ "syntaxLists"
-"name"    ∋ Fresh 186      ↦ "rule"
+"relation"∋ Fresh 186      ↦ "rule"
 "source"  ∋ Fresh 186      ↦ Fresh 55
 "target"  ∋ Fresh 186      ↦ Fresh 56
-"name"    ∋ Fresh 187      ↦ "eFst"
+"relation"∋ Fresh 187      ↦ "eFst"
 "source"  ∋ Fresh 187      ↦ Fresh 56
 "target"  ∋ Fresh 187      ↦ Fresh 57
-"name"    ∋ Fresh 188      ↦ "eSnd"
+"relation"∋ Fresh 188      ↦ "eSnd"
 "source"  ∋ Fresh 188      ↦ Fresh 56
 "target"  ∋ Fresh 188      ↦ Fresh 61
-"name"    ∋ Fresh 189      ↦ "compose"
+"relation"∋ Fresh 189      ↦ "compose"
 "source"  ∋ Fresh 189      ↦ Fresh 57
 "target"  ∋ Fresh 189      ↦ Fresh 58
-"name"    ∋ Fresh 190      ↦ "eFst"
+"relation"∋ Fresh 190      ↦ "eFst"
 "source"  ∋ Fresh 190      ↦ Fresh 58
 "target"  ∋ Fresh 190      ↦ Fresh 59
-"name"    ∋ Fresh 191      ↦ "eSnd"
+"relation"∋ Fresh 191      ↦ "eSnd"
 "source"  ∋ Fresh 191      ↦ Fresh 58
 "target"  ∋ Fresh 191      ↦ Fresh 60
-"name"    ∋ Fresh 192      ↦ "atom"
+"relation"∋ Fresh 192      ↦ "atom"
 "source"  ∋ Fresh 192      ↦ Fresh 59
 "target"  ∋ Fresh 192      ↦ "syntaxList"
-"name"    ∋ Fresh 193      ↦ "atom"
+"relation"∋ Fresh 193      ↦ "atom"
 "source"  ∋ Fresh 193      ↦ Fresh 60
 "target"  ∋ Fresh 193      ↦ "tail2"
-"name"    ∋ Fresh 194      ↦ "atom"
+"relation"∋ Fresh 194      ↦ "atom"
 "source"  ∋ Fresh 194      ↦ Fresh 61
 "target"  ∋ Fresh 194      ↦ "syntaxLists"
-"name"    ∋ Fresh 195      ↦ "rule"
+"relation"∋ Fresh 195      ↦ "rule"
 "source"  ∋ Fresh 195      ↦ Fresh 62
 "target"  ∋ Fresh 195      ↦ Fresh 63
-"name"    ∋ Fresh 196      ↦ "eFst"
+"relation"∋ Fresh 196      ↦ "eFst"
 "source"  ∋ Fresh 196      ↦ Fresh 63
 "target"  ∋ Fresh 196      ↦ Fresh 64
-"name"    ∋ Fresh 197      ↦ "eSnd"
+"relation"∋ Fresh 197      ↦ "eSnd"
 "source"  ∋ Fresh 197      ↦ Fresh 63
 "target"  ∋ Fresh 197      ↦ Fresh 65
-"name"    ∋ Fresh 198      ↦ "atom"
+"relation"∋ Fresh 198      ↦ "atom"
 "source"  ∋ Fresh 198      ↦ Fresh 64
 "target"  ∋ Fresh 198      ↦ "qstring"
-"name"    ∋ Fresh 199      ↦ "rule"
+"relation"∋ Fresh 199      ↦ "rule"
 "source"  ∋ Fresh 199      ↦ Fresh 66
 "target"  ∋ Fresh 199      ↦ Fresh 67
-"name"    ∋ Fresh 200      ↦ "eFst"
+"relation"∋ Fresh 200      ↦ "eFst"
 "source"  ∋ Fresh 200      ↦ Fresh 67
 "target"  ∋ Fresh 200      ↦ Fresh 68
-"name"    ∋ Fresh 201      ↦ "eSnd"
+"relation"∋ Fresh 201      ↦ "eSnd"
 "source"  ∋ Fresh 201      ↦ Fresh 67
 "target"  ∋ Fresh 201      ↦ Fresh 69
-"name"    ∋ Fresh 202      ↦ "atom"
+"relation"∋ Fresh 202      ↦ "atom"
 "source"  ∋ Fresh 202      ↦ Fresh 68
 "target"  ∋ Fresh 202      ↦ "relationName"
-"name"    ∋ Fresh 203      ↦ "rule"
+"relation"∋ Fresh 203      ↦ "rule"
 "source"  ∋ Fresh 203      ↦ Fresh 70
 "target"  ∋ Fresh 203      ↦ Fresh 71
-"name"    ∋ Fresh 204      ↦ "eFst"
+"relation"∋ Fresh 204      ↦ "eFst"
 "source"  ∋ Fresh 204      ↦ Fresh 71
 "target"  ∋ Fresh 204      ↦ Fresh 72
-"name"    ∋ Fresh 205      ↦ "eSnd"
+"relation"∋ Fresh 205      ↦ "eSnd"
 "source"  ∋ Fresh 205      ↦ Fresh 71
 "target"  ∋ Fresh 205      ↦ Fresh 77
-"name"    ∋ Fresh 206      ↦ "compose"
+"relation"∋ Fresh 206      ↦ "compose"
 "source"  ∋ Fresh 206      ↦ Fresh 72
 "target"  ∋ Fresh 206      ↦ Fresh 73
-"name"    ∋ Fresh 207      ↦ "eFst"
+"relation"∋ Fresh 207      ↦ "eFst"
 "source"  ∋ Fresh 207      ↦ Fresh 73
 "target"  ∋ Fresh 207      ↦ Fresh 74
-"name"    ∋ Fresh 208      ↦ "eSnd"
+"relation"∋ Fresh 208      ↦ "eSnd"
 "source"  ∋ Fresh 208      ↦ Fresh 73
 "target"  ∋ Fresh 208      ↦ Fresh 75
-"name"    ∋ Fresh 209      ↦ "atom"
+"relation"∋ Fresh 209      ↦ "atom"
 "source"  ∋ Fresh 209      ↦ Fresh 74
 "target"  ∋ Fresh 209      ↦ "string"
-"name"    ∋ Fresh 210      ↦ "converse"
+"relation"∋ Fresh 210      ↦ "converse"
 "source"  ∋ Fresh 210      ↦ Fresh 75
 "target"  ∋ Fresh 210      ↦ Fresh 76
-"name"    ∋ Fresh 211      ↦ "atom"
+"relation"∋ Fresh 211      ↦ "atom"
 "source"  ∋ Fresh 211      ↦ Fresh 76
 "target"  ∋ Fresh 211      ↦ "string"
-"name"    ∋ Fresh 212      ↦ "rule"
+"relation"∋ Fresh 212      ↦ "rule"
 "source"  ∋ Fresh 212      ↦ Fresh 78
 "target"  ∋ Fresh 212      ↦ Fresh 79
-"name"    ∋ Fresh 213      ↦ "eFst"
+"relation"∋ Fresh 213      ↦ "eFst"
 "source"  ∋ Fresh 213      ↦ Fresh 79
 "target"  ∋ Fresh 213      ↦ Fresh 80
-"name"    ∋ Fresh 214      ↦ "eSnd"
+"relation"∋ Fresh 214      ↦ "eSnd"
 "source"  ∋ Fresh 214      ↦ Fresh 79
 "target"  ∋ Fresh 214      ↦ Fresh 87
-"name"    ∋ Fresh 215      ↦ "compose"
+"relation"∋ Fresh 215      ↦ "compose"
 "source"  ∋ Fresh 215      ↦ Fresh 80
 "target"  ∋ Fresh 215      ↦ Fresh 81
-"name"    ∋ Fresh 216      ↦ "eFst"
+"relation"∋ Fresh 216      ↦ "eFst"
 "source"  ∋ Fresh 216      ↦ Fresh 81
 "target"  ∋ Fresh 216      ↦ Fresh 82
-"name"    ∋ Fresh 217      ↦ "eSnd"
+"relation"∋ Fresh 217      ↦ "eSnd"
 "source"  ∋ Fresh 217      ↦ Fresh 81
 "target"  ∋ Fresh 217      ↦ Fresh 86
-"name"    ∋ Fresh 218      ↦ "compose"
+"relation"∋ Fresh 218      ↦ "compose"
 "source"  ∋ Fresh 218      ↦ Fresh 82
 "target"  ∋ Fresh 218      ↦ Fresh 83
-"name"    ∋ Fresh 219      ↦ "eFst"
+"relation"∋ Fresh 219      ↦ "eFst"
 "source"  ∋ Fresh 219      ↦ Fresh 83
 "target"  ∋ Fresh 219      ↦ Fresh 84
-"name"    ∋ Fresh 220      ↦ "eSnd"
+"relation"∋ Fresh 220      ↦ "eSnd"
 "source"  ∋ Fresh 220      ↦ Fresh 83
 "target"  ∋ Fresh 220      ↦ Fresh 85
-"name"    ∋ Fresh 221      ↦ "atom"
+"relation"∋ Fresh 221      ↦ "atom"
 "source"  ∋ Fresh 221      ↦ Fresh 84
 "target"  ∋ Fresh 221      ↦ "declaration"
-"name"    ∋ Fresh 222      ↦ "atom"
+"relation"∋ Fresh 222      ↦ "atom"
 "source"  ∋ Fresh 222      ↦ Fresh 85
 "target"  ∋ Fresh 222      ↦ "relation"
-"name"    ∋ Fresh 223      ↦ "atom"
+"relation"∋ Fresh 223      ↦ "atom"
 "source"  ∋ Fresh 223      ↦ Fresh 86
 "target"  ∋ Fresh 223      ↦ "string"
-"name"    ∋ Fresh 224      ↦ "atom"
+"relation"∋ Fresh 224      ↦ "atom"
 "source"  ∋ Fresh 224      ↦ Fresh 87
 "target"  ∋ Fresh 224      ↦ "relationName"
-"name"    ∋ Fresh 225      ↦ "rule"
+"relation"∋ Fresh 225      ↦ "rule"
 "source"  ∋ Fresh 225      ↦ Fresh 88
 "target"  ∋ Fresh 225      ↦ Fresh 89
-"name"    ∋ Fresh 226      ↦ "eFst"
+"relation"∋ Fresh 226      ↦ "eFst"
 "source"  ∋ Fresh 226      ↦ Fresh 89
 "target"  ∋ Fresh 226      ↦ Fresh 90
-"name"    ∋ Fresh 227      ↦ "eSnd"
+"relation"∋ Fresh 227      ↦ "eSnd"
 "source"  ∋ Fresh 227      ↦ Fresh 89
 "target"  ∋ Fresh 227      ↦ Fresh 97
-"name"    ∋ Fresh 228      ↦ "compose"
+"relation"∋ Fresh 228      ↦ "compose"
 "source"  ∋ Fresh 228      ↦ Fresh 90
 "target"  ∋ Fresh 228      ↦ Fresh 91
-"name"    ∋ Fresh 229      ↦ "eFst"
+"relation"∋ Fresh 229      ↦ "eFst"
 "source"  ∋ Fresh 229      ↦ Fresh 91
 "target"  ∋ Fresh 229      ↦ Fresh 92
-"name"    ∋ Fresh 230      ↦ "eSnd"
+"relation"∋ Fresh 230      ↦ "eSnd"
 "source"  ∋ Fresh 230      ↦ Fresh 91
 "target"  ∋ Fresh 230      ↦ Fresh 96
-"name"    ∋ Fresh 231      ↦ "compose"
+"relation"∋ Fresh 231      ↦ "compose"
 "source"  ∋ Fresh 231      ↦ Fresh 92
 "target"  ∋ Fresh 231      ↦ Fresh 93
-"name"    ∋ Fresh 232      ↦ "eFst"
+"relation"∋ Fresh 232      ↦ "eFst"
 "source"  ∋ Fresh 232      ↦ Fresh 93
 "target"  ∋ Fresh 232      ↦ Fresh 94
-"name"    ∋ Fresh 233      ↦ "eSnd"
+"relation"∋ Fresh 233      ↦ "eSnd"
 "source"  ∋ Fresh 233      ↦ Fresh 93
 "target"  ∋ Fresh 233      ↦ Fresh 95
-"name"    ∋ Fresh 234      ↦ "atom"
+"relation"∋ Fresh 234      ↦ "atom"
 "source"  ∋ Fresh 234      ↦ Fresh 94
 "target"  ∋ Fresh 234      ↦ "declaration"
-"name"    ∋ Fresh 235      ↦ "atom"
+"relation"∋ Fresh 235      ↦ "atom"
 "source"  ∋ Fresh 235      ↦ Fresh 95
 "target"  ∋ Fresh 235      ↦ "concepts"
-"name"    ∋ Fresh 236      ↦ "atom"
+"relation"∋ Fresh 236      ↦ "atom"
 "source"  ∋ Fresh 236      ↦ Fresh 96
 "target"  ∋ Fresh 236      ↦ "snd"
-"name"    ∋ Fresh 237      ↦ "atom"
+"relation"∋ Fresh 237      ↦ "atom"
 "source"  ∋ Fresh 237      ↦ Fresh 97
 "target"  ∋ Fresh 237      ↦ "nonTerminal"
-"name"    ∋ Fresh 238      ↦ "rule"
+"relation"∋ Fresh 238      ↦ "rule"
 "source"  ∋ Fresh 238      ↦ Fresh 98
 "target"  ∋ Fresh 238      ↦ Fresh 99
-"name"    ∋ Fresh 239      ↦ "eFst"
+"relation"∋ Fresh 239      ↦ "eFst"
 "source"  ∋ Fresh 239      ↦ Fresh 99
 "target"  ∋ Fresh 239      ↦ Fresh 100
-"name"    ∋ Fresh 240      ↦ "eSnd"
+"relation"∋ Fresh 240      ↦ "eSnd"
 "source"  ∋ Fresh 240      ↦ Fresh 99
 "target"  ∋ Fresh 240      ↦ Fresh 109
-"name"    ∋ Fresh 241      ↦ "compose"
+"relation"∋ Fresh 241      ↦ "compose"
 "source"  ∋ Fresh 241      ↦ Fresh 100
 "target"  ∋ Fresh 241      ↦ Fresh 101
-"name"    ∋ Fresh 242      ↦ "eFst"
+"relation"∋ Fresh 242      ↦ "eFst"
 "source"  ∋ Fresh 242      ↦ Fresh 101
 "target"  ∋ Fresh 242      ↦ Fresh 102
-"name"    ∋ Fresh 243      ↦ "eSnd"
+"relation"∋ Fresh 243      ↦ "eSnd"
 "source"  ∋ Fresh 243      ↦ Fresh 101
 "target"  ∋ Fresh 243      ↦ Fresh 108
-"name"    ∋ Fresh 244      ↦ "compose"
+"relation"∋ Fresh 244      ↦ "compose"
 "source"  ∋ Fresh 244      ↦ Fresh 102
 "target"  ∋ Fresh 244      ↦ Fresh 103
-"name"    ∋ Fresh 245      ↦ "eFst"
+"relation"∋ Fresh 245      ↦ "eFst"
 "source"  ∋ Fresh 245      ↦ Fresh 103
 "target"  ∋ Fresh 245      ↦ Fresh 104
-"name"    ∋ Fresh 246      ↦ "eSnd"
+"relation"∋ Fresh 246      ↦ "eSnd"
 "source"  ∋ Fresh 246      ↦ Fresh 103
 "target"  ∋ Fresh 246      ↦ Fresh 106
-"name"    ∋ Fresh 247      ↦ "converse"
+"relation"∋ Fresh 247      ↦ "converse"
 "source"  ∋ Fresh 247      ↦ Fresh 104
 "target"  ∋ Fresh 247      ↦ Fresh 105
-"name"    ∋ Fresh 248      ↦ "atom"
+"relation"∋ Fresh 248      ↦ "atom"
 "source"  ∋ Fresh 248      ↦ Fresh 105
 "target"  ∋ Fresh 248      ↦ "subConcepts"
-"name"    ∋ Fresh 249      ↦ "converse"
+"relation"∋ Fresh 249      ↦ "converse"
 "source"  ∋ Fresh 249      ↦ Fresh 106
 "target"  ∋ Fresh 249      ↦ Fresh 107
-"name"    ∋ Fresh 250      ↦ "atom"
+"relation"∋ Fresh 250      ↦ "atom"
 "source"  ∋ Fresh 250      ↦ Fresh 107
 "target"  ∋ Fresh 250      ↦ "concept"
-"name"    ∋ Fresh 251      ↦ "atom"
+"relation"∋ Fresh 251      ↦ "atom"
 "source"  ∋ Fresh 251      ↦ Fresh 108
 "target"  ∋ Fresh 251      ↦ "syntaxList"
-"name"    ∋ Fresh 252      ↦ "atom"
+"relation"∋ Fresh 252      ↦ "atom"
 "source"  ∋ Fresh 252      ↦ Fresh 109
 "target"  ∋ Fresh 252      ↦ "choice"
-"name"    ∋ Fresh 253      ↦ "rule"
+"relation"∋ Fresh 253      ↦ "rule"
 "source"  ∋ Fresh 253      ↦ Fresh 110
 "target"  ∋ Fresh 253      ↦ Fresh 111
-"name"    ∋ Fresh 254      ↦ "eFst"
+"relation"∋ Fresh 254      ↦ "eFst"
 "source"  ∋ Fresh 254      ↦ Fresh 111
 "target"  ∋ Fresh 254      ↦ Fresh 112
-"name"    ∋ Fresh 255      ↦ "eSnd"
+"relation"∋ Fresh 255      ↦ "eSnd"
 "source"  ∋ Fresh 255      ↦ Fresh 111
 "target"  ∋ Fresh 255      ↦ Fresh 113
-"name"    ∋ Fresh 256      ↦ "atom"
+"relation"∋ Fresh 256      ↦ "atom"
 "source"  ∋ Fresh 256      ↦ Fresh 112
 "target"  ∋ Fresh 256      ↦ "head2"
-"name"    ∋ Fresh 257      ↦ "atom"
+"relation"∋ Fresh 257      ↦ "atom"
 "source"  ∋ Fresh 257      ↦ Fresh 113
 "target"  ∋ Fresh 257      ↦ "recogniser"
-"name"    ∋ Fresh 258      ↦ "rule"
+"relation"∋ Fresh 258      ↦ "rule"
 "source"  ∋ Fresh 258      ↦ Fresh 114
 "target"  ∋ Fresh 258      ↦ Fresh 115
-"name"    ∋ Fresh 259      ↦ "eFst"
+"relation"∋ Fresh 259      ↦ "eFst"
 "source"  ∋ Fresh 259      ↦ Fresh 115
 "target"  ∋ Fresh 259      ↦ Fresh 116
-"name"    ∋ Fresh 260      ↦ "eSnd"
+"relation"∋ Fresh 260      ↦ "eSnd"
 "source"  ∋ Fresh 260      ↦ Fresh 115
 "target"  ∋ Fresh 260      ↦ Fresh 117
-"name"    ∋ Fresh 261      ↦ "atom"
+"relation"∋ Fresh 261      ↦ "atom"
 "source"  ∋ Fresh 261      ↦ Fresh 116
 "target"  ∋ Fresh 261      ↦ "tail2"
-"name"    ∋ Fresh 262      ↦ "atom"
+"relation"∋ Fresh 262      ↦ "atom"
 "source"  ∋ Fresh 262      ↦ Fresh 117
 "target"  ∋ Fresh 262      ↦ "continuation"
-"name"    ∋ Fresh 292      ↦ "choice"
+"relation"∋ Fresh 292      ↦ "choice"
 "source"  ∋ Fresh 292      ↦ "Classification"
 "target"  ∋ Fresh 292      ↦ Fresh 266
-"name"    ∋ Fresh 293      ↦ "choice"
+"relation"∋ Fresh 293      ↦ "choice"
 "source"  ∋ Fresh 293      ↦ "ClassificationStatement"
 "target"  ∋ Fresh 293      ↦ Fresh 263
-"name"    ∋ Fresh 294      ↦ "choice"
+"relation"∋ Fresh 294      ↦ "choice"
 "source"  ∋ Fresh 294      ↦ "ConceptList"
 "target"  ∋ Fresh 294      ↦ Fresh 270
-"name"    ∋ Fresh 295      ↦ "choice"
+"relation"∋ Fresh 295      ↦ "choice"
 "source"  ∋ Fresh 295      ↦ "ConceptList"
 "target"  ∋ Fresh 295      ↦ Fresh 273
-"name"    ∋ Fresh 296      ↦ "choice"
+"relation"∋ Fresh 296      ↦ "choice"
 "source"  ∋ Fresh 296      ↦ "ConsConceptList"
 "target"  ∋ Fresh 296      ↦ Fresh 270
-"name"    ∋ Fresh 297      ↦ "choice"
+"relation"∋ Fresh 297      ↦ "choice"
 "source"  ∋ Fresh 297      ↦ "ConsSyntaxList"
 "target"  ∋ Fresh 297      ↦ Fresh 286
-"name"    ∋ Fresh 298      ↦ "choice"
+"relation"∋ Fresh 298      ↦ "choice"
 "source"  ∋ Fresh 298      ↦ "Declaration"
 "target"  ∋ Fresh 298      ↦ Fresh 277
-"name"    ∋ Fresh 299      ↦ "choice"
+"relation"∋ Fresh 299      ↦ "choice"
 "source"  ∋ Fresh 299      ↦ "DeclarationStatement"
 "target"  ∋ Fresh 299      ↦ Fresh 264
-"name"    ∋ Fresh 300      ↦ "choice"
+"relation"∋ Fresh 300      ↦ "choice"
 "source"  ∋ Fresh 300      ↦ "DeclarationType"
 "target"  ∋ Fresh 300      ↦ Fresh 274
-"name"    ∋ Fresh 301      ↦ "choice"
+"relation"∋ Fresh 301      ↦ "choice"
 "source"  ∋ Fresh 301      ↦ "QuotedStringElement"
 "target"  ∋ Fresh 301      ↦ Fresh 290
-"name"    ∋ Fresh 302      ↦ "choice"
+"relation"∋ Fresh 302      ↦ "choice"
 "source"  ∋ Fresh 302      ↦ "RelationElement"
 "target"  ∋ Fresh 302      ↦ Fresh 291
-"name"    ∋ Fresh 303      ↦ "choice"
+"relation"∋ Fresh 303      ↦ "choice"
 "source"  ∋ Fresh 303      ↦ "Statement"
 "target"  ∋ Fresh 303      ↦ Fresh 263
-"name"    ∋ Fresh 304      ↦ "choice"
+"relation"∋ Fresh 304      ↦ "choice"
 "source"  ∋ Fresh 304      ↦ "Statement"
 "target"  ∋ Fresh 304      ↦ Fresh 264
-"name"    ∋ Fresh 305      ↦ "choice"
+"relation"∋ Fresh 305      ↦ "choice"
 "source"  ∋ Fresh 305      ↦ "Statement"
 "target"  ∋ Fresh 305      ↦ Fresh 265
-"name"    ∋ Fresh 306      ↦ "choice"
+"relation"∋ Fresh 306      ↦ "choice"
 "source"  ∋ Fresh 306      ↦ "Syntax"
 "target"  ∋ Fresh 306      ↦ Fresh 280
-"name"    ∋ Fresh 307      ↦ "choice"
+"relation"∋ Fresh 307      ↦ "choice"
 "source"  ∋ Fresh 307      ↦ "SyntaxElement"
 "target"  ∋ Fresh 307      ↦ Fresh 290
-"name"    ∋ Fresh 308      ↦ "choice"
+"relation"∋ Fresh 308      ↦ "choice"
 "source"  ∋ Fresh 308      ↦ "SyntaxElement"
 "target"  ∋ Fresh 308      ↦ Fresh 291
-"name"    ∋ Fresh 309      ↦ "choice"
+"relation"∋ Fresh 309      ↦ "choice"
 "source"  ∋ Fresh 309      ↦ "SyntaxList"
 "target"  ∋ Fresh 309      ↦ Fresh 286
-"name"    ∋ Fresh 310      ↦ "choice"
+"relation"∋ Fresh 310      ↦ "choice"
 "source"  ∋ Fresh 310      ↦ "SyntaxList"
 "target"  ∋ Fresh 310      ↦ Fresh 289
-"name"    ∋ Fresh 311      ↦ "choice"
+"relation"∋ Fresh 311      ↦ "choice"
 "source"  ∋ Fresh 311      ↦ "SyntaxStatement"
 "target"  ∋ Fresh 311      ↦ Fresh 265
-"name"    ∋ Fresh 312      ↦ "nonTerminal"
+"relation"∋ Fresh 312      ↦ "nonTerminal"
 "source"  ∋ Fresh 312      ↦ "classification"
 "target"  ∋ Fresh 312      ↦ "Classification"
-"name"    ∋ Fresh 313      ↦ "nonTerminal"
+"relation"∋ Fresh 313      ↦ "nonTerminal"
 "source"  ∋ Fresh 313      ↦ "concept"
 "target"  ∋ Fresh 313      ↦ "String"
-"name"    ∋ Fresh 314      ↦ "nonTerminal"
+"relation"∋ Fresh 314      ↦ "nonTerminal"
 "source"  ∋ Fresh 314      ↦ "conceptList"
 "target"  ∋ Fresh 314      ↦ "ConceptList"
-"name"    ∋ Fresh 315      ↦ "nonTerminal"
+"relation"∋ Fresh 315      ↦ "nonTerminal"
 "source"  ∋ Fresh 315      ↦ "concepts"
 "target"  ∋ Fresh 315      ↦ "DeclarationType"
-"name"    ∋ Fresh 316      ↦ "nonTerminal"
+"relation"∋ Fresh 316      ↦ "nonTerminal"
 "source"  ∋ Fresh 316      ↦ "declaration"
 "target"  ∋ Fresh 316      ↦ "Declaration"
-"name"    ∋ Fresh 317      ↦ "nonTerminal"
+"relation"∋ Fresh 317      ↦ "nonTerminal"
 "source"  ∋ Fresh 317      ↦ "fst"
 "target"  ∋ Fresh 317      ↦ "String"
-"name"    ∋ Fresh 318      ↦ "nonTerminal"
+"relation"∋ Fresh 318      ↦ "nonTerminal"
 "source"  ∋ Fresh 318      ↦ "head1"
 "target"  ∋ Fresh 318      ↦ "String"
-"name"    ∋ Fresh 319      ↦ "nonTerminal"
+"relation"∋ Fresh 319      ↦ "nonTerminal"
 "source"  ∋ Fresh 319      ↦ "head2"
 "target"  ∋ Fresh 319      ↦ "SyntaxElement"
-"name"    ∋ Fresh 320      ↦ "nonTerminal"
+"relation"∋ Fresh 320      ↦ "nonTerminal"
 "source"  ∋ Fresh 320      ↦ "mainConcept"
 "target"  ∋ Fresh 320      ↦ "String"
-"name"    ∋ Fresh 321      ↦ "nonTerminal"
+"relation"∋ Fresh 321      ↦ "nonTerminal"
 "source"  ∋ Fresh 321      ↦ "qstring"
 "target"  ∋ Fresh 321      ↦ "QuotedString"
-"name"    ∋ Fresh 322      ↦ "nonTerminal"
+"relation"∋ Fresh 322      ↦ "nonTerminal"
 "source"  ∋ Fresh 322      ↦ "relation"
 "target"  ∋ Fresh 322      ↦ "StringAndOrigin"
-"name"    ∋ Fresh 323      ↦ "nonTerminal"
+"relation"∋ Fresh 323      ↦ "nonTerminal"
 "source"  ∋ Fresh 323      ↦ "relationName"
 "target"  ∋ Fresh 323      ↦ "UnquotedString"
-"name"    ∋ Fresh 324      ↦ "nonTerminal"
+"relation"∋ Fresh 324      ↦ "nonTerminal"
 "source"  ∋ Fresh 324      ↦ "snd"
 "target"  ∋ Fresh 324      ↦ "String"
-"name"    ∋ Fresh 325      ↦ "nonTerminal"
+"relation"∋ Fresh 325      ↦ "nonTerminal"
 "source"  ∋ Fresh 325      ↦ "syntax"
 "target"  ∋ Fresh 325      ↦ "Syntax"
-"name"    ∋ Fresh 326      ↦ "nonTerminal"
+"relation"∋ Fresh 326      ↦ "nonTerminal"
 "source"  ∋ Fresh 326      ↦ "syntaxList"
 "target"  ∋ Fresh 326      ↦ "SyntaxList"
-"name"    ∋ Fresh 327      ↦ "nonTerminal"
+"relation"∋ Fresh 327      ↦ "nonTerminal"
 "source"  ∋ Fresh 327      ↦ "tail1"
 "target"  ∋ Fresh 327      ↦ "ConceptList"
-"name"    ∋ Fresh 328      ↦ "nonTerminal"
+"relation"∋ Fresh 328      ↦ "nonTerminal"
 "source"  ∋ Fresh 328      ↦ "tail2"
 "target"  ∋ Fresh 328      ↦ "SyntaxList"
-"name"    ∋ Fresh 329      ↦ "recogniser"
+"relation"∋ Fresh 329      ↦ "recogniser"
 "source"  ∋ Fresh 329      ↦ Fresh 263
 "target"  ∋ Fresh 329      ↦ "classification"
-"name"    ∋ Fresh 330      ↦ "recogniser"
+"relation"∋ Fresh 330      ↦ "recogniser"
 "source"  ∋ Fresh 330      ↦ Fresh 264
 "target"  ∋ Fresh 330      ↦ "declaration"
-"name"    ∋ Fresh 331      ↦ "recogniser"
+"relation"∋ Fresh 331      ↦ "recogniser"
 "source"  ∋ Fresh 331      ↦ Fresh 265
 "target"  ∋ Fresh 331      ↦ "syntax"
-"name"    ∋ Fresh 332      ↦ "continuation"
+"relation"∋ Fresh 332      ↦ "continuation"
 "source"  ∋ Fresh 332      ↦ Fresh 266
 "target"  ∋ Fresh 332      ↦ Fresh 267
-"name"    ∋ Fresh 333      ↦ "recogniser"
+"relation"∋ Fresh 333      ↦ "recogniser"
 "source"  ∋ Fresh 333      ↦ Fresh 266
 "target"  ∋ Fresh 333      ↦ "\"CLASSIFY\""
-"name"    ∋ Fresh 334      ↦ "continuation"
+"relation"∋ Fresh 334      ↦ "continuation"
 "source"  ∋ Fresh 334      ↦ Fresh 267
 "target"  ∋ Fresh 334      ↦ Fresh 268
-"name"    ∋ Fresh 335      ↦ "recogniser"
+"relation"∋ Fresh 335      ↦ "recogniser"
 "source"  ∋ Fresh 335      ↦ Fresh 267
 "target"  ∋ Fresh 335      ↦ "mainConcept"
-"name"    ∋ Fresh 336      ↦ "continuation"
+"relation"∋ Fresh 336      ↦ "continuation"
 "source"  ∋ Fresh 336      ↦ Fresh 268
 "target"  ∋ Fresh 336      ↦ Fresh 269
-"name"    ∋ Fresh 337      ↦ "recogniser"
+"relation"∋ Fresh 337      ↦ "recogniser"
 "source"  ∋ Fresh 337      ↦ Fresh 268
 "target"  ∋ Fresh 337      ↦ "\"IS\""
-"name"    ∋ Fresh 338      ↦ "recogniser"
+"relation"∋ Fresh 338      ↦ "recogniser"
 "source"  ∋ Fresh 338      ↦ Fresh 269
 "target"  ∋ Fresh 338      ↦ "conceptList"
-"name"    ∋ Fresh 339      ↦ "continuation"
+"relation"∋ Fresh 339      ↦ "continuation"
 "source"  ∋ Fresh 339      ↦ Fresh 270
 "target"  ∋ Fresh 339      ↦ Fresh 271
-"name"    ∋ Fresh 340      ↦ "recogniser"
+"relation"∋ Fresh 340      ↦ "recogniser"
 "source"  ∋ Fresh 340      ↦ Fresh 270
 "target"  ∋ Fresh 340      ↦ "head1"
-"name"    ∋ Fresh 341      ↦ "continuation"
+"relation"∋ Fresh 341      ↦ "continuation"
 "source"  ∋ Fresh 341      ↦ Fresh 271
 "target"  ∋ Fresh 341      ↦ Fresh 272
-"name"    ∋ Fresh 342      ↦ "recogniser"
+"relation"∋ Fresh 342      ↦ "recogniser"
 "source"  ∋ Fresh 342      ↦ Fresh 271
 "target"  ∋ Fresh 342      ↦ "\"/\\\\\""
-"name"    ∋ Fresh 343      ↦ "recogniser"
+"relation"∋ Fresh 343      ↦ "recogniser"
 "source"  ∋ Fresh 343      ↦ Fresh 272
 "target"  ∋ Fresh 343      ↦ "tail1"
-"name"    ∋ Fresh 344      ↦ "recogniser"
+"relation"∋ Fresh 344      ↦ "recogniser"
 "source"  ∋ Fresh 344      ↦ Fresh 273
 "target"  ∋ Fresh 344      ↦ "head1"
-"name"    ∋ Fresh 345      ↦ "continuation"
+"relation"∋ Fresh 345      ↦ "continuation"
 "source"  ∋ Fresh 345      ↦ Fresh 274
 "target"  ∋ Fresh 345      ↦ Fresh 275
-"name"    ∋ Fresh 346      ↦ "recogniser"
+"relation"∋ Fresh 346      ↦ "recogniser"
 "source"  ∋ Fresh 346      ↦ Fresh 274
 "target"  ∋ Fresh 346      ↦ "fst"
-"name"    ∋ Fresh 347      ↦ "continuation"
+"relation"∋ Fresh 347      ↦ "continuation"
 "source"  ∋ Fresh 347      ↦ Fresh 275
 "target"  ∋ Fresh 347      ↦ Fresh 276
-"name"    ∋ Fresh 348      ↦ "recogniser"
+"relation"∋ Fresh 348      ↦ "recogniser"
 "source"  ∋ Fresh 348      ↦ Fresh 275
 "target"  ∋ Fresh 348      ↦ "\"*\""
-"name"    ∋ Fresh 349      ↦ "recogniser"
+"relation"∋ Fresh 349      ↦ "recogniser"
 "source"  ∋ Fresh 349      ↦ Fresh 276
 "target"  ∋ Fresh 349      ↦ "snd"
-"name"    ∋ Fresh 350      ↦ "continuation"
+"relation"∋ Fresh 350      ↦ "continuation"
 "source"  ∋ Fresh 350      ↦ Fresh 277
 "target"  ∋ Fresh 350      ↦ Fresh 278
-"name"    ∋ Fresh 351      ↦ "recogniser"
+"relation"∋ Fresh 351      ↦ "recogniser"
 "source"  ∋ Fresh 351      ↦ Fresh 277
 "target"  ∋ Fresh 351      ↦ "relation"
-"name"    ∋ Fresh 352      ↦ "continuation"
+"relation"∋ Fresh 352      ↦ "continuation"
 "source"  ∋ Fresh 352      ↦ Fresh 278
 "target"  ∋ Fresh 352      ↦ Fresh 279
-"name"    ∋ Fresh 353      ↦ "recogniser"
+"relation"∋ Fresh 353      ↦ "recogniser"
 "source"  ∋ Fresh 353      ↦ Fresh 278
 "target"  ∋ Fresh 353      ↦ "\"::\""
-"name"    ∋ Fresh 354      ↦ "recogniser"
+"relation"∋ Fresh 354      ↦ "recogniser"
 "source"  ∋ Fresh 354      ↦ Fresh 279
 "target"  ∋ Fresh 354      ↦ "concepts"
-"name"    ∋ Fresh 355      ↦ "continuation"
+"relation"∋ Fresh 355      ↦ "continuation"
 "source"  ∋ Fresh 355      ↦ Fresh 280
 "target"  ∋ Fresh 355      ↦ Fresh 281
-"name"    ∋ Fresh 356      ↦ "recogniser"
+"relation"∋ Fresh 356      ↦ "recogniser"
 "source"  ∋ Fresh 356      ↦ Fresh 280
 "target"  ∋ Fresh 356      ↦ "\"VIEW\""
-"name"    ∋ Fresh 357      ↦ "continuation"
+"relation"∋ Fresh 357      ↦ "continuation"
 "source"  ∋ Fresh 357      ↦ Fresh 281
 "target"  ∋ Fresh 357      ↦ Fresh 282
-"name"    ∋ Fresh 358      ↦ "recogniser"
+"relation"∋ Fresh 358      ↦ "recogniser"
 "source"  ∋ Fresh 358      ↦ Fresh 281
 "target"  ∋ Fresh 358      ↦ "concept"
-"name"    ∋ Fresh 359      ↦ "continuation"
+"relation"∋ Fresh 359      ↦ "continuation"
 "source"  ∋ Fresh 359      ↦ Fresh 282
 "target"  ∋ Fresh 359      ↦ Fresh 283
-"name"    ∋ Fresh 360      ↦ "recogniser"
+"relation"∋ Fresh 360      ↦ "recogniser"
 "source"  ∋ Fresh 360      ↦ Fresh 282
 "target"  ∋ Fresh 360      ↦ "\"=\""
-"name"    ∋ Fresh 361      ↦ "continuation"
+"relation"∋ Fresh 361      ↦ "continuation"
 "source"  ∋ Fresh 361      ↦ Fresh 283
 "target"  ∋ Fresh 361      ↦ Fresh 284
-"name"    ∋ Fresh 362      ↦ "recogniser"
+"relation"∋ Fresh 362      ↦ "recogniser"
 "source"  ∋ Fresh 362      ↦ Fresh 283
 "target"  ∋ Fresh 362      ↦ "\"[\""
-"name"    ∋ Fresh 363      ↦ "continuation"
+"relation"∋ Fresh 363      ↦ "continuation"
 "source"  ∋ Fresh 363      ↦ Fresh 284
 "target"  ∋ Fresh 363      ↦ Fresh 285
-"name"    ∋ Fresh 364      ↦ "recogniser"
+"relation"∋ Fresh 364      ↦ "recogniser"
 "source"  ∋ Fresh 364      ↦ Fresh 284
 "target"  ∋ Fresh 364      ↦ "syntaxList"
-"name"    ∋ Fresh 365      ↦ "recogniser"
+"relation"∋ Fresh 365      ↦ "recogniser"
 "source"  ∋ Fresh 365      ↦ Fresh 285
 "target"  ∋ Fresh 365      ↦ "\"]\""
-"name"    ∋ Fresh 366      ↦ "continuation"
+"relation"∋ Fresh 366      ↦ "continuation"
 "source"  ∋ Fresh 366      ↦ Fresh 286
 "target"  ∋ Fresh 366      ↦ Fresh 287
-"name"    ∋ Fresh 367      ↦ "recogniser"
+"relation"∋ Fresh 367      ↦ "recogniser"
 "source"  ∋ Fresh 367      ↦ Fresh 286
 "target"  ∋ Fresh 367      ↦ "head2"
-"name"    ∋ Fresh 368      ↦ "continuation"
+"relation"∋ Fresh 368      ↦ "continuation"
 "source"  ∋ Fresh 368      ↦ Fresh 287
 "target"  ∋ Fresh 368      ↦ Fresh 288
-"name"    ∋ Fresh 369      ↦ "recogniser"
+"relation"∋ Fresh 369      ↦ "recogniser"
 "source"  ∋ Fresh 369      ↦ Fresh 287
 "target"  ∋ Fresh 369      ↦ "\",\""
-"name"    ∋ Fresh 370      ↦ "recogniser"
+"relation"∋ Fresh 370      ↦ "recogniser"
 "source"  ∋ Fresh 370      ↦ Fresh 288
 "target"  ∋ Fresh 370      ↦ "tail2"
-"name"    ∋ Fresh 371      ↦ "recogniser"
+"relation"∋ Fresh 371      ↦ "recogniser"
 "source"  ∋ Fresh 371      ↦ Fresh 289
 "target"  ∋ Fresh 371      ↦ "head2"
-"name"    ∋ Fresh 372      ↦ "recogniser"
+"relation"∋ Fresh 372      ↦ "recogniser"
 "source"  ∋ Fresh 372      ↦ Fresh 290
 "target"  ∋ Fresh 372      ↦ "qstring"
-"name"    ∋ Fresh 373      ↦ "recogniser"
+"relation"∋ Fresh 373      ↦ "recogniser"
 "source"  ∋ Fresh 373      ↦ Fresh 291
 "target"  ∋ Fresh 373      ↦ "relationName"
+
+
+asParser
+parser
+Classification := "CLASSIFY", "mainConcept" "String", "IS", "conceptList" "ConceptList"
+ClassificationStatement := "classification" "Classification"
+ConceptList := "head1" "String", "/\\", "tail1" "ConceptList"
+             | "head1" "String"
+ConsConceptList := "head1" "String", "/\\", "tail1" "ConceptList"
+ConsSyntaxList := "head2" "SyntaxElement", ",", "tail2" "SyntaxList"
+Declaration := "relation" "StringAndOrigin", "::", "concepts" "DeclarationType"
+DeclarationStatement := "declaration" "Declaration"
+DeclarationType := "fst" "String", "*", "snd" "String"
+QuotedStringElement := "qstring" "QuotedString"
+RelationElement := "relationName" "UnquotedString"
+Statement := "classification" "Classification"
+           | "declaration" "Declaration"
+           | "syntax" "Syntax"
+Syntax := "VIEW", "concept" "String", "=", "[", "syntaxList" "SyntaxList", "]"
+SyntaxElement := "qstring" "QuotedString"
+               | "relationName" "UnquotedString"
+SyntaxList := "head2" "SyntaxElement", ",", "tail2" "SyntaxList"
+            | "head2" "SyntaxElement"
+SyntaxStatement := "syntax" "Syntax"
 

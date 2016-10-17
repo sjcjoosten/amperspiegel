@@ -110,14 +110,17 @@ commands = [ ( "i"
                          (x:xs) -> (x,init xs,last xs)
                    in do v<- apply rsys from
                          overwrite targ (TR v)
-               )
-             )
+               ))
            , ( "collect"
-             , ( "collect the current state of amperspiegel and put the result into the population(s) named as argument"
+             , ( "collect the current state of amperspiegel and put the result into the population"
                , oneArg "collect"
                    (\arg -> overwrite arg . popFromLst . popsToPop =<< get)
-               )
-             )
+               ))
+           , ( "distribute"
+             , ( "set the population as the current state of amperspiegel"
+               , oneArg "distribute"
+                   (\arg -> put =<< makePops =<< retrieve arg)
+               ))
            ]
            where
              apply :: Text -> [Text] -> StateT (Map Text Population) IO FullStore
@@ -167,13 +170,23 @@ commands = [ ( "i"
 unFresh :: Monad m => StateT Int m a -> m a
 unFresh v = evalStateT v 0
 
+makePops :: forall f. (MonadFail f) => Population -> f (Map Text Population)
+makePops (TR ts)
+ = (fmap popFromLst . fromListWith (++)) <$> traverse toTripList (getRel ts "contains")
+ where asTriple :: Atom Text -> f (Triple (Atom Text) (Atom Text))
+       asTriple trp = Triple <$> forOne "relation" ts "relation" trp
+                             <*> forOne "source"   ts "source"   trp
+                             <*> forOne "target"   ts "target"   trp
+       toTripList :: (Atom Text, [Atom Text]) -> f (Text, [(Triple (Atom Text) (Atom Text))])
+       toTripList (p,tgt) = (,) <$> deAtomize p <*> traverse asTriple tgt
+
 popsToPop :: Map Text Population -> [Triple (Atom Text) (Atom Text)]
 popsToPop = concat . runIdentity . unFresh . traverse mkContains . Map.toList
   where mkContains (nm,p)
           = do tps <- freshenUp freshTokenSt (getList p)
                concat <$> (traverse (\(Triple n s t) ->
                                  (\fr -> [ Triple "contains" (makeQuoted nm) fr
-                                         , Triple "name" fr n
+                                         , Triple "relation" fr n
                                          , Triple "source" fr s
                                          , Triple "target" fr t
                                          ]) <$> freshTokenSt) tps)
