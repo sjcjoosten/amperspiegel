@@ -1,0 +1,22 @@
+"cur"   ∋ Fresh 0 ↦ Fresh 0
+"next"  ∋ Fresh 0 ↦ Fresh 1
+"string"∋ Fresh 0 ↦ "\"collect\""
+"first" ∋ Fresh 1 ↦ Fresh 4
+"next"  ∋ Fresh 1 ↦ Fresh 2
+"string"∋ Fresh 1 ↦ "\"show\""
+"first" ∋ Fresh 2 ↦ Fresh 5
+"next"  ∋ Fresh 2 ↦ Fresh 3
+"string"∋ Fresh 2 ↦ "\"some\""
+"first" ∋ Fresh 3 ↦ Fresh 7
+"string"∋ Fresh 3 ↦ "\"not-implemeneted\""
+"string"∋ Fresh 4 ↦ "\"switches\""
+"next"  ∋ Fresh 5 ↦ Fresh 6
+"string"∋ Fresh 5 ↦ "\"very\""
+"string"∋ Fresh 6 ↦ "\"strange\""
+"string"∋ Fresh 7 ↦ "\"switches\""
+
+"cur"   ∋ Fresh 0 ↦ Fresh 0
+"first" ∋ Fresh 0 ↦ Fresh 1
+"string"∋ Fresh 0 ↦ "\"show\""
+"string"∋ Fresh 1 ↦ "\"switches\""
+
