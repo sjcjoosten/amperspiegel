@@ -4,8 +4,7 @@ import Helpers
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),tripleStoreRelations,tripleStoreToParseRules,fmap23)
 import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
-import ApplyRuleSet(applySystem)
-import RuleSetFromTripleStore(ruleSetRelations,tripleStoreToRuleSet)
+import RuleSet(applySystem,ruleSetRelations,tripleStoreToRuleSet,Rule(..),Expression(..))
 import System.IO (stderr)
 import System.Exit (exitFailure)
 import System.Console.Terminal.Size (size,width)
@@ -172,11 +171,11 @@ unFresh v = evalStateT v 0
 
 makePops :: forall f. (MonadFail f) => Population -> f (Map Text Population)
 makePops (TR ts)
- = (fmap popFromLst . fromListWith (++)) <$> traverse toTripList (getRel ts "contains")
+ = fmap popFromLst . fromListWith (++) <$> traverse toTripList (getRel ts "contains")
  where asTriple :: Atom Text -> f (Triple (Atom Text) (Atom Text))
-       asTriple trp = Triple <$> forOne "relation" ts "relation" trp
-                             <*> forOne "source"   ts "source"   trp
-                             <*> forOne "target"   ts "target"   trp
+       asTriple trp = Triple <$> forOne (Helpers.fail "'relation' must be a function") ts "relation" trp pure
+                             <*> forOne (Helpers.fail "'source' must be a function")   ts "source"   trp pure
+                             <*> forOne (Helpers.fail "'target' must be a function")   ts "target"   trp pure
        toTripList :: (Atom Text, [Atom Text]) -> f (Text, [(Triple (Atom Text) (Atom Text))])
        toTripList (p,tgt) = (,) <$> deAtomize p <*> traverse asTriple tgt
 
@@ -250,14 +249,14 @@ retrieve s
 getParser :: Text -> StateT (Map Text Population) IO FullParser
 getParser s
  = do mp <- retrieve s
-      unAtomize =<< tripleStoreToParseRules pure (getPop mp)
+      unAtomize =<< tripleStoreToParseRules (Helpers.fail "tripleStoreToParseRules") pure (getPop mp)
  where unAtomize :: [ParseRule (Atom Text) (Atom Text) (Atom Text)] -> StateT (Map Text Population) IO FullParser
        unAtomize = traverse (fmap23 deAtomize deAtomize)
 
 getRules :: Text -> StateT (Map Text Population) IO FullRules
 getRules s
  = do mp <- retrieve s
-      tripleStoreToRuleSet return (getPop mp)
+      tripleStoreToRuleSet (Helpers.fail "tripleStoreToRuleSet") pure (getPop mp)
     
 finishError :: Text -> IO a
 finishError s = hPutStrLn stderr s >> exitFailure

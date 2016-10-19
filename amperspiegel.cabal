@@ -15,10 +15,9 @@ cabal-version:       >=1.10
 
 executable amperspiegel
   main-is:             amperspiegel.hs
-  other-modules:       ApplyRuleSet,
+  other-modules:       RuleSet,
                        Helpers,
                        ParseRulesFromTripleStore,
-                       RuleSetFromTripleStore,
                        TokenAwareParser
   other-extensions:    BangPatterns, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts, TypeFamilies, RankNTypes, DeriveFoldable, TypeSynonymInstances
   build-depends:       base >=4.9 && <4.10,

@@ -19,14 +19,14 @@ deAtomize :: (MonadFail m,Show a) => Atom a -> m a
 deAtomize (UserAtom v) = pure$ runToken v
 deAtomize x = Helpers.fail ("Don't know what to do with the atom: "++show x)
 
-freshenUp :: (Monad m)
+freshenUp :: (Applicative m)
           => m (Atom y)
           -> [Triple (Atom y) (Atom y)]
           -> m [Triple (Atom y) (Atom y)]
 freshenUp fg trs
   = (\fr -> let f = \case{Fresh i -> IntMap.findWithDefault (Fresh 0) i fr;v->v}
             in [Triple (f r) (f a) (f b) | Triple r a b <-trs])
-    <$> sequence (IntMap.fromList [ (i,fg) | Triple r a b <-trs
+    <$> sequenceA (IntMap.fromList [ (i,fg) | Triple r a b <-trs
                                            , Fresh i <- [r,a,b] ])
 
 instance Show a => Show (Atom a) where
