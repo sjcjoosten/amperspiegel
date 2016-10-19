@@ -27,9 +27,9 @@ already installed with ghc.
 # 
 
 I put a GPL-3 license to get you started on using and modifying this software.
-For the license see the file LICENSE. I am the only contributer (as of Sept 2016).
-This means that if you need a less restrictive license (like BSD / Apache 2.0) you
-should just contact me, I'll probably be open to it.
+For the license see the file LICENSE.
+Since I am the only contributer, you can ask me for a less restrictive license (like BSD / Apache 2.0) if you need one.
+I'll probably be open to giving it to you.
 
 #
 # GETTING STARTED
@@ -42,22 +42,28 @@ For an overview of all switches, use:
 amperspiegel -h
 ``
 
+After having done all this, send me an email (or a message in github, or ..) and tell me what you think. I like knowing who is trying out my software. Don't be shy: I'll remove this notice once I'm getting too many such emails.
+
 #
 # Implementation notes
 #
 
 A state assigns a population to each variable.
 Initially, these are the assignments:
-  "parser" gets assigned a population describing the built-in parser
-  "asParser" gets assigned that for the built-in ruleList
-all other variables get assigned the empty population, in particular:
-  "rules", which stands for rules that can be applied to a population
-  "population", which stands for the population we're working on currently
+
+ - "parser" gets assigned a population describing the built-in parser
+ - "asParser" gets assigned that for the built-in ruleList
+ - possibly some others, use -list to see them
+
+All other variables get assigned the empty population by default, the following in particular:
+
+  - "rules", which stands for rules that can be applied to a population
+  - "population", which stands for the population we're working on currently
     Consequently, most switches get "population" as default argument
 
-The switch -i uses "parser" as a parser to parse each of its arguments  (resulting in a list of populations)
-Next, the union over the resulting list of populations is taken         (resulting in a population)
-To this population, "rules" is applied as a rule-set                    (resulting in a population)
+The switch -i uses "parser" as a parser to parse each of its arguments
+Next, the union over the resulting list of populations is taken
+To this population, "rules" is applied as a rule-set
 This result is put in "population" (Resulting in a state)
 
 The switch -asParser applies "asParser" on "population", then filters it.
@@ -65,9 +71,6 @@ Consequently, "population" only contains stuff relevant for parser and rules.
 It then copies "population" to "parser" and "rules".
 
 Switches -count and -show displays stuff about a variable.
-That's it! Not much else is used in this demo.
-
-The switch -apply from below already works. The switch -filter does not.
 
 ## Future work
  
