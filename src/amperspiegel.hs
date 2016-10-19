@@ -14,7 +14,7 @@ import qualified Data.Map as Map
 main :: IO ()
 main = do as <- getChunks =<< getArgs
           evalStateT (forM_ as (uncurry doCommand))
-                     initialstate
+                     (initialstate as)
        where getChunks' [] = ([],[])
              getChunks' (a:as)
                = let (res,spl) = getChunks' as
@@ -262,11 +262,28 @@ getRules s
 finishError :: Text -> IO a
 finishError s = hPutStrLn stderr s >> exitFailure
 
--- TODO: think of a way to get this out of the source code.
-initialstate :: Map Text Population
-initialstate
+selfZip :: Monad m => [a] -> StateT Int m [((a, Atom y), Maybe (Atom y))]
+selfZip lst = do l <- traverse (\v -> (,) v <$> freshTokenSt) lst
+                 return (zip l (Nothing:map (Just . snd) l))
+
+parseSwitch :: Monad m => (((a, [a]), Atom a), Maybe (Atom a))
+                       -> StateT Int m [Triple (Atom Text) (Atom a)]
+parseSwitch o = (parseArgument "cur" id (makeQuoted . fst) o ++)
+              . concatMap (parseArgument "first" (const (snd (fst o))) makeQuoted)
+              <$> selfZip (snd (fst (fst o)))
+ where parseArgument fs c q (arg,prev) 
+          = [ case prev of Nothing -> Triple fs (c (snd arg)) (snd arg)
+                           Just v -> Triple "next" v (snd arg)
+            , Triple "string" (snd arg) (q (fst arg)) ]
+
+-- TODO: think of a way to get this out of the source code
+initialstate :: [(Text,[Text])] -> Map Text Population
+initialstate switches
   = fromListWith const
-    [ ( "parser"
+    [ ( "switches" , popFromLst . runIdentity . unFresh . fmap concat $
+                     do sw <- selfZip switches
+                        traverse parseSwitch sw )
+    , ( "parser"
       , popFromLst
             [ "choice"      ∋ "Classification"          ↦ Fresh 110
             , "choice"      ∋ "ClassificationStatement" ↦ Fresh 98
