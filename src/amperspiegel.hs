@@ -36,7 +36,7 @@ type FullRules = [Rule (Atom Text) (Atom Text)]
 type FullStore = TripleStore (Atom Text) (Atom Text)
 type SpiegelState a = StateT (Map Text Population) IO a
 
-doCommand :: Text -> [Text] -> StateT (Map Text Population) IO ()
+doCommand :: Text -> [Text] -> SpiegelState ()
 doCommand cmd
  = findWithDefault
        (\_ -> lift$ finishError ("Not a valid command: "<>cmd<>"\nGet a list of commands using: -h"))
@@ -44,26 +44,24 @@ doCommand cmd
  where lkp' = fmap snd (fromListWith const commands)
 
 showUnexpected :: Token (LinePos Text, Bool)
-             -> String -> Maybe String
-             -> StateT (Map Text Population) IO
-                  (m [Triple (Atom Text) (Atom Text)])
+               -> Text -> Maybe Text
+               -> Either Text x
 showUnexpected tk expc mby
- = liftIO . finishError $
-   "Parse error, unexpected "<> pack (showPs tk)<>"\n  Expecting: "<>pack expc
-     <> (case mby of {Nothing -> "";Just v ->"\n  mby(TODO: fix me into something more descriptive):"<>pack v})
- where showPs = showPos unpack . fst . runToken
+ = Left $ "Parse error, unexpected "<> (showPs tk)<>"\n  Expecting: "<> expc
+     <> (case mby of {Nothing -> "";Just v ->"\n  mby(TODO: fix me into something more descriptive):"<> v})
+ where showPs = showPos id . fst . runToken
 
-commands :: [ ( Text
-                , ( Text
-                  , [Text]
-                     -> StateT (Map Text (Population))
-                               IO ()
-                  ) ) ]
+parse :: (Monad m, IsString z, Ord z, Show z)
+      => [ParseRule (Atom Text) Text z] -> Text
+      -> SpiegelState (StateT Int m [Triple (Atom Text) (Atom Text)])
+parse p = eitherError . parseText id (parseListOf builtIns (p,"Statement")) showUnexpected
+
+commands :: [ ( Text, ( Text, [Text] -> SpiegelState () ) ) ]
 commands = [ ( "i"
              , ( "parse file as input"
                , (\files -> do txts <- lift$ mapM (Helpers.readFile . unpack) files
                                p <- getParser "parser"
-                               trps <- traverse (parseText show (parseListOf builtIns (p,"Statement")) showUnexpected) txts
+                               trps <- traverse (parse p) txts
                                overwrite "population" =<< unFresh (popFromLst . mconcat <$> sequence trps)
                                res <- apply "rules" ["population"]
                                overwrite "population" (TR res)
@@ -118,11 +116,11 @@ commands = [ ( "i"
            , ( "distribute"
              , ( "set the population as the current state of amperspiegel"
                , oneArg "distribute"
-                   (\arg -> put =<< makePops =<< retrieve arg)
+                   (\arg -> put =<< eitherError . makePops =<< retrieve arg)
                ))
            ]
            where
-             apply :: Text -> [Text] -> StateT (Map Text Population) IO FullStore
+             apply :: Text -> [Text] -> SpiegelState FullStore
              apply rsys from
                    = do pops <- mapM (fmap getList . retrieve) from
                         let pop = mconcat <$> traverse (freshenUp freshTokenSt) pops
@@ -169,15 +167,16 @@ commands = [ ( "i"
 unFresh :: Monad m => StateT Int m a -> m a
 unFresh v = evalStateT v 0
 
-makePops :: forall f. (MonadFail f) => Population -> f (Map Text Population)
+makePops :: Population -> Either Text (Map Text Population)
 makePops (TR ts)
  = fmap popFromLst . fromListWith (++) <$> traverse toTripList (getRel ts "contains")
- where asTriple :: Atom Text -> f (Triple (Atom Text) (Atom Text))
-       asTriple trp = Triple <$> forOne (Helpers.fail "'relation' must be a function") ts "relation" trp pure
-                             <*> forOne (Helpers.fail "'source' must be a function")   ts "source"   trp pure
-                             <*> forOne (Helpers.fail "'target' must be a function")   ts "target"   trp pure
-       toTripList :: (Atom Text, [Atom Text]) -> f (Text, [(Triple (Atom Text) (Atom Text))])
-       toTripList (p,tgt) = (,) <$> deAtomize p <*> traverse asTriple tgt
+ where asTriple :: Atom Text -> Either Text (Triple (Atom Text) (Atom Text))
+       asTriple trp = Triple <$> forOne (Left "'relation' must be a function") ts "relation" trp pure
+                             <*> forOne (Left "'source' must be a function")   ts "source"   trp pure
+                             <*> forOne (Left "'target' must be a function")   ts "target"   trp pure
+       toTripList :: (Atom Text, [Atom Text]) -> Either Text (Text, [(Triple (Atom Text) (Atom Text))])
+       toTripList (p,tgt) = (,) <$> (case deAtomize p of {Left v -> Left (showT v);Right v -> Right v})
+                                <*> traverse asTriple tgt
 
 popsToPop :: Map Text Population -> [Triple (Atom Text) (Atom Text)]
 popsToPop = concat . runIdentity . unFresh . traverse mkContains . Map.toList
@@ -246,17 +245,21 @@ retrieve s
  = do mp <- get
       return $ findWithDefault (popFromLst []) s mp
 
-getParser :: Text -> StateT (Map Text Population) IO FullParser
+getParser :: Text -> SpiegelState FullParser
 getParser s
  = do mp <- retrieve s
-      unAtomize =<< tripleStoreToParseRules (Helpers.fail "tripleStoreToParseRules") pure (getPop mp)
- where unAtomize :: [ParseRule (Atom Text) (Atom Text) (Atom Text)] -> StateT (Map Text Population) IO FullParser
-       unAtomize = traverse (fmap23 deAtomize deAtomize)
+      unAtomize =<< tripleStoreToParseRules (liftIO$finishError "TripleStoreToParseRules could not make a parser out of the population") pure (getPop mp)
+ where unAtomize :: [ParseRule (Atom Text) (Atom Text) (Atom Text)] -> SpiegelState FullParser
+       unAtomize = traverse (eitherError . fmap23 deAtomize deAtomize)
 
-getRules :: Text -> StateT (Map Text Population) IO FullRules
+eitherError ::(MonadIO m, Show t) => Either t a -> m a
+eitherError (Left a) = liftIO$finishError ("error: "<>showT a)
+eitherError (Right a) = pure a
+
+getRules :: Text -> SpiegelState FullRules
 getRules s
  = do mp <- retrieve s
-      tripleStoreToRuleSet (Helpers.fail "tripleStoreToRuleSet") pure (getPop mp)
+      tripleStoreToRuleSet (liftIO$finishError "tripleStoreToRuleSet could not make a set of rules out of the population") pure (getPop mp)
     
 finishError :: Text -> IO a
 finishError s = hPutStrLn stderr s >> exitFailure

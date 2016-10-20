@@ -2,11 +2,9 @@
 module Helpers ((↦),(∋),TripleStore,Triple(..),findInMap,forEachOf,lkpRight,insertTriple
  ,restrictTo, unionTS,showT,forOne,forOneOrNone,getRel
  ,twords,tlength,tnull,ifThenJust
- ,module Control.Monad.Identity,module Data.Monoid,module Data.Map,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Fail, module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
+ ,module Control.Monad.Identity,module Data.Monoid,module Data.Map,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
  ,Set,difference) where
-import Control.Monad.Fail as Fail
 import Control.Applicative
-import Control.Monad
 import Control.Monad.Fix
 import Data.Monoid
 import Data.Foldable

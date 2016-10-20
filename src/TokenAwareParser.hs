@@ -6,6 +6,7 @@ import Data.Map as Map
 import Data.List(intercalate)
 import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),traverseStrings)
 import Helpers
+
 data Atom a
  = UserAtom (Token a)
  | Position Int Int
@@ -15,9 +16,9 @@ data Atom a
 makeQuoted :: a -> Atom a
 makeQuoted = UserAtom . QuotedString
 
-deAtomize :: (MonadFail m,Show a) => Atom a -> m a
+deAtomize :: Atom a -> Either (Atom a) a
 deAtomize (UserAtom v) = pure$ runToken v
-deAtomize x = Helpers.fail ("Don't know what to do with the atom: "++show x)
+deAtomize x = Left x
 
 freshenUp :: (Applicative m)
           => m (Atom y)
@@ -54,21 +55,21 @@ parseListOf :: forall y x z m. (Eq y,Show y,Scannable y,Ord z
             => [(z, Token (LinePos y, Bool) -> Maybe (StateT Int m (Atom (LinePos y), [Triple x (Atom (LinePos y))])))]
             -> ([ParseRule x y z], z)
             -> Either y (y -> ( ( [StateT Int m [Triple x (Atom y)]]
-                                , Report String [Token (LinePos y, Bool)] )
+                                , Report Text [Token (LinePos y, Bool)] )
                               ,LinePos (ScanResult y))
                         )
 parseListOf bi (pg,ps)
  = do pg'<-traverse (traverseStrings stringOp) pg
       Right$ scanPartitioned
             (first (Prelude.map (fmap (fmap (fmap (fmap runLinePos))))) .
-             fullParses (parser (readListGrammar show exactMatch' bi freshTokenSt (\a b c -> [Triple a b c]) (pg',ps))))
+             fullParses (parser (readListGrammar showT exactMatch' bi freshTokenSt (\a b c -> [Triple a b c]) (pg',ps))))
  where
   stringOp v
     = case scan (LinePos 0 0 v) of
           (r,LinePos _ _ Success) -> Right (v,Prelude.map (fmap (first runLinePos))
                                    (partitionTokens False r))
           _ -> Left v
-  exactMatch' (b,t) = exactMatch (\a->terminal a <?> "Token "++show b) t
+  exactMatch' (b,t) = exactMatch (\a->terminal a <?> "Token "<>showT b) t
 
 builtIns :: (IsString x, IsString y, Applicative m)
          => [(x, Token (LinePos s, Bool) -> Maybe
@@ -86,12 +87,12 @@ builtIns
 
 -- Convert something scannable to a set of triples
 -- convenient way to use the parser
-parseText :: forall y a m b t t1. (MonadFail m, Show y)
-          => (b -> String) -> Either y (t -> (([a], Report String [t1]), LinePos (ScanResult b)))
-          -> (t1 -> String -> Maybe String -> m a) -> t -> m a
+parseText :: forall y a b t t1. (Show y)
+          => (b -> Text) -> Either y (t -> (([a], Report Text [t1]), LinePos (ScanResult b)))
+          -> (t1 -> Text -> Maybe Text -> Either Text a) -> t -> Either Text a
 parseText showC parseListOf' showUnexpected t
   = case parseListOf' of
-      Left v -> Helpers.fail ("Invalid parser. Not a valid token: "++show v)
+      Left v -> Left ("Invalid parser. Not a valid token: "<>showT v)
       Right v -> case v t of{
       ( ( [r] -- returns all possible parses. A succes means there is just one.
         , Report _ _ []) -- no tokens are left to be scanned
@@ -101,10 +102,10 @@ parseText showC parseListOf' showUnexpected t
       ,scanResult -- regardless of the scanner, if there were tokens left to be scanned, the error should be about the unexpected token
       ) -> showUnexpected u (showTokens e) $ (showPos id <$> (traverse scanError scanResult));
       ((p,_),scanResult) ->
-        Helpers.fail (fromMaybe ("Ambiguous input:\n"++show (length p)++" possible parses.")
+        Left (fromMaybe ("Ambiguous input:\n"<>showT (length p)<>" possible parses.")
           $ showPos id <$> traverse scanError scanResult)
       }
-  where scanError :: (ScanResult b) -> Maybe String
+  where scanError :: (ScanResult b) -> Maybe Text
         scanError (Success) = Nothing
         scanError (ExpectClosingComment)
           = Just$ "The opened comment {- has to be closed by a -}"
@@ -113,11 +114,11 @@ parseText showC parseListOf' showUnexpected t
         scanError (InvalidChar c)
           = Just$ "Invalid character: "<>showPos id (fmap showC c)<>" in the quoted string"
         
-        showTokens :: [String] -> String
+        showTokens :: [Text] -> Text
         showTokens [] = "end of file"
         showTokens [a] = a
-        showTokens [a,b] = a ++" or "++b
-        showTokens (h:lst) = h ++ ", "++showTokens lst
+        showTokens [a,b] = a <>" or "<>b
+        showTokens (h:lst) = h <> ", " <> showTokens lst
 
 -- | Abstract grammar generator. Generates a Earley-grammar for a parserule-list (along with a designated element). Note that this function will never match undefined ParseRules. I.e. ([somesetofrules],notInTheSetOfRules) returns a parser that only matches the empty string
 readListGrammar :: forall m a e b c r x y z res.
