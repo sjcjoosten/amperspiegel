@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE RankNTypes, TypeFamilies, RankNTypes, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module RuleSet(oldNewSystem,prePostRuleSet,tripleStoreToRuleSet,applySystem,ruleSetRelations,Rule(..),Expression(..)) where
+module RuleSet(oldNewSystem,prePostRuleSet,applySystem,ruleSetRelations,Rule(..),Expression(..)) where
 import Helpers
 import qualified Data.Map as Map
 
 ruleSetRelations :: IsString x => [x]
 ruleSetRelations
- = ["rule","eFst","eSnd","atom","conjunct","compose","converse"]
+ = ["rule","eFst","eSnd","pre","post","during","conjunct","compose","converse"]
 
 
 prePostRuleSet :: forall m v z y. (Applicative m, IsString y, Ord y, Ord v)
@@ -14,30 +14,22 @@ prePostRuleSet :: forall m v z y. (Applicative m, IsString y, Ord y, Ord v)
                      -> TripleStore y v
                      -> m [Rule (TransactionVariable z) v]
 prePostRuleSet fl transAtom ts
- = tripleStoreToRuleSet fl transPrePost ts
- where
-   transPrePost v
-    = forOneOrNone fl ts "pre" v (fmap TransactionPre . transAtom) $
-      forOneOrNone fl ts "post" v (fmap TransactionPost . transAtom) $
-      forOne fl ts "during" v (fmap TransactionDuring . transAtom)
-
-tripleStoreToRuleSet :: forall m v z y. (Applicative m, IsString y, Ord y, Ord v)
-                     => (m (Expression v z)) -> (v -> m z) -> TripleStore y v -> m [Rule z v]
-tripleStoreToRuleSet fl transAtom ts
  = traverse makeRule [t | (_,t_list) <- getRel ts "rule", t<-t_list]
  where
-   makeRule :: v -> m (Rule z v)
+   pre  = fmap (ExprAtom . TransactionPre) . transAtom
+   post = fmap (ExprAtom . TransactionPre) . transAtom
+   duri = fmap (ExprAtom . TransactionPre) . transAtom
    makeRule v = uncurry Subset <$> makeTuple v
-   makeTuple :: v -> m (Expression v z,Expression v z)
    makeTuple v
     = (,) <$> (forOne fl ts "eFst" v makeExpression)
           <*> (forOne fl ts "eSnd" v makeExpression)
-   makeExpression :: v -> m (Expression v z)
    makeExpression v
-    = forOneOrNone fl ts "atom"     v ((\x -> ExprAtom <$> (transAtom x))) $
-      forOneOrNone fl ts "conjunct" v (fmap (uncurry Conjunction) . makeTuple) $
+    = forOneOrNone fl ts "conjunct" v (fmap (uncurry Conjunction) . makeTuple) $
       forOneOrNone fl ts "compose"  v (fmap (uncurry Compose    ) . makeTuple) $
       forOneOrNone fl ts "converse" v (fmap Flp . makeExpression) $
+      forOneOrNone fl ts "pre"    v pre  $
+      forOneOrNone fl ts "post"   v post $
+      forOneOrNone fl ts "during" v duri $
       pure I
 
 oldNewSystem :: (Ord a, Ord b, Monad m) =>

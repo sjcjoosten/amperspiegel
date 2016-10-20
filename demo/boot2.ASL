@@ -48,14 +48,13 @@ VIEW SyntaxList          = [head2]
 VIEW QuotedStringElement = [qstring] -- goes to QuotedString
 VIEW RelationElement     = [relationName]
 
-
 -- For parsing Rules, uncomment this section
 CLASSIFY RuleStatement IS Statement /\ RuleStatement
 CLASSIFY RuleSubset IS TwoExpressionArguments /\ RuleSubset
 rule :: RuleStatement * RuleSubset
 eFst :: TwoExpressionArguments * Expression
 eSnd :: TwoExpressionArguments * Expression
-atom :: Expression * UnquotedString -- Stands for a relation
+post :: Expression * UnquotedString -- Stands for a relation
 VIEW RuleStatement = ["RULE",rule]
 VIEW RuleSubset = [eFst,"|-",eSnd]
-VIEW Expression = [atom]
+VIEW Expression = [post]
