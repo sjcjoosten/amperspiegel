@@ -54,7 +54,7 @@ showUnexpected tk expc mby
 parse :: (Monad m, IsString z, Ord z, Show z)
       => [ParseRule (Atom Text) Text z] -> Text
       -> SpiegelState (StateT Int m [Triple (Atom Text) (Atom Text)])
-parse p = eitherError . parseText id (parseListOf builtIns (p,"Statement")) showUnexpected
+parse p = eitherError id . parseText id (parseListOf builtIns (p,"Statement")) showUnexpected
 
 commands :: [ ( Text, ( Text, [Text] -> SpiegelState () ) ) ]
 commands = [ ( "i"
@@ -116,7 +116,7 @@ commands = [ ( "i"
            , ( "distribute"
              , ( "set the population as the current state of amperspiegel"
                , oneArg "distribute"
-                   (\arg -> put =<< eitherError . makePops =<< retrieve arg)
+                   (\arg -> put =<< eitherError id . makePops =<< retrieve arg)
                ))
            ]
            where
@@ -250,11 +250,11 @@ getParser s
  = do mp <- retrieve s
       unAtomize =<< tripleStoreToParseRules (liftIO$finishError "TripleStoreToParseRules could not make a parser out of the population") pure (getPop mp)
  where unAtomize :: [ParseRule (Atom Text) (Atom Text) (Atom Text)] -> SpiegelState FullParser
-       unAtomize = traverse (eitherError . fmap23 deAtomize deAtomize)
+       unAtomize = traverse (eitherError (("error: "<>) . showT) . fmap23 deAtomize deAtomize)
 
-eitherError ::(MonadIO m, Show t) => Either t a -> m a
-eitherError (Left a) = liftIO$finishError ("error: "<>showT a)
-eitherError (Right a) = pure a
+eitherError ::(MonadIO m) => (t -> Text) -> Either t a -> m a
+eitherError sh (Left a) = liftIO$finishError (sh a)
+eitherError _ (Right a) = pure a
 
 getRules :: Text -> SpiegelState FullRules
 getRules s
