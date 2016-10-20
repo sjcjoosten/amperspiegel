@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE RankNTypes, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module Helpers ((↦),(∋),TripleStore,Triple(..),findInMap,forEachOf,lkpRight,insertTriple
  ,restrictTo, unionTS,showT,forOne,forOneOrNone,getRel
- ,twords,tlength,tnull,ifThenJust
+ ,twords,tlength,tnull,ifThenJust,filterBy,mapRel,getPost
  ,module Control.Monad.Identity,module Data.Monoid,module Data.Map,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
- ,Set,difference) where
+ ,TransactionVariable(..),Set,difference) where
 import Control.Applicative
 import Control.Monad.Fix
 import Data.Monoid
@@ -75,11 +75,27 @@ insertTriple (Triple rel' a' b') revLk
 type TripleStore a b = (Map b (Map a (Set b), Map a (Set b)))
 data Triple r a = Triple{relation::r, t_fst::a, t_snd::a} deriving Functor
 
+data TransactionVariable x =
+     TransactionPre x | TransactionDuring x | TransactionPost x
+     deriving (Functor, Traversable, Foldable, Eq, Ord)
+
+getPost :: TransactionVariable a -> Maybe a
+getPost (TransactionPost v) = Just v
+getPost _ = Nothing
+
+mapRel :: forall r a t. (t -> r) -> Triple t a -> Triple r a
+mapRel f (Triple r a b) = Triple (f r) a b
+
 restrictTo :: (Ord k) => [k] -> TripleStore k b -> TripleStore k b
 restrictTo rs'
  = fmap (d2$flip Map.intersection rs)
  where rs = Map.fromList [(r,()) | r<-rs']
        d2 f (x,y) = (f x,f y)
+filterBy :: Eq v => (k -> Maybe v) -- must be weakly monotonic (= preserve order)
+         -> TripleStore k b -> TripleStore v b
+filterBy rs
+ = fmap (d2 (\m -> Map.fromAscList [(v,b) | (k,b)<-Map.toAscList m, Just v <- [rs k]]))
+ where d2 f (x,y) = (f x,f y)
 unionTS :: (Ord k,Ord b)=> TripleStore k b -> TripleStore k b -> TripleStore k b
 unionTS = Map.unionWith (d2 (Map.unionWith Set.union))
  where d2 f (x1,y1) (x2,y2) = (f x1 x2,f y1 y2)

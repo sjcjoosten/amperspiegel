@@ -1,11 +1,25 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE RankNTypes, TypeFamilies, RankNTypes, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module RuleSet(tripleStoreToRuleSet,applySystem,ruleSetRelations,Rule(..),Expression(..)) where
+module RuleSet(oldNewSystem,prePostRuleSet,tripleStoreToRuleSet,applySystem,ruleSetRelations,Rule(..),Expression(..)) where
 import Helpers
 import qualified Data.Map as Map
 
 ruleSetRelations :: IsString x => [x]
 ruleSetRelations
  = ["rule","eFst","eSnd","atom","conjunct","compose","converse"]
+
+
+prePostRuleSet :: forall m v z y. (Applicative m, IsString y, Ord y, Ord v)
+                     => (forall x. m x)
+                     -> (v -> m z)
+                     -> TripleStore y v
+                     -> m [Rule (TransactionVariable z) v]
+prePostRuleSet fl transAtom ts
+ = tripleStoreToRuleSet fl transPrePost ts
+ where
+   transPrePost v
+    = forOneOrNone fl ts "pre" v (fmap TransactionPre . transAtom) $
+      forOneOrNone fl ts "post" v (fmap TransactionPost . transAtom) $
+      forOne fl ts "during" v (fmap TransactionDuring . transAtom)
 
 tripleStoreToRuleSet :: forall m v z y. (Applicative m, IsString y, Ord y, Ord v)
                      => (m (Expression v z)) -> (v -> m z) -> TripleStore y v -> m [Rule z v]
@@ -26,10 +40,20 @@ tripleStoreToRuleSet fl transAtom ts
       forOneOrNone fl ts "converse" v (fmap Flp . makeExpression) $
       pure I
 
+oldNewSystem :: (Ord a, Ord b, Monad m) =>
+                      (forall v. m v)
+                      -> m b
+                      -> [Rule (TransactionVariable a) b]
+                      -> [Triple a b]
+                      -> m (TripleStore a b, Map b b)
+oldNewSystem fl fg rls tps
+ = first (filterBy getPost) <$> applySystem fl fg rls (map (mapRel TransactionPre) tps)
+
 applySystem :: forall a b m sys r.
- (sys~(r, Map b b, [Triple a b]),r~TripleStore a b
-  ,Ord b,Ord a, Monad m)
- => m sys -> m b -> [Rule a b] -> [Triple a b] -> m (r, Map b b)
+ (sys~(r, Map b b, [Triple a b]),r~TripleStore a b,Ord b,Ord a, Monad m)
+ => m sys -- ^ Failure upon inserting in expression
+ -> m b -- ^ Fresh variable generator
+ -> [Rule a b] -> [Triple a b] -> m (r, Map b b)
 applySystem fl fg allRules originalTriples
  = process =<< (makeNewSystem allRules)
  where
