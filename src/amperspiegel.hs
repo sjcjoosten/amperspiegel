@@ -4,7 +4,7 @@ import Helpers
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),tripleStoreRelations,tripleStoreToParseRules,fmap23)
 import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
-import RuleSet(applySystem,ruleSetRelations,tripleStoreToRuleSet,Rule(..),Expression(..))
+import RuleSet(oldNewSystem,ruleSetRelations,prePostRuleSet,Rule(..),Expression(..))
 import System.IO (stderr)
 import System.Exit (exitFailure)
 import System.Console.Terminal.Size (size,width)
@@ -32,7 +32,7 @@ popFromLst :: [Triple (Atom Text) (Atom Text)] -> Population
 popFromLst = TR . foldl' (\v w -> fst (insertTriple w v)) mempty
 
 type FullParser = [ParseRule (Atom Text) Text Text]
-type FullRules = [Rule (Atom Text) (Atom Text)]
+type FullRules = [Rule (TransactionVariable (Atom Text)) (Atom Text)]
 type FullStore = TripleStore (Atom Text) (Atom Text)
 type SpiegelState a = StateT (Map Text Population) IO a
 
@@ -125,7 +125,7 @@ commands = [ ( "i"
                    = do pops <- mapM (fmap getList . retrieve) from
                         let pop = mconcat <$> traverse (freshenUp freshTokenSt) pops
                         r <- getRules rsys
-                        res <- unFresh (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
+                        res <- unFresh (oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
                                                        freshTokenSt r =<< pop)
                         liftIO$ renameWarnings res
                         return (fst res)
@@ -207,7 +207,6 @@ prettyPParser o@(ParseRule t _:_)
 prettyPRules :: FullRules -> Text
 prettyPRules = mconcat . map (\v -> pRule v <> "\n")
   where pRule (Subset l r) = pExp l<>" |- "<>pExp r
-        pExp :: Expression (Atom Text) (Atom Text) -> Text
         pExp (ExprAtom r) = showT r
         pExp I            = "="
         pExp (Compose e1 e2) = "("<>pExp e1<>";"<>pExp e2<>")"
@@ -259,7 +258,7 @@ eitherError _ (Right a) = pure a
 getRules :: Text -> SpiegelState FullRules
 getRules s
  = do mp <- retrieve s
-      tripleStoreToRuleSet (liftIO$finishError "tripleStoreToRuleSet could not make a set of rules out of the population") pure (getPop mp)
+      prePostRuleSet (liftIO$finishError "tripleStoreToRuleSet could not make a set of rules out of the population") pure (getPop mp)
     
 finishError :: Text -> IO a
 finishError s = hPutStrLn stderr s >> exitFailure

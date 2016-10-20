@@ -77,7 +77,7 @@ data Triple r a = Triple{relation::r, t_fst::a, t_snd::a} deriving Functor
 
 data TransactionVariable x =
      TransactionPre x | TransactionDuring x | TransactionPost x
-     deriving (Functor, Traversable, Foldable, Eq, Ord)
+     deriving (Functor, Traversable, Foldable, Eq, Ord, Show)
 
 getPost :: TransactionVariable a -> Maybe a
 getPost (TransactionPost v) = Just v

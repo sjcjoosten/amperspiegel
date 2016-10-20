@@ -7,6 +7,11 @@ sudo: false
 # Choose a lightweight base image; we provide our own build tools.
 language: c
 
+# Ignore certain branches
+branches:
+  except:
+    - prePost_14
+
 # Caching so the next build will be fast too.
 cache:
   directories:
