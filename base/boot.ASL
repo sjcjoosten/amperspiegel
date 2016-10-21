@@ -59,6 +59,7 @@ converse :: Expression * Expression
 compose :: Expression * Compose
 pre :: Expression * UnquotedString -- Stands for a relation
 post :: Expression * UnquotedString -- Stands for a relation
+during :: Expression * UnquotedString -- Stands for a relation
 VIEW RuleStatement = ["RULE",rule]
 VIEW RuleSubset = [eFst,"|-",eSnd]
 VIEW Expression = ["(",conjunct,")"]
@@ -66,6 +67,7 @@ VIEW Expression = ["(",compose,")"]
 VIEW Expression = [converse,"~"]
 VIEW Expression = ["pre", pre]
 VIEW Expression = ["post", post]
+VIEW Expression = ["during", during]
 VIEW Expression = ["="]
 VIEW Conjunct = [eFst,"/\\",eSnd]
 VIEW Compose = [eFst,";",eSnd]
