@@ -16,9 +16,9 @@ prePostRuleSet :: forall m v z y. (Applicative m, IsString y, Ord y, Ord v)
 prePostRuleSet fl transAtom ts
  = traverse makeRule [t | (_,t_list) <- getRel ts "rule", t<-t_list]
  where
-   pre  = fmap (ExprAtom . TransactionPre) . transAtom
-   post = fmap (ExprAtom . TransactionPre) . transAtom
-   duri = fmap (ExprAtom . TransactionPre) . transAtom
+   pre  = fmap (ExprAtom . TransactionPre)    . transAtom
+   post = fmap (ExprAtom . TransactionPost)   . transAtom
+   duri = fmap (ExprAtom . TransactionDuring) . transAtom
    makeRule v = uncurry Subset <$> makeTuple v
    makeTuple v
     = (,) <$> (forOne fl ts "eFst" v makeExpression)

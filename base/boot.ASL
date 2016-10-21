@@ -58,13 +58,13 @@ eSnd :: TwoExpressionArguments * Expression
 conjunct :: Expression * Conjunct
 converse :: Expression * Expression
 compose :: Expression * Compose
-post :: Expression * UnquotedString -- Stands for a relation
+atom :: Expression * UnquotedString -- Stands for a relation
 VIEW RuleStatement = ["RULE",rule]
 VIEW RuleSubset = [eFst,"|-",eSnd]
 VIEW Expression = ["(",conjunct,")"]
 VIEW Expression = ["(",compose,")"]
 VIEW Expression = [converse,"~"]
-VIEW Expression = [post]
+VIEW Expression = [atom]
 VIEW Expression = ["="]
 VIEW Conjunct = [eFst,"/\\",eSnd]
 VIEW Compose = [eFst,";",eSnd]
