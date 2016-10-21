@@ -126,9 +126,11 @@ commands
         -- liftIO$ renameWarnings res
         overwrite "population" (TR res)
         return ()
+  pass f v = do{_<-f v;return v}
   ruleConsequences r v
-    = renameAndAdd v <$> oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
-                                      freshTokenSt r v
+    = renameAndAdd v <$> (pass (liftIO . renameWarnings) =<<
+          oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
+                       freshTokenSt r v)
   renameAndAdd v (v',n) = (storeFromLst . (map (fmap (findSelfMap n)) v <>) . getList . TR) v'
   apply :: Text -> [Text] -> SpiegelState FullStore
   apply rsys from
