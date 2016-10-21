@@ -4,8 +4,6 @@ RULE (( mainConcept ~ ; conceptLists ) ; head1) |- subConcepts
 RULE (subConcepts ; subConcepts) |- subConcepts
 RULE ((mainConcept ~ ; mainConcept) /\ =) |- subConcepts
 RULE ( (concept ~ ; concept) /\ =) |- subConcepts
-RULE syntaxList |- syntaxLists
-RULE (syntaxList ; tail2) |- syntaxLists
 RULE qstring |- =
 RULE relationName |- =
 RULE (string ; string ~) |- = -- this rule means every relation has a unique name.
@@ -15,3 +13,10 @@ RULE ((declaration ; concepts) ; snd) |- nonTerminal
 RULE ((subConcepts ~ ;  concept ~) ; syntaxList) |- choice
 RULE head2 |- recogniser
 RULE tail2 |- continuation
+RULE ((eFst;eFst ~) /\ (eSnd;eSnd ~)) |- =
+RULE (conjunct;conjunct~) |- =
+RULE (converse;converse~) |- =
+RULE (compose;compose~)   |- =
+RULE (pre ; pre ~)        |- =
+RULE (post ; post ~)      |- =
+RULE (during ; during ~)  |- =

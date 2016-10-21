@@ -13,6 +13,13 @@ data Atom a
  | Fresh Int
  deriving (Eq,Ord,Functor)
 
+instance Show (TransactionVariable (Atom Text)) where
+  show = (\case TransactionPre v    -> "pre "   ++unwrap v
+                TransactionDuring v -> "during "++unwrap v
+                TransactionPost v   -> "post "  ++unwrap v)
+    where unwrap (UserAtom v) = unpack (runToken v)
+          unwrap x = show x
+
 makeQuoted :: a -> Atom a
 makeQuoted = UserAtom . QuotedString
 

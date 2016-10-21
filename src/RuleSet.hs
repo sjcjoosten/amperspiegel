@@ -1,35 +1,51 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE RankNTypes, TypeFamilies, RankNTypes, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module RuleSet(tripleStoreToRuleSet,applySystem,ruleSetRelations,Rule(..),Expression(..)) where
+module RuleSet(oldNewSystem,prePostRuleSet,applySystem,ruleSetRelations,Rule(..),Expression(..)) where
 import Helpers
 import qualified Data.Map as Map
 
 ruleSetRelations :: IsString x => [x]
 ruleSetRelations
- = ["rule","eFst","eSnd","atom","conjunct","compose","converse"]
+ = ["rule","eFst","eSnd","pre","post","during","conjunct","compose","converse"]
 
-tripleStoreToRuleSet :: forall m v z y. (Applicative m, IsString y, Ord y, Ord v)
-                     => (m (Expression v z)) -> (v -> m z) -> TripleStore y v -> m [Rule z v]
-tripleStoreToRuleSet fl transAtom ts
+
+prePostRuleSet :: forall m v z y. (Applicative m, IsString y, Ord y, Ord v)
+                     => (forall x. m x)
+                     -> (v -> m z)
+                     -> TripleStore y v
+                     -> m [Rule (TransactionVariable z) v]
+prePostRuleSet fl transAtom ts
  = traverse makeRule [t | (_,t_list) <- getRel ts "rule", t<-t_list]
  where
-   makeRule :: v -> m (Rule z v)
+   pre  = fmap (ExprAtom . TransactionPre)    . transAtom
+   post = fmap (ExprAtom . TransactionPost)   . transAtom
+   duri = fmap (ExprAtom . TransactionDuring) . transAtom
    makeRule v = uncurry Subset <$> makeTuple v
-   makeTuple :: v -> m (Expression v z,Expression v z)
    makeTuple v
     = (,) <$> (forOne fl ts "eFst" v makeExpression)
           <*> (forOne fl ts "eSnd" v makeExpression)
-   makeExpression :: v -> m (Expression v z)
    makeExpression v
-    = forOneOrNone fl ts "atom"     v ((\x -> ExprAtom <$> (transAtom x))) $
-      forOneOrNone fl ts "conjunct" v (fmap (uncurry Conjunction) . makeTuple) $
+    = forOneOrNone fl ts "conjunct" v (fmap (uncurry Conjunction) . makeTuple) $
       forOneOrNone fl ts "compose"  v (fmap (uncurry Compose    ) . makeTuple) $
       forOneOrNone fl ts "converse" v (fmap Flp . makeExpression) $
+      forOneOrNone fl ts "pre"    v pre  $
+      forOneOrNone fl ts "post"   v post $
+      forOneOrNone fl ts "during" v duri $
       pure I
 
+oldNewSystem :: (Ord a, Ord b, Monad m) =>
+                      (forall v. m v)
+                      -> m b
+                      -> [Rule (TransactionVariable a) b]
+                      -> [Triple a b]
+                      -> m (TripleStore a b, Map b b)
+oldNewSystem fl fg rls tps
+ = first (filterBy getPost) <$> applySystem fl fg rls (map (mapRel TransactionPre) tps)
+
 applySystem :: forall a b m sys r.
- (sys~(r, Map b b, [Triple a b]),r~TripleStore a b
-  ,Ord b,Ord a, Monad m)
- => m sys -> m b -> [Rule a b] -> [Triple a b] -> m (r, Map b b)
+ (sys~(r, Map b b, [Triple a b]),r~TripleStore a b,Ord b,Ord a, Monad m)
+ => m sys -- ^ Failure upon inserting in expression
+ -> m b -- ^ Fresh variable generator
+ -> [Rule a b] -> [Triple a b] -> m (r, Map b b)
 applySystem fl fg allRules originalTriples
  = process =<< (makeNewSystem allRules)
  where

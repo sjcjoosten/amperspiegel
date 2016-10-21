@@ -2,9 +2,9 @@
 module Main (main) where
 import Helpers
 import Data.Set as Set (toList)
-import ParseRulesFromTripleStore(ParseRule(..),tripleStoreRelations,tripleStoreToParseRules,fmap23)
+import ParseRulesFromTripleStore(ParseRule(..),tripleStoreToParseRules,fmap23)
 import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
-import RuleSet(applySystem,ruleSetRelations,tripleStoreToRuleSet,Rule(..),Expression(..))
+import RuleSet(oldNewSystem,ruleSetRelations,prePostRuleSet,Rule(..),Expression(..))
 import System.IO (stderr)
 import System.Exit (exitFailure)
 import System.Console.Terminal.Size (size,width)
@@ -29,10 +29,13 @@ newtype Population
  = TR { getPop   :: FullStore}
 
 popFromLst :: [Triple (Atom Text) (Atom Text)] -> Population
-popFromLst = TR . foldl' (\v w -> fst (insertTriple w v)) mempty
+popFromLst = TR . storeFromLst
+
+storeFromLst :: [Triple (Atom Text) (Atom Text)] -> FullStore
+storeFromLst = foldl' (\v w -> fst (insertTriple w v)) mempty
 
 type FullParser = [ParseRule (Atom Text) Text Text]
-type FullRules = [Rule (Atom Text) (Atom Text)]
+type FullRules = [Rule (TransactionVariable (Atom Text)) (Atom Text)]
 type FullStore = TripleStore (Atom Text) (Atom Text)
 type SpiegelState a = StateT (Map Text Population) IO a
 
@@ -57,112 +60,121 @@ parse :: (Monad m, IsString z, Ord z, Show z)
 parse p = eitherError id . parseText id (parseListOf builtIns (p,"Statement")) showUnexpected
 
 commands :: [ ( Text, ( Text, [Text] -> SpiegelState () ) ) ]
-commands = [ ( "i"
-             , ( "parse file as input"
-               , (\files -> do txts <- lift$ mapM (Helpers.readFile . unpack) files
-                               p <- getParser "parser"
-                               trps <- traverse (parse p) txts
-                               overwrite "population" =<< unFresh (popFromLst . mconcat <$> sequence trps)
-                               res <- apply "rules" ["population"]
-                               overwrite "population" (TR res)
-                               return ()
-                               )))
-           , ( "h"
-             , ( "display this help"
-               , \_ -> liftIO (Helpers.putStrLn . helpText =<< size)))
-           , ( "list"
-             , ( "show a list of all triple-stores"
-               , noArgs "list"$
-                   lift . sequenceA_ . map Helpers.putStrLn . keys
-                     =<< get
-               ))
-           , ( "show"
-             , ( "display the triples as a list"
-               , eachPop (lift . Helpers.putStrLn . prettyPPopulation)))
-           , ( "showP"
-             , ( "display the triples as a set of parse-rules"
-               , eachDo (lift . Helpers.putStrLn . prettyPParser) getParser))
-           , ( "showR"
-             , ( "display the triples as a set of parse-rules"
-               , eachDo (lift . Helpers.putStrLn . prettyPRules) getRules))
-           , ( "count"
-             , ( "count the number of triples"
-               , eachPop (lift . Prelude.putStrLn . show . length . getList)))
-           , ( "asParser"
-             , ( "turn the population into the parser for -i"
-               , noArgs "asParser" $
-                 do res <- apply "asParser" ["population"]
-                    let parser = restrictTo tripleStoreRelations res
-                    let rules = restrictTo ruleSetRelations res
-                    overwrite "parser" (TR parser)
-                    overwrite "rules" (TR rules)
-                    overwrite "population" (TR (unionTS parser rules))
-               ))
-           , ( "apply"
-             , ( "apply the rule-system of first argument and put result into final argument (overwrite what was there). The remaining arguments form the population the system is applied to (or to the final argument if there are no remaining arguments given)."
-               , \args ->
-                   let (rsys,from,targ) = case args of
-                         [] -> ("population",["population"],"population")
-                         [x] -> (x,[x],x)
-                         (x:xs) -> (x,init xs,last xs)
-                   in do v<- apply rsys from
-                         overwrite targ (TR v)
-               ))
-           , ( "collect"
-             , ( "collect the current state of amperspiegel and put the result into the population"
-               , oneArg "collect"
-                   (\arg -> overwrite arg . popFromLst . popsToPop =<< get)
-               ))
-           , ( "distribute"
-             , ( "set the population as the current state of amperspiegel"
-               , oneArg "distribute"
-                   (\arg -> put =<< eitherError id . makePops =<< retrieve arg)
-               ))
-           ]
-           where
-             apply :: Text -> [Text] -> SpiegelState FullStore
-             apply rsys from
-                   = do pops <- mapM (fmap getList . retrieve) from
-                        let pop = mconcat <$> traverse (freshenUp freshTokenSt) pops
-                        r <- getRules rsys
-                        res <- unFresh (applySystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
-                                                       freshTokenSt r =<< pop)
-                        liftIO$ renameWarnings res
-                        return (fst res)
-             noArgs :: Text -> SpiegelState () -> [t] -> SpiegelState ()
-             noArgs s f
-              = \case {[] -> f;_->lift$finishError (s <> " takes no arguments")}
-             oneArg :: Text -> (Text -> SpiegelState ()) -> [Text] -> SpiegelState ()
-             oneArg s f
-              = \case [] -> f "population";
-                      [i] -> f i
-                      v->lift$finishError (s <> " takes one argument (given: "<>showT (length v)<>")")
-             eachPop :: (Population -> SpiegelState ()) -> [Text] -> SpiegelState ()
-             eachPop f = eachDo f retrieve
-             eachDo :: (a -> SpiegelState ())
-                    -> (Text -> SpiegelState a)
-                    -> ([Text] -> SpiegelState ())
-             eachDo f g = \case [] -> f =<< g "population"
-                                l  -> mapM_ (\v -> f =<< g v) l
-             renameWarnings (_,res)
-              = sequenceA_ [ Helpers.hPutStrLn stderr ("Application of rules caused "<>showT v<>" to be equal to "<> showT r)
-                           | (v,r) <- Map.toList res
-                           , case v of {Fresh _ -> False; _ -> True}]
-             helpText Nothing
-              = mconcat [ s <> "\t" <> d <> "\n" | (s,(d,_)) <- commands ]
-             helpText (Just wdw)
-              = "These are the switches you can use: "<> "\n\n" <>
-                   mconcat [ pad maxw ("  " <> s) <> wrap 0 (twords d) <>"\n"
-                           | (s,(d,_)) <- commands]
-              where
-                maxw :: Int
-                maxw = 3 + foldr max 0 (map (tlength . fst) commands)
-                wrap _ [] = ""
-                wrap cur (w:r)
-                 = case tlength w + 1 of
-                     v | cur + v > lim -> "\n " <> pad maxw "" <> w <> wrap v r
-                     v -> " "<>w<>wrap (cur + v) r
-                lim = max 20 (width wdw - maxw)
+commands
+ = [ ( "i"
+     , ( "parse file as input"
+       , (\files -> parseAsIn files)))
+   , ( "h"
+     , ( "display this help"
+       , \_ -> liftIO (Helpers.putStrLn . helpText =<< size)))
+   , ( "list"
+     , ( "show a list of all triple-stores"
+       , noArgs "list"$
+           lift . sequenceA_ . map Helpers.putStrLn . keys
+             =<< get
+       ))
+   , ( "show"
+     , ( "display the triples as a list"
+       , eachPop (lift . Helpers.putStrLn . prettyPPopulation)))
+   , ( "showP"
+     , ( "display the triples as a set of parse-rules"
+       , eachDo (lift . Helpers.putStrLn . prettyPParser) getParser))
+   , ( "showR"
+     , ( "display the triples as a set of parse-rules"
+       , eachDo (lift . Helpers.putStrLn . prettyPRules) getRules))
+   , ( "count"
+     , ( "count the number of triples"
+       , eachPop (lift . Prelude.putStrLn . show . length . getList)))
+   , ( "asParser"
+     , ( "turn the population into the parser for -i"
+       , noArgs "asParser" $
+         do TR pop <- retrieve "population"
+            parser <- apply "asParser" ["population"]
+            let rules = restrictTo ruleSetRelations pop
+            overwrite "parser" (TR parser)
+            overwrite "rules" (TR rules)
+            overwrite "population" (TR (parser <> rules))
+       ))
+   , ( "apply"
+     , ( "apply the rule-system of first argument and put result into final argument (overwrite what was there). The remaining arguments form the population the system is applied to (or to the final argument if there are no remaining arguments given)."
+       , \args ->
+           let (rsys,from,targ) = case args of
+                 [] -> ("population",["population"],"population")
+                 [x] -> (x,[x],x)
+                 (x:xs) -> (x,init xs,last xs)
+           in do v<- apply rsys from
+                 overwrite targ (TR v)
+       ))
+   , ( "collect"
+     , ( "collect the current state of amperspiegel and put the result into the population"
+       , oneArg "collect"
+           (\arg -> overwrite arg . popFromLst . popsToPop =<< get)
+       ))
+   , ( "distribute"
+     , ( "set the population as the current state of amperspiegel"
+       , oneArg "distribute"
+           (\arg -> put =<< eitherError id . makePops =<< retrieve arg)
+       ))
+   ]
+ where
+  parseAsIn files
+   = do txts <- lift$ mapM (Helpers.readFile . unpack) files
+        p <- getParser "parser"
+        trps <- traverse (parse p) txts
+        r <- getRules "rules"
+        res <- unFresh (ruleConsequences r . mconcat =<< sequence trps)
+        -- liftIO$ renameWarnings res
+        overwrite "population" (TR res)
+        return ()
+  pass f v = do{_<-f v;return v}
+  ruleConsequences r v
+    = renameAndAdd v <$> (pass (liftIO . renameWarnings) =<<
+          oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
+                       freshTokenSt r v)
+  renameAndAdd v (v',n) = (storeFromLst . (map (fmap (findSelfMap n)) v <>) . getList . TR) v'
+  apply :: Text -> [Text] -> SpiegelState FullStore
+  apply rsys from
+   = do pops <- mapM (fmap getList . retrieve) from
+        let pop = mconcat <$> traverse (freshenUp freshTokenSt) pops
+        r <- getRules rsys
+        res <- unFresh (oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
+                                       freshTokenSt r =<< pop)
+        liftIO$ renameWarnings res
+        return (fst res)
+  noArgs :: Text -> SpiegelState () -> [t] -> SpiegelState ()
+  noArgs s f
+   = \case {[] -> f;_->lift$finishError (s <> " takes no arguments")}
+  oneArg :: Text -> (Text -> SpiegelState ()) -> [Text] -> SpiegelState ()
+  oneArg s f
+   = \case [] -> f "population";
+           [i] -> f i
+           v->lift$finishError (s <> " takes one argument (given: "<>showT (length v)<>")")
+  eachPop :: (Population -> SpiegelState ()) -> [Text] -> SpiegelState ()
+  eachPop f = eachDo f retrieve
+  eachDo :: (a -> SpiegelState ())
+         -> (Text -> SpiegelState a)
+         -> ([Text] -> SpiegelState ())
+  eachDo f g = \case [] -> f =<< g "population"
+                     l  -> mapM_ (\v -> f =<< g v) l
+  renameWarnings (_,res)
+   = sequenceA_ [ Helpers.hPutStrLn stderr ("Application of rules caused "<>showT v<>" to be equal to "<> showT r)
+                | (v,r) <- Map.toList res
+                , case v of {Fresh _ -> False; _ -> True}]
+  helpText Nothing
+   = mconcat [ s <> "\t" <> d <> "\n" | (s,(d,_)) <- commands ]
+  helpText (Just wdw)
+   = "These are the switches you can use: "<> "\n\n" <>
+        mconcat [ pad maxw ("  " <> s) <> wrap 0 (twords d) <>"\n"
+                | (s,(d,_)) <- commands]
+   where
+     maxw :: Int
+     maxw = 3 + foldr max 0 (map (tlength . fst) commands)
+     wrap _ [] = ""
+     wrap cur (w:r)
+      = case tlength w + 1 of
+          v | cur + v > lim -> "\n " <> pad maxw "" <> w <> wrap v r
+          v -> " "<>w<>wrap (cur + v) r
+     lim = max 20 (width wdw - maxw)
 
 unFresh :: Monad m => StateT Int m a -> m a
 unFresh v = evalStateT v 0
@@ -207,7 +219,6 @@ prettyPParser o@(ParseRule t _:_)
 prettyPRules :: FullRules -> Text
 prettyPRules = mconcat . map (\v -> pRule v <> "\n")
   where pRule (Subset l r) = pExp l<>" |- "<>pExp r
-        pExp :: Expression (Atom Text) (Atom Text) -> Text
         pExp (ExprAtom r) = showT r
         pExp I            = "="
         pExp (Compose e1 e2) = "("<>pExp e1<>";"<>pExp e2<>")"
@@ -259,7 +270,7 @@ eitherError _ (Right a) = pure a
 getRules :: Text -> SpiegelState FullRules
 getRules s
  = do mp <- retrieve s
-      tripleStoreToRuleSet (liftIO$finishError "tripleStoreToRuleSet could not make a set of rules out of the population") pure (getPop mp)
+      prePostRuleSet (liftIO$finishError "tripleStoreToRuleSet could not make a set of rules out of the population") pure (getPop mp)
     
 finishError :: Text -> IO a
 finishError s = hPutStrLn stderr s >> exitFailure
@@ -372,149 +383,117 @@ initialstate switches
       )
     , ( "asParser"
       , popFromLst
-            ["rule"    ∋ Fresh 0   ↦ Fresh 1
-            ,"eFst"    ∋ Fresh 1   ↦ Fresh 2
-            ,"eSnd"    ∋ Fresh 1   ↦ Fresh 3
-            ,"atom"    ∋ Fresh 2   ↦ "conceptList"
-            ,"atom"    ∋ Fresh 3   ↦ "conceptLists"
-            ,"rule"    ∋ Fresh 4   ↦ Fresh 5
-            ,"eFst"    ∋ Fresh 5   ↦ Fresh 6
-            ,"eSnd"    ∋ Fresh 5   ↦ Fresh 10
-            ,"compose" ∋ Fresh 6   ↦ Fresh 7
-            ,"eFst"    ∋ Fresh 7   ↦ Fresh 8
-            ,"eSnd"    ∋ Fresh 7   ↦ Fresh 9
-            ,"atom"    ∋ Fresh 8   ↦ "conceptLists"
-            ,"atom"    ∋ Fresh 9   ↦ "tail1"
-            ,"atom"    ∋ Fresh 10  ↦ "conceptLists"
-            ,"rule"    ∋ Fresh 11  ↦ Fresh 12
-            ,"eFst"    ∋ Fresh 12  ↦ Fresh 13
-            ,"eSnd"    ∋ Fresh 12  ↦ Fresh 21
-            ,"compose" ∋ Fresh 13  ↦ Fresh 14
-            ,"eFst"    ∋ Fresh 14  ↦ Fresh 15
-            ,"eSnd"    ∋ Fresh 14  ↦ Fresh 20
-            ,"compose" ∋ Fresh 15  ↦ Fresh 16
-            ,"eFst"    ∋ Fresh 16  ↦ Fresh 17
-            ,"eSnd"    ∋ Fresh 16  ↦ Fresh 19
-            ,"converse"∋ Fresh 17  ↦ Fresh 18
-            ,"atom"    ∋ Fresh 18  ↦ "mainConcept"
-            ,"atom"    ∋ Fresh 19  ↦ "conceptLists"
-            ,"atom"    ∋ Fresh 20  ↦ "head1"
-            ,"atom"    ∋ Fresh 21  ↦ "subConcepts"
-            ,"rule"    ∋ Fresh 22  ↦ Fresh 23
-            ,"eFst"    ∋ Fresh 23  ↦ Fresh 24
-            ,"eSnd"    ∋ Fresh 23  ↦ Fresh 28
-            ,"compose" ∋ Fresh 24  ↦ Fresh 25
-            ,"eFst"    ∋ Fresh 25  ↦ Fresh 26
-            ,"eSnd"    ∋ Fresh 25  ↦ Fresh 27
-            ,"atom"    ∋ Fresh 26  ↦ "subConcepts"
-            ,"atom"    ∋ Fresh 27  ↦ "subConcepts"
-            ,"atom"    ∋ Fresh 28  ↦ "subConcepts"
-            ,"rule"    ∋ Fresh 29  ↦ Fresh 30
-            ,"eFst"    ∋ Fresh 30  ↦ Fresh 31
-            ,"eSnd"    ∋ Fresh 30  ↦ Fresh 39
-            ,"conjunct"∋ Fresh 31  ↦ Fresh 32
-            ,"eFst"    ∋ Fresh 32  ↦ Fresh 33
-            ,"eSnd"    ∋ Fresh 32  ↦ Fresh 38
-            ,"compose" ∋ Fresh 33  ↦ Fresh 34
-            ,"eFst"    ∋ Fresh 34  ↦ Fresh 35
-            ,"eSnd"    ∋ Fresh 34  ↦ Fresh 37
-            ,"converse"∋ Fresh 35  ↦ Fresh 36
-            ,"atom"    ∋ Fresh 36  ↦ "mainConcept"
-            ,"atom"    ∋ Fresh 37  ↦ "mainConcept"
-            ,"atom"    ∋ Fresh 39  ↦ "subConcepts"
-            ,"rule"    ∋ Fresh 40  ↦ Fresh 41
-            ,"eFst"    ∋ Fresh 41  ↦ Fresh 42
-            ,"eSnd"    ∋ Fresh 41  ↦ Fresh 50
-            ,"conjunct"∋ Fresh 42  ↦ Fresh 43
-            ,"eFst"    ∋ Fresh 43  ↦ Fresh 44
-            ,"eSnd"    ∋ Fresh 43  ↦ Fresh 49
-            ,"compose" ∋ Fresh 44  ↦ Fresh 45
-            ,"eFst"    ∋ Fresh 45  ↦ Fresh 46
-            ,"eSnd"    ∋ Fresh 45  ↦ Fresh 48
-            ,"converse"∋ Fresh 46  ↦ Fresh 47
-            ,"atom"    ∋ Fresh 47  ↦ "concept"
-            ,"atom"    ∋ Fresh 48  ↦ "concept"
-            ,"atom"    ∋ Fresh 50  ↦ "subConcepts"
-            ,"rule"    ∋ Fresh 51  ↦ Fresh 52
-            ,"eFst"    ∋ Fresh 52  ↦ Fresh 53
-            ,"eSnd"    ∋ Fresh 52  ↦ Fresh 54
-            ,"atom"    ∋ Fresh 53  ↦ "syntaxList"
-            ,"atom"    ∋ Fresh 54  ↦ "syntaxLists"
-            ,"rule"    ∋ Fresh 55  ↦ Fresh 56
-            ,"eFst"    ∋ Fresh 56  ↦ Fresh 57
-            ,"eSnd"    ∋ Fresh 56  ↦ Fresh 61
-            ,"compose" ∋ Fresh 57  ↦ Fresh 58
-            ,"eFst"    ∋ Fresh 58  ↦ Fresh 59
-            ,"eSnd"    ∋ Fresh 58  ↦ Fresh 60
-            ,"atom"    ∋ Fresh 59  ↦ "syntaxList"
-            ,"atom"    ∋ Fresh 60  ↦ "tail2"
-            ,"atom"    ∋ Fresh 61  ↦ "syntaxLists"
-            ,"rule"    ∋ Fresh 62  ↦ Fresh 63
-            ,"eFst"    ∋ Fresh 63  ↦ Fresh 64
-            ,"eSnd"    ∋ Fresh 63  ↦ Fresh 65
-            ,"atom"    ∋ Fresh 64  ↦ "qstring"
-            ,"rule"    ∋ Fresh 66  ↦ Fresh 67
-            ,"eFst"    ∋ Fresh 67  ↦ Fresh 68
-            ,"eSnd"    ∋ Fresh 67  ↦ Fresh 69
-            ,"atom"    ∋ Fresh 68  ↦ "relationName"
-            ,"rule"    ∋ Fresh 70  ↦ Fresh 71
-            ,"eFst"    ∋ Fresh 71  ↦ Fresh 72
-            ,"eSnd"    ∋ Fresh 71  ↦ Fresh 77
-            ,"compose" ∋ Fresh 72  ↦ Fresh 73
-            ,"eFst"    ∋ Fresh 73  ↦ Fresh 74
-            ,"eSnd"    ∋ Fresh 73  ↦ Fresh 75
-            ,"atom"    ∋ Fresh 74  ↦ "string"
-            ,"converse"∋ Fresh 75  ↦ Fresh 76
-            ,"atom"    ∋ Fresh 76  ↦ "string"
-            ,"rule"    ∋ Fresh 78  ↦ Fresh 79
-            ,"eFst"    ∋ Fresh 79  ↦ Fresh 80
-            ,"eSnd"    ∋ Fresh 79  ↦ Fresh 87
-            ,"compose" ∋ Fresh 80  ↦ Fresh 81
-            ,"eFst"    ∋ Fresh 81  ↦ Fresh 82
-            ,"eSnd"    ∋ Fresh 81  ↦ Fresh 86
-            ,"compose" ∋ Fresh 82  ↦ Fresh 83
-            ,"eFst"    ∋ Fresh 83  ↦ Fresh 84
-            ,"eSnd"    ∋ Fresh 83  ↦ Fresh 85
-            ,"atom"    ∋ Fresh 84  ↦ "declaration"
-            ,"atom"    ∋ Fresh 85  ↦ "relation"
-            ,"atom"    ∋ Fresh 86  ↦ "string"
-            ,"atom"    ∋ Fresh 87  ↦ "relationName"
-            ,"rule"    ∋ Fresh 88  ↦ Fresh 89
-            ,"eFst"    ∋ Fresh 89  ↦ Fresh 90
-            ,"eSnd"    ∋ Fresh 89  ↦ Fresh 97
-            ,"compose" ∋ Fresh 90  ↦ Fresh 91
-            ,"eFst"    ∋ Fresh 91  ↦ Fresh 92
-            ,"eSnd"    ∋ Fresh 91  ↦ Fresh 96
-            ,"compose" ∋ Fresh 92  ↦ Fresh 93
-            ,"eFst"    ∋ Fresh 93  ↦ Fresh 94
-            ,"eSnd"    ∋ Fresh 93  ↦ Fresh 95
-            ,"atom"    ∋ Fresh 94  ↦ "declaration"
-            ,"atom"    ∋ Fresh 95  ↦ "concepts"
-            ,"atom"    ∋ Fresh 96  ↦ "snd"
-            ,"atom"    ∋ Fresh 97  ↦ "nonTerminal"
-            ,"rule"    ∋ Fresh 98  ↦ Fresh 99
-            ,"eFst"    ∋ Fresh 99  ↦ Fresh 100
-            ,"eSnd"    ∋ Fresh 99  ↦ Fresh 109
-            ,"compose" ∋ Fresh 100 ↦ Fresh 101
-            ,"eFst"    ∋ Fresh 101 ↦ Fresh 102
-            ,"eSnd"    ∋ Fresh 101 ↦ Fresh 108
-            ,"compose" ∋ Fresh 102 ↦ Fresh 103
-            ,"eFst"    ∋ Fresh 103 ↦ Fresh 104
-            ,"eSnd"    ∋ Fresh 103 ↦ Fresh 106
-            ,"converse"∋ Fresh 104 ↦ Fresh 105
-            ,"atom"    ∋ Fresh 105 ↦ "subConcepts"
-            ,"converse"∋ Fresh 106 ↦ Fresh 107
-            ,"atom"    ∋ Fresh 107 ↦ "concept"
-            ,"atom"    ∋ Fresh 108 ↦ "syntaxList"
-            ,"atom"    ∋ Fresh 109 ↦ "choice"
-            ,"rule"    ∋ Fresh 110 ↦ Fresh 111
-            ,"eFst"    ∋ Fresh 111 ↦ Fresh 112
-            ,"eSnd"    ∋ Fresh 111 ↦ Fresh 113
-            ,"atom"    ∋ Fresh 112 ↦ "head2"
-            ,"atom"    ∋ Fresh 113 ↦ "recogniser"
-            ,"rule"    ∋ Fresh 114 ↦ Fresh 115
-            ,"eFst"    ∋ Fresh 115 ↦ Fresh 116
-            ,"eSnd"    ∋ Fresh 115 ↦ Fresh 117
-            ,"atom"    ∋ Fresh 116 ↦ "tail2"
-            ,"atom"    ∋ Fresh 117 ↦ "continuation"])
+            [ "rule"    ∋ Fresh 0   ↦ Fresh 1
+            , "eFst"    ∋ Fresh 1   ↦ Fresh 2
+            , "eSnd"    ∋ Fresh 1   ↦ Fresh 3
+            , "pre"     ∋ Fresh 2   ↦ "conceptList"
+            , "during"  ∋ Fresh 3   ↦ "conceptLists"
+            , "rule"    ∋ Fresh 4   ↦ Fresh 5
+            , "eFst"    ∋ Fresh 5   ↦ Fresh 6
+            , "eSnd"    ∋ Fresh 5   ↦ Fresh 3
+            , "compose" ∋ Fresh 6   ↦ Fresh 7
+            , "eFst"    ∋ Fresh 7   ↦ Fresh 3
+            , "eSnd"    ∋ Fresh 7   ↦ Fresh 9
+            , "pre"     ∋ Fresh 9   ↦ "tail1"
+            , "rule"    ∋ Fresh 11  ↦ Fresh 12
+            , "eFst"    ∋ Fresh 12  ↦ Fresh 13
+            , "eSnd"    ∋ Fresh 12  ↦ Fresh 21
+            , "compose" ∋ Fresh 13  ↦ Fresh 14
+            , "eFst"    ∋ Fresh 14  ↦ Fresh 15
+            , "eSnd"    ∋ Fresh 14  ↦ Fresh 20
+            , "compose" ∋ Fresh 15  ↦ Fresh 16
+            , "eFst"    ∋ Fresh 16  ↦ Fresh 17
+            , "eSnd"    ∋ Fresh 16  ↦ Fresh 3
+            , "converse"∋ Fresh 17  ↦ Fresh 18
+            , "pre"     ∋ Fresh 18  ↦ "mainConcept"
+            , "pre"     ∋ Fresh 20  ↦ "head1"
+            , "during"  ∋ Fresh 21  ↦ "subConcepts"
+            , "rule"    ∋ Fresh 22  ↦ Fresh 23
+            , "eFst"    ∋ Fresh 23  ↦ Fresh 24
+            , "eSnd"    ∋ Fresh 23  ↦ Fresh 21
+            , "compose" ∋ Fresh 24  ↦ Fresh 25
+            , "eFst"    ∋ Fresh 25  ↦ Fresh 21
+            , "eSnd"    ∋ Fresh 25  ↦ Fresh 21
+            , "rule"    ∋ Fresh 29  ↦ Fresh 30
+            , "eFst"    ∋ Fresh 30  ↦ Fresh 31
+            , "eSnd"    ∋ Fresh 30  ↦ Fresh 21
+            , "conjunct"∋ Fresh 31  ↦ Fresh 32
+            , "eFst"    ∋ Fresh 32  ↦ Fresh 33
+            , "eSnd"    ∋ Fresh 32  ↦ Fresh 38
+            , "compose" ∋ Fresh 33  ↦ Fresh 34
+            , "eFst"    ∋ Fresh 34  ↦ Fresh 17
+            , "eSnd"    ∋ Fresh 34  ↦ Fresh 18
+            , "rule"    ∋ Fresh 40  ↦ Fresh 41
+            , "eFst"    ∋ Fresh 41  ↦ Fresh 42
+            , "eSnd"    ∋ Fresh 41  ↦ Fresh 21
+            , "conjunct"∋ Fresh 42  ↦ Fresh 43
+            , "eFst"    ∋ Fresh 43  ↦ Fresh 44
+            , "eSnd"    ∋ Fresh 43  ↦ Fresh 49
+            , "compose" ∋ Fresh 44  ↦ Fresh 45
+            , "eFst"    ∋ Fresh 45  ↦ Fresh 46
+            , "eSnd"    ∋ Fresh 45  ↦ Fresh 47
+            , "converse"∋ Fresh 46  ↦ Fresh 47
+            , "pre"     ∋ Fresh 47  ↦ "concept"
+            , "rule"    ∋ Fresh 51  ↦ Fresh 52
+            , "eFst"    ∋ Fresh 52  ↦ Fresh 53
+            , "eSnd"    ∋ Fresh 52  ↦ Fresh 54
+            , "pre"     ∋ Fresh 53  ↦ "qstring"
+            , "rule"    ∋ Fresh 55  ↦ Fresh 56
+            , "eFst"    ∋ Fresh 56  ↦ Fresh 57
+            , "eSnd"    ∋ Fresh 56  ↦ Fresh 58
+            , "pre"     ∋ Fresh 57  ↦ "relationName"
+            , "rule"    ∋ Fresh 59  ↦ Fresh 60
+            , "eFst"    ∋ Fresh 60  ↦ Fresh 61
+            , "eSnd"    ∋ Fresh 60  ↦ Fresh 66
+            , "compose" ∋ Fresh 61  ↦ Fresh 62
+            , "eFst"    ∋ Fresh 62  ↦ Fresh 63
+            , "eSnd"    ∋ Fresh 62  ↦ Fresh 64
+            , "pre"     ∋ Fresh 63  ↦ "string"
+            , "converse"∋ Fresh 64  ↦ Fresh 63
+            , "rule"    ∋ Fresh 67  ↦ Fresh 68
+            , "eFst"    ∋ Fresh 68  ↦ Fresh 69
+            , "eSnd"    ∋ Fresh 68  ↦ Fresh 57
+            , "compose" ∋ Fresh 69  ↦ Fresh 70
+            , "eFst"    ∋ Fresh 70  ↦ Fresh 71
+            , "eSnd"    ∋ Fresh 70  ↦ Fresh 63
+            , "compose" ∋ Fresh 71  ↦ Fresh 72
+            , "eFst"    ∋ Fresh 72  ↦ Fresh 73
+            , "eSnd"    ∋ Fresh 72  ↦ Fresh 74
+            , "pre"     ∋ Fresh 73  ↦ "declaration"
+            , "pre"     ∋ Fresh 74  ↦ "relation"
+            , "rule"    ∋ Fresh 77  ↦ Fresh 78
+            , "eFst"    ∋ Fresh 78  ↦ Fresh 79
+            , "eSnd"    ∋ Fresh 78  ↦ Fresh 86
+            , "compose" ∋ Fresh 79  ↦ Fresh 80
+            , "eFst"    ∋ Fresh 80  ↦ Fresh 81
+            , "eSnd"    ∋ Fresh 80  ↦ Fresh 85
+            , "compose" ∋ Fresh 81  ↦ Fresh 82
+            , "eFst"    ∋ Fresh 82  ↦ Fresh 73
+            , "eSnd"    ∋ Fresh 82  ↦ Fresh 84
+            , "pre"     ∋ Fresh 84  ↦ "concepts"
+            , "pre"     ∋ Fresh 85  ↦ "snd"
+            , "post"    ∋ Fresh 86  ↦ "nonTerminal"
+            , "rule"    ∋ Fresh 87  ↦ Fresh 88
+            , "eFst"    ∋ Fresh 88  ↦ Fresh 89
+            , "eSnd"    ∋ Fresh 88  ↦ Fresh 98
+            , "compose" ∋ Fresh 89  ↦ Fresh 90
+            , "eFst"    ∋ Fresh 90  ↦ Fresh 91
+            , "eSnd"    ∋ Fresh 90  ↦ Fresh 97
+            , "compose" ∋ Fresh 91  ↦ Fresh 92
+            , "eFst"    ∋ Fresh 92  ↦ Fresh 93
+            , "eSnd"    ∋ Fresh 92  ↦ Fresh 46
+            , "converse"∋ Fresh 93  ↦ Fresh 21
+            , "pre"     ∋ Fresh 97  ↦ "syntaxList"
+            , "post"    ∋ Fresh 98  ↦ "choice"
+            , "rule"    ∋ Fresh 99  ↦ Fresh 100
+            , "eFst"    ∋ Fresh 100 ↦ Fresh 101
+            , "eSnd"    ∋ Fresh 100 ↦ Fresh 102
+            , "pre"     ∋ Fresh 101 ↦ "head2"
+            , "post"    ∋ Fresh 102 ↦ "recogniser"
+            , "rule"    ∋ Fresh 103 ↦ Fresh 104
+            , "eFst"    ∋ Fresh 104 ↦ Fresh 105
+            , "eSnd"    ∋ Fresh 104 ↦ Fresh 106
+            , "pre"     ∋ Fresh 105 ↦ "tail2"
+            , "post"    ∋ Fresh 106 ↦ "continuation"
+            ] )
     ]

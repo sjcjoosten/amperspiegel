@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE RankNTypes, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module ParseRulesFromTripleStore (ParseRule(..),ParseAtom(..),tripleStoreRelations,tripleStoreToParseRules,traverseStrings,fmap23) where
+module ParseRulesFromTripleStore (ParseRule(..),ParseAtom(..),tripleStoreToParseRules,traverseStrings,fmap23) where
 import Helpers
 
 -- A grammar
@@ -41,14 +41,6 @@ traverseStrings f (ParseRule r lst)
 traverseString :: Applicative f => (a -> f b) -> ParseAtom x a z -> f (ParseAtom x b z)
 traverseString f (ParseString a) = ParseString <$> f a
 traverseString _ (ParseRef x i) = pure (ParseRef x i)
-
-tripleStoreRelations :: IsString x => [x]
-tripleStoreRelations
- = [ "choice" -- :: ParseRule*Expansion
-   , "continuation" -- :: Expansion*Expansion [UNI]
-   , "recogniser" -- :: Expension*Element [UNI]
-   , "nonTerminal" -- :: Reference*ParseRule [UNI,TOT]
-   ]
    
 -- tripleStoreToParseRules takes a triple store that describes a parser, and turns it into the set of parserules that can be turned into a parser by parseListOf or readListGrammar
 -- Requires the following relations:
