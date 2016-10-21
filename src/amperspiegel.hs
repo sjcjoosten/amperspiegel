@@ -123,12 +123,13 @@ commands
         trps <- traverse (parse p) txts
         r <- getRules "rules"
         res <- unFresh (ruleConsequences r . mconcat =<< sequence trps)
-        liftIO$ renameWarnings res
-        overwrite "population" (TR (fst res))
+        -- liftIO$ renameWarnings res
+        overwrite "population" (TR res)
         return ()
-  ruleConsequences r v = first (storeFromLst . (<>) v . getList . TR) <$>
-                        oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
-                                     freshTokenSt r v
+  ruleConsequences r v
+    = renameAndAdd v <$> oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
+                                      freshTokenSt r v
+  renameAndAdd v (v',n) = (storeFromLst . (map (fmap (findSelfMap n)) v <>) . getList . TR) v'
   apply :: Text -> [Text] -> SpiegelState FullStore
   apply rsys from
    = do pops <- mapM (fmap getList . retrieve) from

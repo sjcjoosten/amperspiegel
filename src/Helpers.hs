@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE RankNTypes, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module Helpers ((↦),(∋),TripleStore,Triple(..),findInMap,forEachOf,lkpRight,insertTriple
  ,restrictTo, unionTS,showT,forOne,forOneOrNone,getRel
- ,twords,tlength,tnull,ifThenJust,filterBy,mapRel,getPost
+ ,twords,tlength,tnull,ifThenJust,filterBy,mapRel,getPost,findSelfMap
  ,module Control.Monad.Identity,module Data.Monoid,module Data.Map,module Control.Arrow,module Data.Char,module Data.Text.Lazy.IO,module Control.Applicative,module Data.Text.Lazy, module System.Environment, module Control.Monad.State,module Control.Monad.Fix, module Data.Foldable, module Data.String, module Data.Maybe
  ,TransactionVariable(..),Set,difference) where
 import Control.Applicative
@@ -32,6 +32,8 @@ twords = Text.words
 
 findInMap :: (Monoid a, Ord k) => k -> Map k a -> a
 findInMap = Map.findWithDefault mempty
+findSelfMap :: (Ord k) => Map k k -> k -> k
+findSelfMap mp x = Map.findWithDefault x x mp
 
 ifThenJust :: (a -> Bool) -> a -> Maybe a
 ifThenJust f v = case f v of {True -> Just v;False -> Nothing}

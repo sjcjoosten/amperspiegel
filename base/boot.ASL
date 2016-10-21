@@ -53,19 +53,19 @@ CLASSIFY Conjunct IS Conjunct /\ TwoExpressionArguments
 CLASSIFY Compose IS Compose /\ TwoExpressionArguments
 rule :: RuleStatement * RuleSubset
 eFst :: TwoExpressionArguments * Expression
-eSnd :: TwoExpressionArguments * PostExpression
+eSnd :: TwoExpressionArguments * Expression
 conjunct :: Expression * Conjunct
 converse :: Expression * Expression
 compose :: Expression * Compose
 pre :: Expression * UnquotedString -- Stands for a relation
-post :: PostExpression * UnquotedString -- Stands for a relation
+post :: Expression * UnquotedString -- Stands for a relation
 VIEW RuleStatement = ["RULE",rule]
 VIEW RuleSubset = [eFst,"|-",eSnd]
 VIEW Expression = ["(",conjunct,")"]
 VIEW Expression = ["(",compose,")"]
 VIEW Expression = [converse,"~"]
-VIEW Expression = [pre]
+VIEW Expression = ["pre", pre]
+VIEW Expression = ["post", post]
 VIEW Expression = ["="]
-VIEW PostExpression = [post]
 VIEW Conjunct = [eFst,"/\\",eSnd]
 VIEW Compose = [eFst,";",eSnd]
