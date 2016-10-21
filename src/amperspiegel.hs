@@ -2,7 +2,7 @@
 module Main (main) where
 import Helpers
 import Data.Set as Set (toList)
-import ParseRulesFromTripleStore(ParseRule(..),tripleStoreRelations,tripleStoreToParseRules,fmap23)
+import ParseRulesFromTripleStore(ParseRule(..),tripleStoreToParseRules,fmap23)
 import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
 import RuleSet(oldNewSystem,ruleSetRelations,prePostRuleSet,Rule(..),Expression(..))
 import System.IO (stderr)
@@ -29,7 +29,10 @@ newtype Population
  = TR { getPop   :: FullStore}
 
 popFromLst :: [Triple (Atom Text) (Atom Text)] -> Population
-popFromLst = TR . foldl' (\v w -> fst (insertTriple w v)) mempty
+popFromLst = TR . storeFromLst
+
+storeFromLst :: [Triple (Atom Text) (Atom Text)] -> FullStore
+storeFromLst = foldl' (\v w -> fst (insertTriple w v)) mempty
 
 type FullParser = [ParseRule (Atom Text) Text Text]
 type FullRules = [Rule (TransactionVariable (Atom Text)) (Atom Text)]
@@ -57,109 +60,118 @@ parse :: (Monad m, IsString z, Ord z, Show z)
 parse p = eitherError id . parseText id (parseListOf builtIns (p,"Statement")) showUnexpected
 
 commands :: [ ( Text, ( Text, [Text] -> SpiegelState () ) ) ]
-commands = [ ( "i"
-             , ( "parse file as input"
-               , (\files -> do txts <- lift$ mapM (Helpers.readFile . unpack) files
-                               p <- getParser "parser"
-                               trps <- traverse (parse p) txts
-                               overwrite "population" =<< unFresh (popFromLst . mconcat <$> sequence trps)
-                               -- res <- apply "rules" ["population"]
-                               -- overwrite "population" (TR res)
-                               return ()
-                               )))
-           , ( "h"
-             , ( "display this help"
-               , \_ -> liftIO (Helpers.putStrLn . helpText =<< size)))
-           , ( "list"
-             , ( "show a list of all triple-stores"
-               , noArgs "list"$
-                   lift . sequenceA_ . map Helpers.putStrLn . keys
-                     =<< get
-               ))
-           , ( "show"
-             , ( "display the triples as a list"
-               , eachPop (lift . Helpers.putStrLn . prettyPPopulation)))
-           , ( "showP"
-             , ( "display the triples as a set of parse-rules"
-               , eachDo (lift . Helpers.putStrLn . prettyPParser) getParser))
-           , ( "showR"
-             , ( "display the triples as a set of parse-rules"
-               , eachDo (lift . Helpers.putStrLn . prettyPRules) getRules))
-           , ( "count"
-             , ( "count the number of triples"
-               , eachPop (lift . Prelude.putStrLn . show . length . getList)))
-           , ( "asParser"
-             , ( "turn the population into the parser for -i"
-               , noArgs "asParser" $
-                 do res <- apply "asParser" ["population"]
-                    overwrite "parser" (TR res)
-                    overwrite "population" (TR res)
-               ))
-           , ( "apply"
-             , ( "apply the rule-system of first argument and put result into final argument (overwrite what was there). The remaining arguments form the population the system is applied to (or to the final argument if there are no remaining arguments given)."
-               , \args ->
-                   let (rsys,from,targ) = case args of
-                         [] -> ("population",["population"],"population")
-                         [x] -> (x,[x],x)
-                         (x:xs) -> (x,init xs,last xs)
-                   in do v<- apply rsys from
-                         overwrite targ (TR v)
-               ))
-           , ( "collect"
-             , ( "collect the current state of amperspiegel and put the result into the population"
-               , oneArg "collect"
-                   (\arg -> overwrite arg . popFromLst . popsToPop =<< get)
-               ))
-           , ( "distribute"
-             , ( "set the population as the current state of amperspiegel"
-               , oneArg "distribute"
-                   (\arg -> put =<< eitherError id . makePops =<< retrieve arg)
-               ))
-           ]
-           where
-             apply :: Text -> [Text] -> SpiegelState FullStore
-             apply rsys from
-                   = do pops <- mapM (fmap getList . retrieve) from
-                        let pop = mconcat <$> traverse (freshenUp freshTokenSt) pops
-                        r <- getRules rsys
-                        res <- unFresh (oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
-                                                       freshTokenSt r =<< pop)
-                        liftIO$ renameWarnings res
-                        return (fst res)
-             noArgs :: Text -> SpiegelState () -> [t] -> SpiegelState ()
-             noArgs s f
-              = \case {[] -> f;_->lift$finishError (s <> " takes no arguments")}
-             oneArg :: Text -> (Text -> SpiegelState ()) -> [Text] -> SpiegelState ()
-             oneArg s f
-              = \case [] -> f "population";
-                      [i] -> f i
-                      v->lift$finishError (s <> " takes one argument (given: "<>showT (length v)<>")")
-             eachPop :: (Population -> SpiegelState ()) -> [Text] -> SpiegelState ()
-             eachPop f = eachDo f retrieve
-             eachDo :: (a -> SpiegelState ())
-                    -> (Text -> SpiegelState a)
-                    -> ([Text] -> SpiegelState ())
-             eachDo f g = \case [] -> f =<< g "population"
-                                l  -> mapM_ (\v -> f =<< g v) l
-             renameWarnings (_,res)
-              = sequenceA_ [ Helpers.hPutStrLn stderr ("Application of rules caused "<>showT v<>" to be equal to "<> showT r)
-                           | (v,r) <- Map.toList res
-                           , case v of {Fresh _ -> False; _ -> True}]
-             helpText Nothing
-              = mconcat [ s <> "\t" <> d <> "\n" | (s,(d,_)) <- commands ]
-             helpText (Just wdw)
-              = "These are the switches you can use: "<> "\n\n" <>
-                   mconcat [ pad maxw ("  " <> s) <> wrap 0 (twords d) <>"\n"
-                           | (s,(d,_)) <- commands]
-              where
-                maxw :: Int
-                maxw = 3 + foldr max 0 (map (tlength . fst) commands)
-                wrap _ [] = ""
-                wrap cur (w:r)
-                 = case tlength w + 1 of
-                     v | cur + v > lim -> "\n " <> pad maxw "" <> w <> wrap v r
-                     v -> " "<>w<>wrap (cur + v) r
-                lim = max 20 (width wdw - maxw)
+commands
+ = [ ( "i"
+     , ( "parse file as input"
+       , (\files -> parseAsIn files)))
+   , ( "h"
+     , ( "display this help"
+       , \_ -> liftIO (Helpers.putStrLn . helpText =<< size)))
+   , ( "list"
+     , ( "show a list of all triple-stores"
+       , noArgs "list"$
+           lift . sequenceA_ . map Helpers.putStrLn . keys
+             =<< get
+       ))
+   , ( "show"
+     , ( "display the triples as a list"
+       , eachPop (lift . Helpers.putStrLn . prettyPPopulation)))
+   , ( "showP"
+     , ( "display the triples as a set of parse-rules"
+       , eachDo (lift . Helpers.putStrLn . prettyPParser) getParser))
+   , ( "showR"
+     , ( "display the triples as a set of parse-rules"
+       , eachDo (lift . Helpers.putStrLn . prettyPRules) getRules))
+   , ( "count"
+     , ( "count the number of triples"
+       , eachPop (lift . Prelude.putStrLn . show . length . getList)))
+   , ( "asParser"
+     , ( "turn the population into the parser for -i"
+       , noArgs "asParser" $
+         do TR pop <- retrieve "population"
+            parser <- apply "asParser" ["population"]
+            let rules = restrictTo ruleSetRelations pop
+            overwrite "parser" (TR parser)
+            overwrite "rules" (TR rules)
+            overwrite "population" (TR (parser <> rules))
+       ))
+   , ( "apply"
+     , ( "apply the rule-system of first argument and put result into final argument (overwrite what was there). The remaining arguments form the population the system is applied to (or to the final argument if there are no remaining arguments given)."
+       , \args ->
+           let (rsys,from,targ) = case args of
+                 [] -> ("population",["population"],"population")
+                 [x] -> (x,[x],x)
+                 (x:xs) -> (x,init xs,last xs)
+           in do v<- apply rsys from
+                 overwrite targ (TR v)
+       ))
+   , ( "collect"
+     , ( "collect the current state of amperspiegel and put the result into the population"
+       , oneArg "collect"
+           (\arg -> overwrite arg . popFromLst . popsToPop =<< get)
+       ))
+   , ( "distribute"
+     , ( "set the population as the current state of amperspiegel"
+       , oneArg "distribute"
+           (\arg -> put =<< eitherError id . makePops =<< retrieve arg)
+       ))
+   ]
+ where
+  parseAsIn files
+   = do txts <- lift$ mapM (Helpers.readFile . unpack) files
+        p <- getParser "parser"
+        trps <- traverse (parse p) txts
+        r <- getRules "rules"
+        res <- unFresh (ruleConsequences r . mconcat =<< sequence trps)
+        liftIO$ renameWarnings res
+        overwrite "population" (TR (fst res))
+        return ()
+  ruleConsequences r v = first (storeFromLst . (<>) v . getList . TR) <$>
+                        oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
+                                     freshTokenSt r v
+  apply :: Text -> [Text] -> SpiegelState FullStore
+  apply rsys from
+   = do pops <- mapM (fmap getList . retrieve) from
+        let pop = mconcat <$> traverse (freshenUp freshTokenSt) pops
+        r <- getRules rsys
+        res <- unFresh (oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
+                                       freshTokenSt r =<< pop)
+        liftIO$ renameWarnings res
+        return (fst res)
+  noArgs :: Text -> SpiegelState () -> [t] -> SpiegelState ()
+  noArgs s f
+   = \case {[] -> f;_->lift$finishError (s <> " takes no arguments")}
+  oneArg :: Text -> (Text -> SpiegelState ()) -> [Text] -> SpiegelState ()
+  oneArg s f
+   = \case [] -> f "population";
+           [i] -> f i
+           v->lift$finishError (s <> " takes one argument (given: "<>showT (length v)<>")")
+  eachPop :: (Population -> SpiegelState ()) -> [Text] -> SpiegelState ()
+  eachPop f = eachDo f retrieve
+  eachDo :: (a -> SpiegelState ())
+         -> (Text -> SpiegelState a)
+         -> ([Text] -> SpiegelState ())
+  eachDo f g = \case [] -> f =<< g "population"
+                     l  -> mapM_ (\v -> f =<< g v) l
+  renameWarnings (_,res)
+   = sequenceA_ [ Helpers.hPutStrLn stderr ("Application of rules caused "<>showT v<>" to be equal to "<> showT r)
+                | (v,r) <- Map.toList res
+                , case v of {Fresh _ -> False; _ -> True}]
+  helpText Nothing
+   = mconcat [ s <> "\t" <> d <> "\n" | (s,(d,_)) <- commands ]
+  helpText (Just wdw)
+   = "These are the switches you can use: "<> "\n\n" <>
+        mconcat [ pad maxw ("  " <> s) <> wrap 0 (twords d) <>"\n"
+                | (s,(d,_)) <- commands]
+   where
+     maxw :: Int
+     maxw = 3 + foldr max 0 (map (tlength . fst) commands)
+     wrap _ [] = ""
+     wrap cur (w:r)
+      = case tlength w + 1 of
+          v | cur + v > lim -> "\n " <> pad maxw "" <> w <> wrap v r
+          v -> " "<>w<>wrap (cur + v) r
+     lim = max 20 (width wdw - maxw)
 
 unFresh :: Monad m => StateT Int m a -> m a
 unFresh v = evalStateT v 0
