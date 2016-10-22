@@ -53,7 +53,7 @@ CLASSIFY RuleStatement IS Statement /\ RuleStatement
 rule :: RuleStatement * RuleSubset
 eFst :: TwoExpressionArguments * PreExpression
 eSnd :: TwoExpressionArguments * PostExpression
-pre :: PreExpression * UnquotedString -- Stands for a relation
+pre  :: PreExpression * UnquotedString -- Stands for a relation
 post :: PostExpression * UnquotedString -- Stands for a relation
 VIEW RuleStatement = ["RULE",rule]
 VIEW RuleSubset = [eFst,"|-",eSnd]
