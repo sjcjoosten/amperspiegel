@@ -220,7 +220,7 @@ prettyPRules = mconcat . map (\v -> pRule v <> "\n")
         pExp (Conjunction e1 e2) = "("<>pExp e1<>" /\\ "<>pExp e2<>")"
         pExp (Flp e1) = pExp e1<>"~"
         pExp Bot = "Bot"
-        pExp (Pair a1 a2) = "Pair "<>showT a1<>" "<>showT a2
+        pExp (Pair a1 a2) = "< "<>showT a1<>" , "<>showT a2<>" >"
 
 prettyPPopulation :: Population -> Text
 prettyPPopulation v
