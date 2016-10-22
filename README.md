@@ -51,24 +51,24 @@ After having done all this, send me an email (or a message in github, or ..) and
 A state assigns a population to each variable.
 Initially, these are the assignments:
 
- - "parser" gets assigned a population describing the built-in parser
- - "asParser" gets assigned that for the built-in ruleList
+ - "parser" gets assigned a population describing the built-in parser. It contains the relations "recogniser", "continuation", "choice" and "nonTerminal" to describe the parser, plus a set of rules that is applied after parsing, using "rule", "eFst", "eSnd", "pre", "post", and some other relations.
+ - "asParser" gets assigned a set of rules to change a ampersand-style script that talks about "concepts", "declaration", "relation" etc into a parser.
+ - "switches" gets assigned the switches passed to amperspiegel.
  - possibly some others, use -list to see them
 
 All other variables get assigned the empty population by default, the following in particular:
 
-  - "rules", which stands for rules that can be applied to a population
   - "population", which stands for the population we're working on currently
     Consequently, most switches get "population" as default argument
 
 The switch -i uses "parser" as a parser to parse each of its arguments
 Next, the union over the resulting list of populations is taken
-To this population, "rules" is applied as a rule-set
+To this population, "parser" is then applied as a rule-set
 This result is put in "population" (Resulting in a state)
 
 The switch -asParser applies "asParser" on "population", then filters it.
 Consequently, "population" only contains stuff relevant for parser and rules.
-It then copies "population" to "parser" and "rules".
+It then copies "population" to "parser".
 
 Switches -count and -show displays stuff about a variable.
 

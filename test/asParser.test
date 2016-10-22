@@ -1,2 +1,2 @@
-amperspiegel -showR rules -i ../base/boot.ASL -asParser -i ../base/asParser.ASL -asParser -showR rules
+amperspiegel -showR asParser -i ../base/boot.ASL -asParser -i ../base/asParser.ASL -asParser -showR rules
 

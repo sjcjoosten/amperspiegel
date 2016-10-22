@@ -1,1 +1,43 @@
+pre conceptList |- during conceptLists
+(during conceptLists;pre tail1) |- during conceptLists
+((pre mainConcept~;during conceptLists);pre head1) |- during subConcepts
+(during subConcepts;during subConcepts) |- during subConcepts
+((pre mainConcept~;pre mainConcept) /\ =) |- during subConcepts
+((pre concept~;pre concept) /\ =) |- during subConcepts
+pre qstring |- =
+pre relationName |- =
+(pre string;pre string~) |- =
+((pre declaration;pre relation);pre string) |- pre relationName
+((pre declaration;pre concepts);pre snd) |- post nonTerminal
+((during subConcepts~;pre concept~);pre syntaxList) |- post choice
+pre head2 |- post recogniser
+pre tail2 |- post continuation
+((post eFst;post eFst~) /\ (post eSnd;post eSnd~)) |- =
+(post conjunct;post conjunct~) |- =
+(post converse;post converse~) |- =
+(post compose;post compose~) |- =
+(post pre;post pre~) |- =
+(post post;post post~) |- =
+(post during;post during~) |- =
+pre during |- post during
+pre pre |- post pre
+pre post |- post post
+pre converse |- post converse
+pre conjunct |- post conjunct
+pre eFst |- post eFst
+pre eSnd |- post eSnd
+pre compose |- post compose
+pre rule |- post rule
+pre pair1 |- post pair1
+pre pair2 |- post pair2
+pre declaration |- post rule
+(pre relation;pre string) |- (post eFst;post pre)
+(pre relation;pre string) |- (post eSnd;post post)
+Pair "r1" "r1" |- post rule
+Pair "r2" "r2" |- post rule
+Pair "r1" "string" |- (post eFst;post pre)
+Pair "r1" "string" |- (post eSnd;post post)
+Pair "r2" "origin" |- (post eFst;post pre)
+Pair "r2" "origin" |- (post eSnd;post post)
+
 

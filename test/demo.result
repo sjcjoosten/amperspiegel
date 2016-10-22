@@ -8,14 +8,12 @@ CLASSIFY Woman IS Woman /\ Person
 "declaration"   ∋ Fresh 0  ↦ Fresh 1
 "concepts"      ∋ Fresh 1  ↦ Fresh 3
 "relation"      ∋ Fresh 1  ↦ Fresh 2
-"origin"        ∋ Fresh 2  ↦ Position 1 0
 "string"        ∋ Fresh 2  ↦ "parent"
 "fst"           ∋ Fresh 3  ↦ "Person"
 "snd"           ∋ Fresh 3  ↦ "Person"
 "declaration"   ∋ Fresh 4  ↦ Fresh 5
 "concepts"      ∋ Fresh 5  ↦ Fresh 7
 "relation"      ∋ Fresh 5  ↦ Fresh 6
-"origin"        ∋ Fresh 6  ↦ Position 2 0
 "string"        ∋ Fresh 6  ↦ "dad"
 "fst"           ∋ Fresh 7  ↦ "Person"
 "snd"           ∋ Fresh 7  ↦ "Man"
@@ -64,8 +62,23 @@ Woman := "Woman", "name" "String"
 "choice"      ∋ "Statement" ↦ Fresh 34
 "choice"      ∋ "Woman"     ↦ Fresh 28
 "nonTerminal" ∋ "dad"       ↦ "Man"
+"rule"        ∋ "dad"       ↦ Fresh 5
 "nonTerminal" ∋ "name"      ↦ "String"
+"rule"        ∋ "name"      ↦ Fresh 9
 "nonTerminal" ∋ "parent"    ↦ "Person"
+"rule"        ∋ "parent"    ↦ Fresh 1
+"eFst"        ∋ "r1"        ↦ Fresh 51
+"eSnd"        ∋ "r1"        ↦ Fresh 50
+"rule"        ∋ "r1"        ↦ "r1"
+"eFst"        ∋ "r2"        ↦ Fresh 49
+"eSnd"        ∋ "r2"        ↦ Fresh 48
+"rule"        ∋ "r2"        ↦ "r2"
+"eFst"        ∋ Fresh 1     ↦ Fresh 52
+"eSnd"        ∋ Fresh 1     ↦ Fresh 53
+"eFst"        ∋ Fresh 5     ↦ Fresh 54
+"eSnd"        ∋ Fresh 5     ↦ Fresh 55
+"eFst"        ∋ Fresh 9     ↦ Fresh 56
+"eSnd"        ∋ Fresh 9     ↦ Fresh 57
 "continuation"∋ Fresh 22    ↦ Fresh 24
 "recogniser"  ∋ Fresh 22    ↦ "\"Man\""
 "recogniser"  ∋ Fresh 24    ↦ "name"
@@ -81,6 +94,16 @@ Woman := "Woman", "name" "String"
 "continuation"∋ Fresh 40    ↦ Fresh 42
 "recogniser"  ∋ Fresh 40    ↦ "\"is\""
 "recogniser"  ∋ Fresh 42    ↦ "dad"
+"post"        ∋ Fresh 48    ↦ "origin"
+"pre"         ∋ Fresh 49    ↦ "origin"
+"post"        ∋ Fresh 50    ↦ "string"
+"pre"         ∋ Fresh 51    ↦ "string"
+"pre"         ∋ Fresh 52    ↦ "parent"
+"post"        ∋ Fresh 53    ↦ "parent"
+"pre"         ∋ Fresh 54    ↦ "dad"
+"post"        ∋ Fresh 55    ↦ "dad"
+"pre"         ∋ Fresh 56    ↦ "name"
+"post"        ∋ Fresh 57    ↦ "name"
 
 
 Man Han
@@ -119,9 +142,9 @@ CLASSIFY Person IS Statement /\ Person -- Parser will parse a list of statements
     12	CLASSIFY Person IS Statement /\ Person -- Parser will parse a list of statements
     13	
     14	RULE dad |- parent
-274
-82
-82
+257
+177
+177
 Man := "Man", "name" "String"
 Person := "Man", "name" "String"
         | "Woman", "name" "String"

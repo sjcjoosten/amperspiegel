@@ -1,12 +1,7 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE RankNTypes, TypeFamilies, RankNTypes, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module RuleSet(oldNewSystem,prePostRuleSet,applySystem,ruleSetRelations,Rule(..),Expression(..)) where
+module RuleSet(oldNewSystem,prePostRuleSet,Rule(..),Expression(..)) where
 import Helpers
 import qualified Data.Map as Map
-
-ruleSetRelations :: IsString x => [x]
-ruleSetRelations
- = ["rule","eFst","eSnd","pre","post","during","conjunct","compose","converse"]
-
 
 prePostRuleSet :: forall m v z y. (Applicative m, IsString y, Ord y, Ord v)
                      => (forall x. m x)
@@ -19,6 +14,7 @@ prePostRuleSet fl transAtom ts
    pre  = fmap (ExprAtom . TransactionPre)    . transAtom
    post = fmap (ExprAtom . TransactionPost)   . transAtom
    duri = fmap (ExprAtom . TransactionDuring) . transAtom
+   pair v x = Pair x <$> forOne fl ts "pair2" v pure
    makeRule v = uncurry Subset <$> makeTuple v
    makeTuple v
     = (,) <$> (forOne fl ts "eFst" v makeExpression)
@@ -27,6 +23,7 @@ prePostRuleSet fl transAtom ts
     = forOneOrNone fl ts "conjunct" v (fmap (uncurry Conjunction) . makeTuple) $
       forOneOrNone fl ts "compose"  v (fmap (uncurry Compose    ) . makeTuple) $
       forOneOrNone fl ts "converse" v (fmap Flp . makeExpression) $
+      forOneOrNone fl ts "pair1"   v (pair v) $
       forOneOrNone fl ts "pre"    v pre  $
       forOneOrNone fl ts "post"   v post $
       forOneOrNone fl ts "during" v duri $
