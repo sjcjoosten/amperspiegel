@@ -2,11 +2,11 @@ RULE pre conceptList |- during conceptLists
 RULE (during conceptLists;pre tail1) |- during conceptLists
 RULE ((pre mainConcept~;during conceptLists);pre head1) |- during subConcepts
 RULE (during subConcepts;during subConcepts) |- during subConcepts
-RULE ((pre mainConcept~;pre mainConcept) /\ =) |- during subConcepts
-RULE ((pre concept~;pre concept) /\ =) |- during subConcepts
-RULE pre qstring |- =
-RULE pre relationName |- =
-RULE (pre string;pre string~) |- =
+RULE ((pre mainConcept~;pre mainConcept) /\ I) |- during subConcepts
+RULE ((pre concept~;pre concept) /\ I) |- during subConcepts
+RULE pre qstring |- I
+RULE pre relationName |- I
+RULE (pre string;pre string~) |- I
 -- Unfortunately, there is no other way to disambiguate declarations.
 RULE ((pre declaration;pre relation);pre string) |- pre relationName
 RULE ((pre declaration;pre concepts);pre snd) |- post nonTerminal
@@ -14,13 +14,13 @@ RULE ((during subConcepts~;pre concept~);pre syntaxList) |- post choice
 RULE pre head2 |- post recogniser
 RULE pre tail2 |- post continuation
 -- Identities to compress the system a bit (not strictly needed)
-RULE ((post eFst;post eFst ~) /\ (post eSnd;post eSnd ~)) |- =
-RULE (post conjunct ; post conjunct ~) |- =
-RULE (post converse ; post converse ~) |- =
-RULE (post compose  ; post compose ~)  |- =
-RULE (post pre      ; post pre ~)      |- =
-RULE (post post     ; post post ~)     |- =
-RULE (post during   ; post during ~)   |- =
+RULE ((post eFst;post eFst ~) /\ (post eSnd;post eSnd ~)) |- I
+RULE (post conjunct ; post conjunct ~) |- I
+RULE (post converse ; post converse ~) |- I
+RULE (post compose  ; post compose ~)  |- I
+RULE (post pre      ; post pre ~)      |- I
+RULE (post post     ; post post ~)     |- I
+RULE (post during   ; post during ~)   |- I
 -- keep al the existing rules
 RULE pre during |- post during
 RULE pre pre |- post pre

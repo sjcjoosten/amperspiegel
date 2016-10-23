@@ -12,5 +12,5 @@ VIEW Person = ["Father", "of", name, "is", dad]
 CLASSIFY Person IS Statement /\ Person -- Parser will parse a list of statements
 
 -- we trigger some errors
-RULE pre dad |- =
-RULE pre name |- =
+RULE pre dad |- I
+RULE pre name |- I

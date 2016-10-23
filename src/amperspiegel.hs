@@ -215,7 +215,7 @@ prettyPRules :: FullRules -> Text
 prettyPRules = mconcat . map (\v -> pRule v <> "\n")
   where pRule (Subset l r) = pExp l<>" |- "<>pExp r
         pExp (ExprAtom r) = showT r
-        pExp I            = "="
+        pExp I            = "I"
         pExp (Compose e1 e2) = "("<>pExp e1<>";"<>pExp e2<>")"
         pExp (Conjunction e1 e2) = "("<>pExp e1<>" /\\ "<>pExp e2<>")"
         pExp (Flp e1) = pExp e1<>"~"

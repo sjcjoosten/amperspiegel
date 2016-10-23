@@ -23,23 +23,23 @@ pre conceptList |- during conceptLists
 (during conceptLists;pre tail1) |- during conceptLists
 ((pre mainConcept~;during conceptLists);pre head1) |- during subConcepts
 (during subConcepts;during subConcepts) |- during subConcepts
-((pre mainConcept~;pre mainConcept) /\ =) |- during subConcepts
-((pre concept~;pre concept) /\ =) |- during subConcepts
-pre qstring |- =
-pre relationName |- =
-(pre string;pre string~) |- =
+((pre mainConcept~;pre mainConcept) /\ I) |- during subConcepts
+((pre concept~;pre concept) /\ I) |- during subConcepts
+pre qstring |- I
+pre relationName |- I
+(pre string;pre string~) |- I
 ((pre declaration;pre relation);pre string) |- pre relationName
 ((pre declaration;pre concepts);pre snd) |- post nonTerminal
 ((during subConcepts~;pre concept~);pre syntaxList) |- post choice
 pre head2 |- post recogniser
 pre tail2 |- post continuation
-((post eFst;post eFst~) /\ (post eSnd;post eSnd~)) |- =
-(post conjunct;post conjunct~) |- =
-(post converse;post converse~) |- =
-(post compose;post compose~) |- =
-(post pre;post pre~) |- =
-(post post;post post~) |- =
-(post during;post during~) |- =
+((post eFst;post eFst~) /\ (post eSnd;post eSnd~)) |- I
+(post conjunct;post conjunct~) |- I
+(post converse;post converse~) |- I
+(post compose;post compose~) |- I
+(post pre;post pre~) |- I
+(post post;post post~) |- I
+(post during;post during~) |- I
 pre during |- post during
 pre pre |- post pre
 pre post |- post post
