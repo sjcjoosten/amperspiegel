@@ -2,7 +2,7 @@
 module Main (main) where
 import Helpers
 import Data.Set as Set (toList)
-import ParseRulesFromTripleStore(ParseRule(..),tripleStoreToParseRules,fmap23)
+import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),tripleStoreToParseRules,fmap23)
 import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
 import RuleSet(oldNewSystem,prePostRuleSet,Rule(..),Expression(..))
 import System.IO (stderr)
@@ -87,6 +87,18 @@ commands
        , eachDo (lift . Helpers.putStrLn . prettyPPopulations)
                 (\v -> eitherError id . makePops =<< retrieve v)
        ))
+   , ( "print"
+     , ( "Print the second argument(s) using syntax of the first argument. Missing arguments default to \"population\". Prints to stdout"
+       , \args ->
+           let (synt,pops) = case args of
+                 [] -> ("population",["population"])
+                 [x] -> (x,["population"])
+                 (x:xs) -> (x,xs)
+           in do parser <- getParser synt
+                 pop <- mconcat <$> mapM (fmap getList . retrieve) pops
+                 printPop parser (popFromLst pop)
+       )
+     )
    , ( "count"
      , ( "count the number of triples"
        , eachPop (lift . Prelude.putStrLn . show . length . getList)))
@@ -103,8 +115,7 @@ commands
                  [] -> ("population",["population"],"population")
                  [x] -> (x,[x],x)
                  (x:xs) -> (x,init xs,last xs)
-           in do v<- apply rsys from
-                 overwrite targ (TR v)
+           in overwrite targ . TR =<< apply rsys from
        ))
    , ( "collect"
      , ( "collect the current state of amperspiegel and put the result into the population"
@@ -127,6 +138,49 @@ commands
         overwrite "population" (TR res)
         return ()
   pass f v = const v <$> f v
+  printPop :: FullParser -> Population -> SpiegelState ()
+  printPop pr (TR pop)
+   = sequenceA_ [ (liftIO . traverse Helpers.putStrLn) =<< matchStart pa
+                | pa <- findInMap "Statement" pm ]
+   where
+    -- parse map based on all parse rules (faster lookup)
+    pm = Map.fromListWith (++) [(k,[v]) | ParseRule k v <-
+      ParseRule "StringAndOrigin" [(ParseRef "string" "String")] : pr]
+    matchStart :: [ParseAtom (Atom Text) Text Text] -> SpiegelState [Text]
+    matchStart [] = pure []
+    matchStart (ParseString v:r) = map ((v<>" ")<>) <$> matchStart r
+    matchStart (ParseRef rel cont:r)
+     = sequence [ mappend . intercalate " " <$> sequence h <*> 
+                   (intercalate " " <$> sequence r')
+                | (k,v@(_:_))<-getRel pop rel
+                -- we might want to make sure that (length v == 1)?
+                -- otherwise, parsing back yields different source objects
+                , Just h <- [traverse (printAs cont) v]
+                , Just r' <- [traverse (match k) r]
+                ]
+    printAs :: Text -> Atom Text -> Maybe (SpiegelState Text)
+    printAs cont v
+     = if cont `elem` ["String", "QuotedString", "UnquotedString"]
+       then -- Just . pure$ showT v
+            Just$ eitherError (mappend "Not a String: ".showT) $ deAtomize v
+       else pickBest -- print the first of all matching patterns
+             [ sequence r
+             | pa <- findInMap cont pm, Just r <- [traverse (match v) pa]]
+    match :: Atom Text
+          -> ParseAtom (Atom Text) Text Text
+          -> Maybe (SpiegelState Text)
+    match _ (ParseString v) = Just (pure v)
+    -- maybe throw an error upon multiple
+    match v (ParseRef rel cont)
+     = case forEachOf pop rel v of
+         [] -> Nothing -- no match
+         lst -> (fmap (intercalate " ") . sequence <$> traverse (printAs cont) lst)
+    pickBest :: [SpiegelState [Text]] -> Maybe (SpiegelState Text)
+    pickBest [] = Nothing
+    pickBest (h:tl)
+     = Just$ chooseBest (pickBest tl) =<< h
+    chooseBest (Just v) [] = v
+    chooseBest _ h = return (intercalate " " h)
   ruleConsequences :: forall x. MonadIO x
                    => FullRules
                    -> [Triple (Atom Text) (Atom Text)]
