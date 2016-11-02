@@ -37,9 +37,9 @@ RULE pre pair2 |- post pair2
 RULE pre declaration |- post rule
 RULE (pre relation ; pre string) |- (post eFst ; post pre)
 RULE (pre relation ; pre string) |- (post eSnd ; post post)
-RULE < "r1" , "r1" > |- post rule
-RULE < "r2" , "r2" > |- post rule
-RULE < "r1" , "string" > |- (post eFst ; post pre)
-RULE < "r1" , "string" > |- (post eSnd ; post post)
-RULE < "r2" , "origin" > |- (post eFst ; post pre)
-RULE < "r2" , "origin" > |- (post eSnd ; post post)
+RULE < r1 , r1 > |- post rule
+RULE < r2 , r2 > |- post rule
+RULE < r1 , string > |- (post eFst ; post pre)
+RULE < r1 , string > |- (post eSnd ; post post)
+RULE < r2 , origin > |- (post eFst ; post pre)
+RULE < r2 , origin > |- (post eSnd ; post post)

@@ -82,6 +82,11 @@ commands
    , ( "showR"
      , ( "display the triples as a set of parse-rules"
        , eachDo (lift . Helpers.putStrLn . prettyPRules) getRules))
+   , ( "showTS"
+     , ( "display for populations generated with -collect"
+       , eachDo (lift . Helpers.putStrLn . prettyPPopulations)
+                (\v -> eitherError id . makePops =<< retrieve v)
+       ))
    , ( "count"
      , ( "count the number of triples"
        , eachPop (lift . Prelude.putStrLn . show . length . getList)))
@@ -122,6 +127,10 @@ commands
         overwrite "population" (TR res)
         return ()
   pass f v = const v <$> f v
+  ruleConsequences :: forall x. MonadIO x
+                   => FullRules
+                   -> [Triple (Atom Text) (Atom Text)]
+                   -> StateT Int x FullStore
   ruleConsequences r v
     = fst <$> (pass (liftIO . renameWarnings) =<<
           oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
@@ -132,10 +141,7 @@ commands
    = do pops <- mapM (fmap getList . retrieve) from
         let pop = mconcat <$> traverse (freshenUp freshTokenSt) pops
         r <- getRules rsys
-        res <- unFresh (oldNewSystem (liftIO$finishError "Error occurred in applying rule-set: rules & data lead to an inconsistency.")
-                                       freshTokenSt r =<< pop)
-        liftIO$ renameWarnings res
-        return (fst res)
+        unFresh (ruleConsequences r =<< pop)
   noArgs :: Text -> SpiegelState () -> [t] -> SpiegelState ()
   noArgs s f
    = \case {[] -> f;_->lift$finishError (s <> " takes no arguments")}
@@ -230,6 +236,15 @@ prettyPPopulation v
        l = getList v
        max2 (Triple a b _) (al,bl)
          = (max al (length (show a)), max bl (length (show b)))
+
+prettyPPopulations :: (Map Text Population) -> Text
+prettyPPopulations v
+ = intercalate "\n  , "
+     [ "( "<>showT k<>"\n    , [ " <> 
+       intercalate "\n      , " [showT n <> " \8715 "<>showT s<>" \8614 "<>showT t
+                                | Triple n s t <- getList p ] <> "\n      ])"
+     | (k,p)<-Map.toList v]
+
 showPad :: forall a. Show a => Int -> a -> Text
 showPad w = pad w . showT
 

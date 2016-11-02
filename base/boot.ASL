@@ -60,8 +60,8 @@ compose  :: Expression * Compose
 pre      :: Expression * UnquotedString -- Stands for a relation
 post     :: Expression * UnquotedString -- Stands for a relation
 during   :: Expression * UnquotedString -- Stands for a relation
-pair1    :: Expression * QuotedString -- Stands for an atom
-pair2    :: Expression * QuotedString -- Stands for an atom
+pair1    :: Expression * String -- Stands for an atom
+pair2    :: Expression * String -- Stands for an atom
 VIEW RuleStatement = ["RULE",rule]
 VIEW RuleSubset = [eFst,"|-",eSnd]
 VIEW Expression = ["(",conjunct,")"]
