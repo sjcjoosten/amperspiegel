@@ -1,9 +1,8 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TupleSections,RankNTypes, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module TokenAwareParser(Atom(..),parseText,deAtomize,freshTokenSt,freshenUp,parseListOf,showPos,runToken,Token,LinePos,builtIns,makeQuoted) where
+module TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted) where
 import Text.Earley
 import Data.IntMap as IntMap
 import Data.Map as Map
-import Data.List(intercalate)
 import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),traverseStrings)
 import Helpers
 
@@ -45,13 +44,13 @@ instance (Scannable a, IsString a) => IsString (Atom a) where
   fromString v = case scanPartitioned id (fromString v) of
        ([v'],LinePos _ _ Success) -> UserAtom (fmap (runLinePos . fst) v')
        _ -> UserAtom (fromString v)
-
-instance IsString (Atom (LinePos Text)) where
-  fromString v = UserAtom (fmap (LinePos 0 0) (fromString v))
-
-instance Show y => Show (Triple y (Atom Text)) where
-  showList ts = (++) ("makeTriples [" ++ Data.List.intercalate ", " [show (r,a,b) | Triple r a b <- ts] ++ "]")
-  show (Triple r a b) = show (r,a,b)
+instance Show a => Show (Token a) where
+  show (QuotedString a) = show (show a)
+  show (NonQuoted _ a) = show a           
+instance (Scannable a, IsString a) => IsString (Token a) where
+  fromString v = case scanPartitioned id (fromString v) of
+       ([v'],LinePos _ _ Success) -> (fmap (runLinePos . fst) v')
+       _ -> QuotedString (fromString v)
 
 freshTokenSt :: Applicative x => StateT Int x (Atom y)
 freshTokenSt = StateT (\i -> pure (Fresh i,i+1))
@@ -238,15 +237,6 @@ exactMatch end mpt = go mpt
                        -> Just (f (NonQuoted (fmap fst p) v))
                      _ -> Nothing)
 
-instance Show a => Show (Token a) where
-  show (QuotedString a) = show (show a)
-  show (NonQuoted _ a) = show a           
-
-instance (Scannable a, IsString a) => IsString (Token a) where
-  fromString v = case scanPartitioned id (fromString v) of
-       ([v'],LinePos _ _ Success) -> (fmap (runLinePos . fst) v')
-       _ -> QuotedString (fromString v)
-
 isQuoted :: Token t -> Bool
 isQuoted QuotedString{} = True
 isQuoted NonQuoted{} = False
@@ -262,17 +252,6 @@ data ScanResult a = Success | ExpectClosingComment | ExpectClosingQuote
 
 class Scannable a where
   scan :: LinePos a -> ([LinePos (PreToken a)],LinePos (ScanResult a))
-
-instance Scannable a => Scannable (LinePos a,Bool) where
-  scan (LinePos a b (v,r))
-   = let (r1,LinePos c d rm) = scan v
-     in (fmap incr r1, LinePos c d (fmap wrap rm))
-   where
-     wrap v' = (LinePos a b v',r)
-     incr :: LinePos (PreToken a) -> LinePos (PreToken (LinePos a, Bool))
-     incr (LinePos c d x)
-           = if c>0 then LinePos (a+c) d (fmap wrap x)
-             else LinePos a (d+b) (fmap wrap x)
 
 splitPreToken :: PreToken a -> Either (Token a) (NonParsed a)
 splitPreToken o = case o of
