@@ -8,12 +8,14 @@ CLASSIFY Woman IS Woman /\ Person
 "declaration"   ∋ Fresh 0  ↦ Fresh 1
 "concepts"      ∋ Fresh 1  ↦ Fresh 3
 "relation"      ∋ Fresh 1  ↦ Fresh 2
+"origin"        ∋ Fresh 2  ↦ Position 1 0
 "string"        ∋ Fresh 2  ↦ "parent"
 "fst"           ∋ Fresh 3  ↦ "Person"
 "snd"           ∋ Fresh 3  ↦ "Person"
 "declaration"   ∋ Fresh 4  ↦ Fresh 5
 "concepts"      ∋ Fresh 5  ↦ Fresh 7
 "relation"      ∋ Fresh 5  ↦ Fresh 6
+"origin"        ∋ Fresh 6  ↦ Position 2 0
 "string"        ∋ Fresh 6  ↦ "dad"
 "fst"           ∋ Fresh 7  ↦ "Person"
 "snd"           ∋ Fresh 7  ↦ "Man"
@@ -142,7 +144,7 @@ CLASSIFY Person IS Statement /\ Person -- Parser will parse a list of statements
     12	CLASSIFY Person IS Statement /\ Person -- Parser will parse a list of statements
     13	
     14	RULE dad |- parent
-257
+274
 177
 177
 Man := "Man", "name" "String"
