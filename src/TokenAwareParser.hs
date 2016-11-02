@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TupleSections,RankNTypes, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted) where
+module TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted) where
 import Text.Earley
 import Data.IntMap as IntMap
 import Data.Map as Map
@@ -25,6 +25,11 @@ makeQuoted = UserAtom . QuotedString
 deAtomize :: Atom a -> Either (Atom a) a
 deAtomize (UserAtom v) = pure$ runToken v
 deAtomize x = Left x
+deAtomizeString :: Atom Text -> Either (Atom Text) Text
+deAtomizeString (UserAtom v)
+ = pure$ case v of QuotedString q -> showT q
+                   NonQuoted _ o -> o
+deAtomizeString x = Left x
 
 freshenUp :: (Applicative m)
           => m (Atom y)

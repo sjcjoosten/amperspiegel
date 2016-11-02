@@ -3,7 +3,7 @@ module Main (main) where
 import Helpers
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),tripleStoreToParseRules,fmap23)
-import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
+import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
 import RuleSet(oldNewSystem,prePostRuleSet,Rule(..),Expression(..))
 import System.IO (stderr)
 import System.Exit (exitFailure)
@@ -144,8 +144,14 @@ commands
                 | pa <- findInMap "Statement" pm ]
    where
     -- parse map based on all parse rules (faster lookup)
-    pm = Map.fromListWith (++) [(k,[v]) | ParseRule k v <-
+    pm :: Map Text [[ParseAtom (Atom Text) Text Text]]
+    pm = Map.fromListWith merge [(k,[v]) | ParseRule k v <-
       ParseRule "StringAndOrigin" [(ParseRef "string" "String")] : pr]
+    merge [] l = l
+    merge l [] = l
+    merge o1@(h1:l1) o2@(h2:l2)
+     = if numRefs h1 < numRefs h2 then h2 : merge o1 l2 else h1 : merge l1 o2
+    numRefs lst = length [() | ParseRef _ _ <- lst]
     matchStart :: [ParseAtom (Atom Text) Text Text] -> SpiegelState [Text]
     matchStart [] = pure []
     matchStart (ParseString v:r) = map ((v<>" ")<>) <$> matchStart r
@@ -162,7 +168,7 @@ commands
     printAs cont v
      = if cont `elem` ["String", "QuotedString", "UnquotedString"]
        then -- Just . pure$ showT v
-            Just$ eitherError (mappend "Not a String: ".showT) $ deAtomize v
+            Just$ eitherError (mappend "Not a String: ".showT) $ deAtomizeString v
        else pickBest -- print the first of all matching patterns
              [ sequence r
              | pa <- findInMap cont pm, Just r <- [traverse (match v) pa]]
@@ -174,7 +180,7 @@ commands
     match v (ParseRef rel cont)
      = case forEachOf pop rel v of
          [] -> Nothing -- no match
-         lst -> (fmap (intercalate " ") . sequence <$> traverse (printAs cont) lst)
+         lst -> (fmap (intercalate " match ") . sequence <$> traverse (printAs cont) lst)
     pickBest :: [SpiegelState [Text]] -> Maybe (SpiegelState Text)
     pickBest [] = Nothing
     pickBest (h:tl)
