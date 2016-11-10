@@ -43,6 +43,7 @@ VIEW ConceptList         = [head1]
 VIEW DeclarationType     = [fst,"*",snd]
 VIEW Declaration         = [relation,"::",concepts]
 VIEW Syntax              = ["VIEW",concept,"=","[",syntaxList,"]"]
+VIEW Syntax              = ["VIEW",concept,"=","[","]"]
 VIEW ConsSyntaxList      = [head2,",",tail2]
 VIEW SyntaxList          = [head2]
 VIEW QuotedStringElement = [qstring] -- goes to QuotedString

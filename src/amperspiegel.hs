@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
 module Main (main) where
-import Helpers
+import Helpers 
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),tripleStoreToParseRules,fmap23)
 import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
@@ -166,12 +166,13 @@ commands
                 ]
     printAs :: Text -> Atom Text -> Maybe (SpiegelState Text)
     printAs cont v
-     = if cont `elem` ["String", "QuotedString", "UnquotedString"]
-       then -- Just . pure$ showT v
-            Just$ eitherError (mappend "Not a String: ".showT) $ deAtomizeString v
-       else pickBest -- print the first of all matching patterns
-             [ sequence r
-             | pa <- findInMap cont pm, Just r <- [traverse (match v) pa]]
+     = case cont of
+         "String" -> Just$ eitherError (mappend "Not a String: ".showT) $ deAtomizeString v
+         "UnquotedString" -> Just$ eitherError (mappend "Not a String: ".showT) $ deAtomize v
+         "QuotedString" -> Just$ fmap (showT . unpack) . eitherError (mappend "Not a String: ".showT) $ deAtomize v
+         _ -> pickBest -- print the first of all matching patterns
+               [ sequence r
+               | pa <- findInMap cont pm, Just r <- [traverse (match v) pa]]
     match :: Atom Text
           -> ParseAtom (Atom Text) Text Text
           -> Maybe (SpiegelState Text)
@@ -301,7 +302,7 @@ prettyPPopulations :: (Map Text Population) -> Text
 prettyPPopulations v
  = intercalate "\n  , "
      [ "( "<>showT k<>"\n    , [ " <> 
-       intercalate "\n      , " [showT n <> " \8715 "<>showT s<>" \8614 "<>showT t
+       intercalate "\n      , " [ showT n <> " \8715 "<>showT s<>" \8614 "<>showT t
                                 | Triple n s t <- getList p ] <> "\n      ])"
      | (k,p)<-Map.toList v]
 

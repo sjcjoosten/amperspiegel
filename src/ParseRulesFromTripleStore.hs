@@ -72,7 +72,8 @@ tripleStoreToParseRules fl transAtom ts
    traversePair :: ((v, v)    -> m (ParseRule z z z))
                 -> [(v, [v])] -> m [ParseRule z z z]
    traversePair _ [] = pure []
-   traversePair f ((src',tgts):as) = (++) <$> sequenceA [f (src', tgt') | tgt'<-tgts] <*> traversePair f as
+   traversePair f ((src',tgts):as) = (++) <$> sequenceA [f (src', tgt') | tgt'<-tgts]
+                                          <*> traversePair f as
    makeParseRule :: (v, v) -> m (ParseRule z z z)
    makeParseRule (s,t) = ParseRule <$> transAtom s <*> makeList t
    makeList :: v -> m [ParseAtom z z z]
@@ -81,4 +82,5 @@ tripleStoreToParseRules fl transAtom ts
           forOneOrNone fl ts "continuation" cl makeList (pure [])
    makeAtom :: v -> m (ParseAtom z z z)
    makeAtom atm
-        = forOneOrNone fl ts "nonTerminal" atm (\v -> ParseRef <$> transAtom atm <*> transAtom v) (ParseString <$> transAtom atm)
+        = forOneOrNone fl ts "nonTerminal" atm (\v -> ParseRef <$> transAtom atm <*> transAtom v)
+                                               (ParseString <$> transAtom atm)

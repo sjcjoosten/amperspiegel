@@ -25,11 +25,13 @@ makeQuoted = UserAtom . QuotedString
 deAtomize :: Atom a -> Either (Atom a) a
 deAtomize (UserAtom v) = pure$ runToken v
 deAtomize x = Left x
-deAtomizeString :: Atom Text -> Either (Atom Text) Text
+
+deAtomizeString :: Atom Text -> Either Text Text
 deAtomizeString (UserAtom v)
  = pure$ case v of QuotedString q -> showT q
                    NonQuoted _ o -> o
-deAtomizeString x = Left x
+deAtomizeString (Position r c) = Left$ "Position "<>showT r<>" "<>showT c
+deAtomizeString (Fresh i) = Left$"Fresh "<>showT i
 
 freshenUp :: (Applicative m)
           => m (Atom y)
@@ -41,17 +43,12 @@ freshenUp fg trs
     <$> sequenceA (IntMap.fromList [ (i,fg) | Triple r a b <-trs
                                            , Fresh i <- [r,a,b] ])
 
-instance Show a => Show (Atom a) where
-  show (UserAtom a) = show a
-  show (Position r c) = "Position "++show r++" "++show c
-  show (Fresh i) = "Fresh "++show i
+instance Show (Atom Text) where
+  show = unpack . either id (showT . unpack) . deAtomizeString 
 instance (Scannable a, IsString a) => IsString (Atom a) where
   fromString v = case scanPartitioned id (fromString v) of
        ([v'],LinePos _ _ Success) -> UserAtom (fmap (runLinePos . fst) v')
-       _ -> UserAtom (fromString v)
-instance Show a => Show (Token a) where
-  show (QuotedString a) = show (show a)
-  show (NonQuoted _ a) = show a           
+       _ -> UserAtom (fromString v)        
 instance (Scannable a, IsString a) => IsString (Token a) where
   fromString v = case scanPartitioned id (fromString v) of
        ([v'],LinePos _ _ Success) -> (fmap (runLinePos . fst) v')
