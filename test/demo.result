@@ -224,3 +224,8 @@ RULE pre dad |- post parent
 RULE (pre name;pre name ~) |- I -- symbol for identity relation is . for now
 
 RULE pre name |- I
+"dad"   ∋ "Bas"  ↦ "Stef"
+"name"  ∋ "Bas"  ↦ "Bas"
+"parent"∋ "Bas"  ↦ "Stef"
+"name"  ∋ "Stef" ↦ "Stef"
+
