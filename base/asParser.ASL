@@ -7,10 +7,11 @@ RULE ((pre concept~;pre concept) /\ I) |- during subConcepts
 RULE pre qstring |- I
 RULE pre relationName |- I
 RULE (pre string;pre string~) |- I
--- Unfortunately, there is no other way to disambiguate declarations.
+-- Disambiguate declarations (lookup their target):
 RULE ((pre declaration;pre relation);pre string) |- pre relationName
 RULE ((pre declaration;pre concepts);pre snd) |- post nonTerminal
-RULE ((during subConcepts~;pre concept~);pre syntaxList) |- post choice
+RULE (during subConcepts~;pre concept~) |- post choice
+RULE pre syntaxList |- I
 RULE pre head2 |- post recogniser
 RULE pre tail2 |- post continuation
 -- Identities to compress the system a bit (not strictly needed)

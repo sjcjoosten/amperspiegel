@@ -8,6 +8,7 @@ CLASSIFY ConsConceptList IS ConsConceptList /\ ConceptList -- non-empty list, i.
 CLASSIFY ConsSyntaxList IS ConsSyntaxList /\ SyntaxList
 CLASSIFY QuotedStringElement IS QuotedStringElement /\ SyntaxElement
 CLASSIFY RelationElement IS RelationElement /\ SyntaxElement
+CLASSIFY EmptySyntax IS Syntax /\ EmptySyntax
 
 -- builtin:
 -- string :: StringAndOrigin * String
@@ -43,7 +44,7 @@ VIEW ConceptList         = [head1]
 VIEW DeclarationType     = [fst,"*",snd]
 VIEW Declaration         = [relation,"::",concepts]
 VIEW Syntax              = ["VIEW",concept,"=","[",syntaxList,"]"]
-VIEW Syntax              = ["VIEW",concept,"=","[","]"]
+VIEW EmptySyntax         = ["VIEW",concept,"=","[","]"]
 VIEW ConsSyntaxList      = [head2,",",tail2]
 VIEW SyntaxList          = [head2]
 VIEW QuotedStringElement = [qstring] -- goes to QuotedString

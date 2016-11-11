@@ -3,7 +3,7 @@ module Main (main) where
 import Helpers 
 import Data.Set as Set (toList)
 import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),tripleStoreToParseRules,fmap23)
-import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
+import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
 import RuleSet(oldNewSystem,prePostRuleSet,Rule(..),Expression(..))
 import System.IO (stderr)
 import System.Exit (exitFailure)
@@ -57,13 +57,26 @@ showUnexpected tk expc mby
 parse :: (Monad m, IsString z, Ord z, Show z)
       => [ParseRule (Atom Text) Text z] -> Text
       -> SpiegelState (StateT Int m [Triple (Atom Text) (Atom Text)])
-parse p = eitherError id . parseText id (parseListOf builtIns (p,"Statement")) showUnexpected
+parse p = eitherError id . parseText id (parseOf builtIns (p,"Start")) showUnexpected
 
 commands :: [ ( Text, ( Text, [Text] -> SpiegelState () ) ) ]
 commands
  = [ ( "i"
      , ( "parse file as input"
        , (\files -> parseAsIn files)))
+   , ( "parse"
+     , ( "Read the file mentioned in the first argument, use the parser mentioned in the second (default: population). Put the result in the final argument."
+       , let pr f p' r
+              = do txt <- liftIO$ Helpers.readFile (unpack f)
+                   p <- getParser p'
+                   trps <- parse p txt
+                   overwrite r (TR . storeFromLst . runIdentity . unFresh $ trps)
+                   return ()
+         in \case [] -> liftIO$finishError "-parse needs a file-name as argument"
+                  [f] -> pr f "population" "population"
+                  [f,p] -> pr f p "population"
+                  [f,p,r] -> pr f p r
+                  _ -> liftIO$finishError "-parse cannot take more than three arguments"))
    , ( "h"
      , ( "display this help"
        , \_ -> liftIO (Helpers.putStrLn . helpText =<< size)))
@@ -330,7 +343,7 @@ retrieve s
 getParser :: Text -> SpiegelState FullParser
 getParser s
  = do mp <- retrieve s
-      unAtomize =<< tripleStoreToParseRules (liftIO$finishError "TripleStoreToParseRules could not make a parser out of the population") pure (getPop mp)
+      unAtomize =<< tripleStoreToParseRules (\m -> liftIO$finishError ("TripleStoreToParseRules could not make a parser out of the population: "<>m)) pure (getPop mp)
  where unAtomize :: [ParseRule (Atom Text) (Atom Text) (Atom Text)] -> SpiegelState FullParser
        unAtomize = traverse (eitherError (("error: "<>) . showT) . fmap23 deAtomize deAtomize)
 

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TupleSections,RankNTypes, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseListOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted) where
+module TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted) where
 import Text.Earley
 import Data.IntMap as IntMap
 import Data.Map as Map
@@ -58,19 +58,19 @@ freshTokenSt :: Applicative x => StateT Int x (Atom y)
 freshTokenSt = StateT (\i -> pure (Fresh i,i+1))
 
 -- combine an abstract parser with a tokeniser
-parseListOf :: forall y x z m. (Eq y,Show y,Scannable y,Ord z
-                               ,Show z,Monad m)
-            => [(z, Token (LinePos y, Bool) -> Maybe (StateT Int m (Atom (LinePos y), [Triple x (Atom (LinePos y))])))]
-            -> ([ParseRule x y z], z)
-            -> Either y (y -> ( ( [StateT Int m [Triple x (Atom y)]]
-                                , Report Text [Token (LinePos y, Bool)] )
-                              ,LinePos (ScanResult y))
-                        )
-parseListOf bi (pg,ps)
+parseOf :: forall y x z m. (Eq y,Show y,Scannable y,Ord z
+                           ,Show z,Monad m)
+        => [(z, Token (LinePos y, Bool) -> Maybe (StateT Int m (Atom (LinePos y), [Triple x (Atom (LinePos y))])))]
+        -> ([ParseRule x y z], z)
+        -> Either y (y -> ( ( [StateT Int m [Triple x (Atom y)]]
+                            , Report Text [Token (LinePos y, Bool)] )
+                          ,LinePos (ScanResult y))
+                    )
+parseOf bi (pg,ps)
  = do pg'<-traverse (traverseStrings stringOp) pg
       Right$ scanPartitioned
             (first (Prelude.map (fmap (fmap (fmap (fmap runLinePos))))) .
-             fullParses (parser (readListGrammar showT exactMatch' bi freshTokenSt (\a b c -> [Triple a b c]) (pg',ps))))
+             fullParses (parser (readGrammar showT exactMatch' bi freshTokenSt (\a b c -> [Triple a b c]) (pg',ps))))
  where
   stringOp v
     = case scan (LinePos 0 0 v) of
@@ -98,8 +98,8 @@ builtIns
 parseText :: forall y a b t t1. (Show y)
           => (b -> Text) -> Either y (t -> (([a], Report Text [t1]), LinePos (ScanResult b)))
           -> (t1 -> Text -> Maybe Text -> Either Text a) -> t -> Either Text a
-parseText showC parseListOf' showUnexpected t
-  = case parseListOf' of
+parseText showC parseOf' showUnexpected t
+  = case parseOf' of
       Left v -> Left ("Invalid parser. Not a valid token: "<>showT v)
       Right v -> case v t of{
       ( ( [r] -- returns all possible parses. A succes means there is just one.
@@ -129,17 +129,17 @@ parseText showC parseListOf' showUnexpected t
         showTokens (h:lst) = h <> ", " <> showTokens lst
 
 -- | Abstract grammar generator. Generates a Earley-grammar for a parserule-list (along with a designated element). Note that this function will never match undefined ParseRules. I.e. ([somesetofrules],notInTheSetOfRules) returns a parser that only matches the empty string
-readListGrammar :: forall m a e b c r x y z res.
-                (Ord z, Applicative m, Monoid res)
-                => (z -> e)
-                -> (x -> Prod r e a b) -- ^ Recognise exactly the token "x"
-                -> [(z, a -> Maybe (m (c, res)))] -- ^ Any predefined elements
-                -> m c -- ^ will generate a fresh constant of type c
-                -> (y -> c -> c -> res) -- ^ the result to produce
-                -> ([ParseRule y x z], z)
-                -> Grammar r (Prod r e a (m res))
-readListGrammar shw matchToken builtIn getFresh buildFn (grammar,gelem)
- = (\s -> (fmap mconcat <$> (traverse (fmap snd) <$> many s))) <$> statement
+readGrammar :: forall m a e b c r x y z res.
+            (Ord z, Applicative m, Monoid res)
+            => (z -> e)
+            -> (x -> Prod r e a b) -- ^ Recognise exactly the token "x"
+            -> [(z, a -> Maybe (m (c, res)))] -- ^ Any predefined elements
+            -> m c -- ^ will generate a fresh constant of type c
+            -> (y -> c -> c -> res) -- ^ the result to produce
+            -> ([ParseRule y x z], z)
+            -> Grammar r (Prod r e a (m res))
+readGrammar shw matchToken builtIn getFresh buildFn (grammar,gelem)
+ = fmap (fmap snd) <$> statement
  where
    statement :: Grammar r (Prod r e a (m (c,res)))
    statement = fmap (findInMap gelem) (mfix (\res -> foldrM (insRule res) iniMap grammar))

@@ -62,7 +62,7 @@ traverseString _ (ParseRef x i) = pure (ParseRef x i)
   -- In other words: it is your own responsibility that the intersection of x and y is empty. This is why we require I[Element] = I[Reference] (+) I[String]
 -- TODO: write this function in an &-INTERFACE-like syntax
 tripleStoreToParseRules :: forall z v m y. ( Applicative m, IsString y, Ord v, Ord y)
-                    => (forall x. m x) -> (v -> m z) -> TripleStore y v -> m [ParseRule z z z]
+                    => (forall x. Text -> m x) -> (v -> m z) -> TripleStore y v -> m [ParseRule z z z]
 tripleStoreToParseRules fl transAtom ts
  = do r<-fA "choice" makeParseRule
       return r
@@ -78,9 +78,9 @@ tripleStoreToParseRules fl transAtom ts
    makeParseRule (s,t) = ParseRule <$> transAtom s <*> makeList t
    makeList :: v -> m [ParseAtom z z z]
    makeList cl
-        = forOneOrNone fl ts "recogniser" cl (fmap (:) . makeAtom) (pure id) <*>
-          forOneOrNone fl ts "continuation" cl makeList (pure [])
+        = forOneOrNone (fl "too many recognisers") ts "recogniser" cl (fmap (:) . makeAtom) (pure id) <*>
+          forOneOrNone (fl "too many continuations") ts "continuation" cl makeList (pure [])
    makeAtom :: v -> m (ParseAtom z z z)
    makeAtom atm
-        = forOneOrNone fl ts "nonTerminal" atm (\v -> ParseRef <$> transAtom atm <*> transAtom v)
+        = forOneOrNone (fl "too many nonTerminals") ts "nonTerminal" atm (\v -> ParseRef <$> transAtom atm <*> transAtom v)
                                                (ParseString <$> transAtom atm)

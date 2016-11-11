@@ -32,22 +32,27 @@ syntax :: SyntaxStatement * Syntax
   tail2 :: ConsSyntaxList * SyntaxList
   qstring :: QuotedStringElement * QuotedString
 
+Statement :: Start * Statement
+Start :: Start * Start
+
 VIEW ClassificationStatement = [classification]
 VIEW DeclarationStatement    = [declaration]
 VIEW SyntaxStatement         = [syntax]
-
+VIEW Start = [Statement,Start]
+VIEW Start = []
 VIEW Classification      = ["CLASSIFY",mainConcept,"IS",conceptList]
 VIEW ConsConceptList     = [head1,"/\\",tail1]
 VIEW ConceptList         = [head1]
 VIEW DeclarationType     = [fst,"*",snd]
 VIEW Declaration         = [relation,"::",concepts]
 VIEW Syntax              = ["VIEW",concept,"=","[",syntaxList,"]"]
-VIEW Syntax              = ["VIEW",concept,"=","[","]"]
+VIEW EmptySyntax         = ["VIEW",concept,"=","[","]"]
 VIEW ConsSyntaxList      = [head2,",",tail2]
 VIEW SyntaxList          = [head2]
 VIEW QuotedStringElement = [qstring] -- goes to QuotedString
 VIEW RelationElement     = [relationName]
 
+CLASSIFY EmptySyntax IS Syntax /\ EmptySyntax
 CLASSIFY RuleStatement IS Statement /\ RuleStatement
 CLASSIFY RuleSubset IS TwoExpressionArguments /\ RuleSubset
 CLASSIFY Conjunct IS Conjunct /\ TwoExpressionArguments
