@@ -1,0 +1,51 @@
+pre conceptList |- during conceptLists
+(during conceptLists;pre tail1) |- during conceptLists
+((pre mainConcept~;during conceptLists);pre head1) |- during subConcepts
+(during subConcepts;during subConcepts) |- during subConcepts
+((pre mainConcept~;pre mainConcept) /\ I) |- during subConcepts
+((pre concept~;pre concept) /\ I) |- during subConcepts
+pre qstring |- I
+pre relationName |- I
+(pre string;pre string~) |- I
+((pre declaration;pre relation);pre string) |- pre relationName
+((pre declaration;pre concepts);pre snd) |- post nonTerminal
+(during subConcepts~;pre concept~) |- post choice
+pre syntaxList |- I
+pre head2 |- post recogniser
+pre tail2 |- post continuation
+((post eFst;post eFst~) /\ (post eSnd;post eSnd~)) |- I
+(post conjunct;post conjunct~) |- I
+(post converse;post converse~) |- I
+(post compose;post compose~) |- I
+(post pre;post pre~) |- I
+(post post;post post~) |- I
+(post during;post during~) |- I
+pre during |- post during
+pre pre |- post pre
+pre post |- post post
+pre converse |- post converse
+pre conjunct |- post conjunct
+pre eFst |- post eFst
+pre eSnd |- post eSnd
+pre compose |- post compose
+pre rule |- post rule
+pre pair1 |- post pair1
+pre pair2 |- post pair2
+pre declaration |- post rule
+(pre relation;pre string) |- (post eFst;post pre)
+(pre relation;pre string) |- (post eSnd;post post)
+< "keepString" , "keepString" > |- post rule
+< "keepOrigin" , "keepOrigin" > |- post rule
+< "keepString" , "string" > |- (post eFst;post pre)
+< "keepString" , "string" > |- (post eSnd;post post)
+< "keepOrigin" , "origin" > |- (post eFst;post pre)
+< "keepOrigin" , "origin" > |- (post eSnd;post post)
+< "Start" , "endOfFile" > |- post choice
+< "Start" , "NextStatement" > |- post choice
+< "NextStatement" , "Statement" > |- post recogniser
+< "NextStatement" , "gotoStart" > |- post continuation
+< "gotoStart" , "Start" > |- post recogniser
+< "Start" , "Start" > |- post nonTerminal
+< "Statement" , "Statement" > |- post nonTerminal
+
+
