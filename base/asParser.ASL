@@ -38,9 +38,17 @@ RULE pre pair2 |- post pair2
 RULE pre declaration |- post rule
 RULE (pre relation ; pre string) |- (post eFst ; post pre)
 RULE (pre relation ; pre string) |- (post eSnd ; post post)
-RULE < r1 , r1 > |- post rule
-RULE < r2 , r2 > |- post rule
-RULE < r1 , string > |- (post eFst ; post pre)
-RULE < r1 , string > |- (post eSnd ; post post)
-RULE < r2 , origin > |- (post eFst ; post pre)
-RULE < r2 , origin > |- (post eSnd ; post post)
+RULE < keepString , keepString > |- post rule
+RULE < keepOrigin , keepOrigin > |- post rule
+RULE < keepString , string > |- (post eFst ; post pre)
+RULE < keepString , string > |- (post eSnd ; post post)
+RULE < keepOrigin , origin > |- (post eFst ; post pre)
+RULE < keepOrigin , origin > |- (post eSnd ; post post)
+-- add view for statements
+RULE < Start , endOfFile > |- post choice
+RULE < Start , NextStatement > |- post choice
+RULE < NextStatement , Statement > |- post recogniser
+RULE < NextStatement , gotoStart > |- post continuation
+RULE < gotoStart , Start > |- post recogniser
+RULE < Start , Start > |- post nonTerminal
+RULE < Statement , Statement > |- post nonTerminal

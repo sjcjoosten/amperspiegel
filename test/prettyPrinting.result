@@ -1,23 +1,43 @@
 Classification := "CLASSIFY", "mainConcept" "String", "IS", "conceptList" "ConceptList"
 ClassificationStatement := "classification" "Classification"
+Compose := "eFst" "Expression", ";", "eSnd" "Expression"
 ConceptList := "head1" "String", "/\\", "tail1" "ConceptList"
              | "head1" "String"
+Conjunct := "eFst" "Expression", "/\\", "eSnd" "Expression"
 ConsConceptList := "head1" "String", "/\\", "tail1" "ConceptList"
 ConsSyntaxList := "head2" "SyntaxElement", ",", "tail2" "SyntaxList"
 Declaration := "relation" "StringAndOrigin", "::", "concepts" "DeclarationType"
 DeclarationStatement := "declaration" "Declaration"
 DeclarationType := "fst" "String", "*", "snd" "String"
+EmptySyntax := "VIEW", "concept" "String", "=", "[", "]"
+Expression := "(", "conjunct" "Conjunct", ")"
+            | "(", "compose" "Compose", ")"
+            | "converse" "Expression", "~"
+            | "pre", "pre" "UnquotedString"
+            | "post", "post" "UnquotedString"
+            | "during", "during" "UnquotedString"
+            | "<", "pair1" "String", ",", "pair2" "String", ">"
+            | "I"
 QuotedStringElement := "qstring" "QuotedString"
 RelationElement := "relationName" "UnquotedString"
+RuleStatement := "RULE", "rule" "RuleSubset"
+RuleSubset := "eFst" "Expression", "|-", "eSnd" "Expression"
+Start := "Statement" "Statement", "Start" "Start"
+       | 
 Statement := "classification" "Classification"
            | "declaration" "Declaration"
            | "syntax" "Syntax"
+           | "RULE", "rule" "RuleSubset"
 Syntax := "VIEW", "concept" "String", "=", "[", "syntaxList" "SyntaxList", "]"
+        | "VIEW", "concept" "String", "=", "[", "]"
 SyntaxElement := "qstring" "QuotedString"
                | "relationName" "UnquotedString"
 SyntaxList := "head2" "SyntaxElement", ",", "tail2" "SyntaxList"
             | "head2" "SyntaxElement"
 SyntaxStatement := "syntax" "Syntax"
+TwoExpressionArguments := "eFst" "Expression", "|-", "eSnd" "Expression"
+                        | "eFst" "Expression", "/\\", "eSnd" "Expression"
+                        | "eFst" "Expression", ";", "eSnd" "Expression"
 
 pre conceptList |- during conceptLists
 (during conceptLists;pre tail1) |- during conceptLists
@@ -30,7 +50,8 @@ pre relationName |- I
 (pre string;pre string~) |- I
 ((pre declaration;pre relation);pre string) |- pre relationName
 ((pre declaration;pre concepts);pre snd) |- post nonTerminal
-((during subConcepts~;pre concept~);pre syntaxList) |- post choice
+(during subConcepts~;pre concept~) |- post choice
+pre syntaxList |- I
 pre head2 |- post recogniser
 pre tail2 |- post continuation
 ((post eFst;post eFst~) /\ (post eSnd;post eSnd~)) |- I
@@ -54,39 +75,68 @@ pre pair2 |- post pair2
 pre declaration |- post rule
 (pre relation;pre string) |- (post eFst;post pre)
 (pre relation;pre string) |- (post eSnd;post post)
-< "r1" , "r1" > |- post rule
-< "r2" , "r2" > |- post rule
-< "r1" , "string" > |- (post eFst;post pre)
-< "r1" , "string" > |- (post eSnd;post post)
-< "r2" , "origin" > |- (post eFst;post pre)
-< "r2" , "origin" > |- (post eSnd;post post)
+< "keepString" , "keepString" > |- post rule
+< "keepOrigin" , "keepOrigin" > |- post rule
+< "keepString" , "string" > |- (post eFst;post pre)
+< "keepString" , "string" > |- (post eSnd;post post)
+< "keepOrigin" , "origin" > |- (post eFst;post pre)
+< "keepOrigin" , "origin" > |- (post eSnd;post post)
+< "Start" , "endOfFile" > |- post choice
+< "Start" , "NextStatement" > |- post choice
+< "NextStatement" , "Statement" > |- post recogniser
+< "NextStatement" , "gotoStart" > |- post continuation
+< "gotoStart" , "Start" > |- post recogniser
+< "Start" , "Start" > |- post nonTerminal
+< "Statement" , "Statement" > |- post nonTerminal
 
 asParser
+cfg
 parser
 population
 switches
 
 asParser
+cfg
 parser
 switches
 Classification := "CLASSIFY", "mainConcept" "String", "IS", "conceptList" "ConceptList"
 ClassificationStatement := "classification" "Classification"
+Compose := "eFst" "Expression", ";", "eSnd" "Expression"
 ConceptList := "head1" "String", "/\\", "tail1" "ConceptList"
              | "head1" "String"
+Conjunct := "eFst" "Expression", "/\\", "eSnd" "Expression"
 ConsConceptList := "head1" "String", "/\\", "tail1" "ConceptList"
 ConsSyntaxList := "head2" "SyntaxElement", ",", "tail2" "SyntaxList"
 Declaration := "relation" "StringAndOrigin", "::", "concepts" "DeclarationType"
 DeclarationStatement := "declaration" "Declaration"
 DeclarationType := "fst" "String", "*", "snd" "String"
+EmptySyntax := "VIEW", "concept" "String", "=", "[", "]"
+Expression := "(", "conjunct" "Conjunct", ")"
+            | "(", "compose" "Compose", ")"
+            | "converse" "Expression", "~"
+            | "pre", "pre" "UnquotedString"
+            | "post", "post" "UnquotedString"
+            | "during", "during" "UnquotedString"
+            | "<", "pair1" "String", ",", "pair2" "String", ">"
+            | "I"
 QuotedStringElement := "qstring" "QuotedString"
 RelationElement := "relationName" "UnquotedString"
+RuleStatement := "RULE", "rule" "RuleSubset"
+RuleSubset := "eFst" "Expression", "|-", "eSnd" "Expression"
+Start := "Statement" "Statement", "Start" "Start"
+       | 
 Statement := "classification" "Classification"
            | "declaration" "Declaration"
            | "syntax" "Syntax"
+           | "RULE", "rule" "RuleSubset"
 Syntax := "VIEW", "concept" "String", "=", "[", "syntaxList" "SyntaxList", "]"
+        | "VIEW", "concept" "String", "=", "[", "]"
 SyntaxElement := "qstring" "QuotedString"
                | "relationName" "UnquotedString"
 SyntaxList := "head2" "SyntaxElement", ",", "tail2" "SyntaxList"
             | "head2" "SyntaxElement"
 SyntaxStatement := "syntax" "Syntax"
+TwoExpressionArguments := "eFst" "Expression", "|-", "eSnd" "Expression"
+                        | "eFst" "Expression", "/\\", "eSnd" "Expression"
+                        | "eFst" "Expression", ";", "eSnd" "Expression"
 

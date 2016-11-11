@@ -32,14 +32,9 @@ syntax :: SyntaxStatement * Syntax
   tail2 :: ConsSyntaxList * SyntaxList
   qstring :: QuotedStringElement * QuotedString
 
-Statement :: Start * Statement
-Start :: Start * Start
-
 VIEW ClassificationStatement = [classification]
 VIEW DeclarationStatement    = [declaration]
 VIEW SyntaxStatement         = [syntax]
-VIEW Start = [Statement,Start]
-VIEW Start = []
 VIEW Classification      = ["CLASSIFY",mainConcept,"IS",conceptList]
 VIEW ConsConceptList     = [head1,"/\\",tail1]
 VIEW ConceptList         = [head1]
@@ -80,3 +75,9 @@ VIEW Expression = ["<",pair1,",",pair2,">"]
 VIEW Expression = ["I"]
 VIEW Conjunct = [eFst,"/\\",eSnd]
 VIEW Compose = [eFst,";",eSnd]
+
+
+Statement :: Start * Statement
+Start :: Start * Start
+VIEW Start = [Statement,Start]
+VIEW Start = []

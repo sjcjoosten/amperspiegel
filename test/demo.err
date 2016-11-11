@@ -1,6 +1,8 @@
 Parse error, unexpected dad on 14:6
-  Expecting: Token "::"
+  Expecting: Token "::", Token "I", Token "<", Token "during", Token "post", Token "pre", Token "(" or Token "("
+Parse error, unexpected dad on 14:6
+  Expecting: Token "::", Token "I", Token "<", Token "during", Token "post", Token "pre", Token "(" or Token "("
 Parse error, unexpected dad on 14:6
   Expecting: Token "::"
-Parse error, unexpected dad on 14:6
-  Expecting: Token "::"
+Ambiguous input:
+8192 possible parses.
