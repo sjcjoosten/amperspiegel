@@ -77,6 +77,21 @@ commands
                   [f,p] -> pr f p "population"
                   [f,p,r] -> pr f p r
                   _ -> liftIO$finishError "-parse cannot take more than three arguments"))
+   , ( "Parse"
+     , ( "Read the file mentioned in the first argument, use the parser mentioned in the second (default: population), and apply the rules in it. Put the result in the final argument."
+       , let pr f p' r'
+              = do txt <- liftIO$ Helpers.readFile (unpack f)
+                   p <- getParser p'
+                   trps <- parse p txt
+                   r <- getRules p'
+                   res <- unFresh (ruleConsequences r =<< trps)
+                   overwrite r' (TR res)
+                   return ()
+         in \case [] -> liftIO$finishError "-Parse needs a file-name as argument"
+                  [f] -> pr f "population" "population"
+                  [f,p] -> pr f p "population"
+                  [f,p,r] -> pr f p r
+                  _ -> liftIO$finishError "-Parse cannot take more than three arguments"))
    , ( "h"
      , ( "display this help"
        , \_ -> liftIO (Helpers.putStrLn . helpText =<< size)))
@@ -122,11 +137,12 @@ commands
             overwrite "parser" (TR parser)
             overwrite "population" (TR parser)))
    , ( "apply"
-     , ( "apply the rule-system of first argument and put result into final argument (overwrite what was there). The remaining arguments form the population the system is applied to (or to the final argument if there are no remaining arguments given)."
+     , ( "apply the rule-system of first argument to the (union of the) system(s) in the second argument(s). Put the result in the last argument. Uses \"population\" by default."
        , \args ->
            let (rsys,from,targ) = case args of
                  [] -> ("population",["population"],"population")
-                 [x] -> (x,[x],x)
+                 [x] -> (x,["population"],"population")
+                 [x,y] -> (x,[y],"population")
                  (x:xs) -> (x,init xs,last xs)
            in overwrite targ . TR =<< apply rsys from
        ))
@@ -154,7 +170,7 @@ commands
   printPop :: FullParser -> Population -> SpiegelState ()
   printPop pr (TR pop)
    = sequenceA_ [ (liftIO . traverse Helpers.putStrLn) =<< matchStart pa
-                | pa <- findInMap "Statement" pm ]
+                | pa <- findInMap "Start" pm ] -- should actually only print one
    where
     -- parse map based on all parse rules (faster lookup)
     pm :: Map Text [[ParseAtom (Atom Text) Text Text]]
@@ -194,7 +210,7 @@ commands
     match v (ParseRef rel cont)
      = case forEachOf pop rel v of
          [] -> Nothing -- no match
-         lst -> (fmap (intercalate " match ") . sequence <$> traverse (printAs cont) lst)
+         (h:_) -> (printAs cont h)
     pickBest :: [SpiegelState [Text]] -> Maybe (SpiegelState Text)
     pickBest [] = Nothing
     pickBest (h:tl)
