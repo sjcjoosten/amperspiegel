@@ -75,9 +75,3 @@ VIEW Expression = ["<",pair1,",",pair2,">"]
 VIEW Expression = ["I"]
 VIEW Conjunct = [eFst,"/\\",eSnd]
 VIEW Compose = [eFst,";",eSnd]
-
-
-Statement :: Start * Statement
-Start :: Start * Start
-VIEW Start = [Statement,Start]
-VIEW Start = []
