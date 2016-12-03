@@ -1,102 +1,102 @@
-"cur"   ∋ Fresh 1475 ↦ Fresh 1475
-"first" ∋ Fresh 1475 ↦ Fresh 1485
-"next"  ∋ Fresh 1475 ↦ Fresh 1476
-"string"∋ Fresh 1475 ↦ "\"i\""
-"next"  ∋ Fresh 1476 ↦ Fresh 1477
-"string"∋ Fresh 1476 ↦ "\"asParser\""
-"first" ∋ Fresh 1477 ↦ Fresh 1486
-"next"  ∋ Fresh 1477 ↦ Fresh 1478
-"string"∋ Fresh 1477 ↦ "\"i\""
-"first" ∋ Fresh 1478 ↦ Fresh 1487
-"next"  ∋ Fresh 1478 ↦ Fresh 1479
-"string"∋ Fresh 1478 ↦ "\"apply\""
-"first" ∋ Fresh 1479 ↦ Fresh 1490
-"next"  ∋ Fresh 1479 ↦ Fresh 1480
-"string"∋ Fresh 1479 ↦ "\"i\""
-"first" ∋ Fresh 1480 ↦ Fresh 1491
-"next"  ∋ Fresh 1480 ↦ Fresh 1481
-"string"∋ Fresh 1480 ↦ "\"apply\""
-"first" ∋ Fresh 1481 ↦ Fresh 1494
-"next"  ∋ Fresh 1481 ↦ Fresh 1482
-"string"∋ Fresh 1481 ↦ "\"apply\""
-"first" ∋ Fresh 1482 ↦ Fresh 1496
-"next"  ∋ Fresh 1482 ↦ Fresh 1483
-"string"∋ Fresh 1482 ↦ "\"apply\""
-"first" ∋ Fresh 1483 ↦ Fresh 1498
-"next"  ∋ Fresh 1483 ↦ Fresh 1484
-"string"∋ Fresh 1483 ↦ "\"collect\""
-"first" ∋ Fresh 1484 ↦ Fresh 1499
-"string"∋ Fresh 1484 ↦ "\"showTS\""
-"string"∋ Fresh 1485 ↦ "\"boot.ASL\""
-"string"∋ Fresh 1486 ↦ "\"asParser.ASL\""
-"next"  ∋ Fresh 1487 ↦ Fresh 1488
-"string"∋ Fresh 1487 ↦ "\"parser\""
-"next"  ∋ Fresh 1488 ↦ Fresh 1489
-"string"∋ Fresh 1488 ↦ "\"population\""
-"string"∋ Fresh 1489 ↦ "\"asParser\""
-"string"∋ Fresh 1490 ↦ "\"cfg.ASL\""
-"next"  ∋ Fresh 1491 ↦ Fresh 1492
-"string"∋ Fresh 1491 ↦ "\"asParser\""
-"next"  ∋ Fresh 1492 ↦ Fresh 1493
-"string"∋ Fresh 1492 ↦ "\"population\""
-"string"∋ Fresh 1493 ↦ "\"cfg\""
-"next"  ∋ Fresh 1494 ↦ Fresh 1495
-"string"∋ Fresh 1494 ↦ "\"del\""
-"string"∋ Fresh 1495 ↦ "\"switches\""
-"next"  ∋ Fresh 1496 ↦ Fresh 1497
-"string"∋ Fresh 1496 ↦ "\"del\""
-"string"∋ Fresh 1497 ↦ "\"population\""
-"string"∋ Fresh 1498 ↦ "\"state\""
-"string"∋ Fresh 1499 ↦ "\"state\""
+"cur"   ∋ Fresh 1774 ↦ Fresh 1774
+"first" ∋ Fresh 1774 ↦ Fresh 1784
+"next"  ∋ Fresh 1774 ↦ Fresh 1775
+"string"∋ Fresh 1774 ↦ "\"i\""
+"next"  ∋ Fresh 1775 ↦ Fresh 1776
+"string"∋ Fresh 1775 ↦ "\"asParser\""
+"first" ∋ Fresh 1776 ↦ Fresh 1785
+"next"  ∋ Fresh 1776 ↦ Fresh 1777
+"string"∋ Fresh 1776 ↦ "\"i\""
+"first" ∋ Fresh 1777 ↦ Fresh 1786
+"next"  ∋ Fresh 1777 ↦ Fresh 1778
+"string"∋ Fresh 1777 ↦ "\"apply\""
+"first" ∋ Fresh 1778 ↦ Fresh 1789
+"next"  ∋ Fresh 1778 ↦ Fresh 1779
+"string"∋ Fresh 1778 ↦ "\"i\""
+"first" ∋ Fresh 1779 ↦ Fresh 1790
+"next"  ∋ Fresh 1779 ↦ Fresh 1780
+"string"∋ Fresh 1779 ↦ "\"apply\""
+"first" ∋ Fresh 1780 ↦ Fresh 1793
+"next"  ∋ Fresh 1780 ↦ Fresh 1781
+"string"∋ Fresh 1780 ↦ "\"apply\""
+"first" ∋ Fresh 1781 ↦ Fresh 1795
+"next"  ∋ Fresh 1781 ↦ Fresh 1782
+"string"∋ Fresh 1781 ↦ "\"apply\""
+"first" ∋ Fresh 1782 ↦ Fresh 1797
+"next"  ∋ Fresh 1782 ↦ Fresh 1783
+"string"∋ Fresh 1782 ↦ "\"collect\""
+"first" ∋ Fresh 1783 ↦ Fresh 1798
+"string"∋ Fresh 1783 ↦ "\"showTS\""
+"string"∋ Fresh 1784 ↦ "\"boot.ASL\""
+"string"∋ Fresh 1785 ↦ "\"asParser.ASL\""
+"next"  ∋ Fresh 1786 ↦ Fresh 1787
+"string"∋ Fresh 1786 ↦ "\"parser\""
+"next"  ∋ Fresh 1787 ↦ Fresh 1788
+"string"∋ Fresh 1787 ↦ "\"population\""
+"string"∋ Fresh 1788 ↦ "\"asParser\""
+"string"∋ Fresh 1789 ↦ "\"cfg.ASL\""
+"next"  ∋ Fresh 1790 ↦ Fresh 1791
+"string"∋ Fresh 1790 ↦ "\"asParser\""
+"next"  ∋ Fresh 1791 ↦ Fresh 1792
+"string"∋ Fresh 1791 ↦ "\"population\""
+"string"∋ Fresh 1792 ↦ "\"cfg\""
+"next"  ∋ Fresh 1793 ↦ Fresh 1794
+"string"∋ Fresh 1793 ↦ "\"del\""
+"string"∋ Fresh 1794 ↦ "\"switches\""
+"next"  ∋ Fresh 1795 ↦ Fresh 1796
+"string"∋ Fresh 1795 ↦ "\"del\""
+"string"∋ Fresh 1796 ↦ "\"population\""
+"string"∋ Fresh 1797 ↦ "\"state\""
+"string"∋ Fresh 1798 ↦ "\"state\""
 
-"cur"   ∋ Fresh 1475 ↦ Fresh 1475
-"first" ∋ Fresh 1475 ↦ Fresh 1485
-"next"  ∋ Fresh 1475 ↦ Fresh 1476
-"string"∋ Fresh 1475 ↦ "\"i\""
-"next"  ∋ Fresh 1476 ↦ Fresh 1477
-"string"∋ Fresh 1476 ↦ "\"asParser\""
-"first" ∋ Fresh 1477 ↦ Fresh 1486
-"next"  ∋ Fresh 1477 ↦ Fresh 1478
-"string"∋ Fresh 1477 ↦ "\"i\""
-"first" ∋ Fresh 1478 ↦ Fresh 1487
-"next"  ∋ Fresh 1478 ↦ Fresh 1479
-"string"∋ Fresh 1478 ↦ "\"apply\""
-"first" ∋ Fresh 1479 ↦ Fresh 1490
-"next"  ∋ Fresh 1479 ↦ Fresh 1480
-"string"∋ Fresh 1479 ↦ "\"i\""
-"first" ∋ Fresh 1480 ↦ Fresh 1491
-"next"  ∋ Fresh 1480 ↦ Fresh 1481
-"string"∋ Fresh 1480 ↦ "\"apply\""
-"first" ∋ Fresh 1481 ↦ Fresh 1494
-"next"  ∋ Fresh 1481 ↦ Fresh 1482
-"string"∋ Fresh 1481 ↦ "\"apply\""
-"first" ∋ Fresh 1482 ↦ Fresh 1496
-"next"  ∋ Fresh 1482 ↦ Fresh 1483
-"string"∋ Fresh 1482 ↦ "\"apply\""
-"first" ∋ Fresh 1483 ↦ Fresh 1498
-"next"  ∋ Fresh 1483 ↦ Fresh 1484
-"string"∋ Fresh 1483 ↦ "\"collect\""
-"first" ∋ Fresh 1484 ↦ Fresh 1499
-"string"∋ Fresh 1484 ↦ "\"showTS\""
-"string"∋ Fresh 1485 ↦ "\"boot.ASL\""
-"string"∋ Fresh 1486 ↦ "\"asParser.ASL\""
-"next"  ∋ Fresh 1487 ↦ Fresh 1488
-"string"∋ Fresh 1487 ↦ "\"parser\""
-"next"  ∋ Fresh 1488 ↦ Fresh 1489
-"string"∋ Fresh 1488 ↦ "\"population\""
-"string"∋ Fresh 1489 ↦ "\"asParser\""
-"string"∋ Fresh 1490 ↦ "\"cfg.ASL\""
-"next"  ∋ Fresh 1491 ↦ Fresh 1492
-"string"∋ Fresh 1491 ↦ "\"asParser\""
-"next"  ∋ Fresh 1492 ↦ Fresh 1493
-"string"∋ Fresh 1492 ↦ "\"population\""
-"string"∋ Fresh 1493 ↦ "\"cfg\""
-"next"  ∋ Fresh 1494 ↦ Fresh 1495
-"string"∋ Fresh 1494 ↦ "\"del\""
-"string"∋ Fresh 1495 ↦ "\"switches\""
-"next"  ∋ Fresh 1496 ↦ Fresh 1497
-"string"∋ Fresh 1496 ↦ "\"del\""
-"string"∋ Fresh 1497 ↦ "\"population\""
-"string"∋ Fresh 1498 ↦ "\"state\""
-"string"∋ Fresh 1499 ↦ "\"state\""
+"cur"   ∋ Fresh 1774 ↦ Fresh 1774
+"first" ∋ Fresh 1774 ↦ Fresh 1784
+"next"  ∋ Fresh 1774 ↦ Fresh 1775
+"string"∋ Fresh 1774 ↦ "\"i\""
+"next"  ∋ Fresh 1775 ↦ Fresh 1776
+"string"∋ Fresh 1775 ↦ "\"asParser\""
+"first" ∋ Fresh 1776 ↦ Fresh 1785
+"next"  ∋ Fresh 1776 ↦ Fresh 1777
+"string"∋ Fresh 1776 ↦ "\"i\""
+"first" ∋ Fresh 1777 ↦ Fresh 1786
+"next"  ∋ Fresh 1777 ↦ Fresh 1778
+"string"∋ Fresh 1777 ↦ "\"apply\""
+"first" ∋ Fresh 1778 ↦ Fresh 1789
+"next"  ∋ Fresh 1778 ↦ Fresh 1779
+"string"∋ Fresh 1778 ↦ "\"i\""
+"first" ∋ Fresh 1779 ↦ Fresh 1790
+"next"  ∋ Fresh 1779 ↦ Fresh 1780
+"string"∋ Fresh 1779 ↦ "\"apply\""
+"first" ∋ Fresh 1780 ↦ Fresh 1793
+"next"  ∋ Fresh 1780 ↦ Fresh 1781
+"string"∋ Fresh 1780 ↦ "\"apply\""
+"first" ∋ Fresh 1781 ↦ Fresh 1795
+"next"  ∋ Fresh 1781 ↦ Fresh 1782
+"string"∋ Fresh 1781 ↦ "\"apply\""
+"first" ∋ Fresh 1782 ↦ Fresh 1797
+"next"  ∋ Fresh 1782 ↦ Fresh 1783
+"string"∋ Fresh 1782 ↦ "\"collect\""
+"first" ∋ Fresh 1783 ↦ Fresh 1798
+"string"∋ Fresh 1783 ↦ "\"showTS\""
+"string"∋ Fresh 1784 ↦ "\"boot.ASL\""
+"string"∋ Fresh 1785 ↦ "\"asParser.ASL\""
+"next"  ∋ Fresh 1786 ↦ Fresh 1787
+"string"∋ Fresh 1786 ↦ "\"parser\""
+"next"  ∋ Fresh 1787 ↦ Fresh 1788
+"string"∋ Fresh 1787 ↦ "\"population\""
+"string"∋ Fresh 1788 ↦ "\"asParser\""
+"string"∋ Fresh 1789 ↦ "\"cfg.ASL\""
+"next"  ∋ Fresh 1790 ↦ Fresh 1791
+"string"∋ Fresh 1790 ↦ "\"asParser\""
+"next"  ∋ Fresh 1791 ↦ Fresh 1792
+"string"∋ Fresh 1791 ↦ "\"population\""
+"string"∋ Fresh 1792 ↦ "\"cfg\""
+"next"  ∋ Fresh 1793 ↦ Fresh 1794
+"string"∋ Fresh 1793 ↦ "\"del\""
+"string"∋ Fresh 1794 ↦ "\"switches\""
+"next"  ∋ Fresh 1795 ↦ Fresh 1796
+"string"∋ Fresh 1795 ↦ "\"del\""
+"string"∋ Fresh 1796 ↦ "\"population\""
+"string"∋ Fresh 1797 ↦ "\"state\""
+"string"∋ Fresh 1798 ↦ "\"state\""
 

@@ -5,8 +5,6 @@ dad :: Person * Man
 CLASSIFY Man IS Man /\ Person
 CLASSIFY Woman IS Woman /\ Person
 
-"Start"         ∋ Fresh 0  ↦ Fresh 5
-"Statement"     ∋ Fresh 0  ↦ Fresh 1
 "declaration"   ∋ Fresh 1  ↦ Fresh 2
 "concepts"      ∋ Fresh 2  ↦ Fresh 4
 "relation"      ∋ Fresh 2  ↦ Fresh 3
@@ -14,8 +12,6 @@ CLASSIFY Woman IS Woman /\ Person
 "string"        ∋ Fresh 3  ↦ "parent"
 "fst"           ∋ Fresh 4  ↦ "Person"
 "snd"           ∋ Fresh 4  ↦ "Person"
-"Start"         ∋ Fresh 5  ↦ Fresh 10
-"Statement"     ∋ Fresh 5  ↦ Fresh 6
 "declaration"   ∋ Fresh 6  ↦ Fresh 7
 "concepts"      ∋ Fresh 7  ↦ Fresh 9
 "relation"      ∋ Fresh 7  ↦ Fresh 8
@@ -23,16 +19,12 @@ CLASSIFY Woman IS Woman /\ Person
 "string"        ∋ Fresh 8  ↦ "dad"
 "fst"           ∋ Fresh 9  ↦ "Person"
 "snd"           ∋ Fresh 9  ↦ "Man"
-"Start"         ∋ Fresh 10 ↦ Fresh 15
-"Statement"     ∋ Fresh 10 ↦ Fresh 11
 "classification"∋ Fresh 11 ↦ Fresh 12
 "conceptList"   ∋ Fresh 12 ↦ Fresh 13
 "mainConcept"   ∋ Fresh 12 ↦ "Man"
 "head1"         ∋ Fresh 13 ↦ "Man"
 "tail1"         ∋ Fresh 13 ↦ Fresh 14
 "head1"         ∋ Fresh 14 ↦ "Person"
-"Start"         ∋ Fresh 15 ↦ Fresh 20
-"Statement"     ∋ Fresh 15 ↦ Fresh 16
 "classification"∋ Fresh 16 ↦ Fresh 17
 "conceptList"   ∋ Fresh 17 ↦ Fresh 18
 "mainConcept"   ∋ Fresh 17 ↦ "Woman"
@@ -42,8 +34,8 @@ CLASSIFY Woman IS Woman /\ Person
 
 
 parent :: Person * Person
-dad :: Person * Man
-name :: Person * String -- string is built-in (has a parser defined for it)
+dad    :: Person * Man
+name   :: Person * String -- string is built-in (has a parser defined for it)
 
 CLASSIFY Man IS Man /\ Person
 CLASSIFY Woman IS Woman /\ Person
@@ -65,64 +57,64 @@ Statement := "Man", "name" "String"
            | "Father", "of", "name" "String", "is", "dad" "Man"
 Woman := "Woman", "name" "String"
 
-"choice"      ∋ "Man"           ↦ Fresh 27
+"choice"      ∋ "Man"           ↦ Fresh 21
 "continuation"∋ "NextStatement" ↦ "gotoStart"
 "recogniser"  ∋ "NextStatement" ↦ "Statement"
+"choice"      ∋ "Person"        ↦ Fresh 21
 "choice"      ∋ "Person"        ↦ Fresh 27
-"choice"      ∋ "Person"        ↦ Fresh 34
-"choice"      ∋ "Person"        ↦ Fresh 41
+"choice"      ∋ "Person"        ↦ Fresh 33
 "choice"      ∋ "Start"         ↦ "NextStatement"
 "choice"      ∋ "Start"         ↦ "endOfFile"
 "nonTerminal" ∋ "Start"         ↦ "Start"
+"choice"      ∋ "Statement"     ↦ Fresh 21
 "choice"      ∋ "Statement"     ↦ Fresh 27
-"choice"      ∋ "Statement"     ↦ Fresh 34
-"choice"      ∋ "Statement"     ↦ Fresh 41
+"choice"      ∋ "Statement"     ↦ Fresh 33
 "nonTerminal" ∋ "Statement"     ↦ "Statement"
-"choice"      ∋ "Woman"         ↦ Fresh 34
+"choice"      ∋ "Woman"         ↦ Fresh 27
 "nonTerminal" ∋ "dad"           ↦ "Man"
-"rule"        ∋ "dad"           ↦ Fresh 7
+"rule"        ∋ "dad"           ↦ Fresh 5
 "recogniser"  ∋ "gotoStart"     ↦ "Start"
-"eFst"        ∋ "keepOrigin"    ↦ Fresh 59
-"eSnd"        ∋ "keepOrigin"    ↦ Fresh 58
+"eFst"        ∋ "keepOrigin"    ↦ Fresh 49
+"eSnd"        ∋ "keepOrigin"    ↦ Fresh 48
 "rule"        ∋ "keepOrigin"    ↦ "keepOrigin"
-"eFst"        ∋ "keepString"    ↦ Fresh 61
-"eSnd"        ∋ "keepString"    ↦ Fresh 60
+"eFst"        ∋ "keepString"    ↦ Fresh 51
+"eSnd"        ∋ "keepString"    ↦ Fresh 50
 "rule"        ∋ "keepString"    ↦ "keepString"
 "nonTerminal" ∋ "name"          ↦ "String"
-"rule"        ∋ "name"          ↦ Fresh 12
+"rule"        ∋ "name"          ↦ Fresh 9
 "nonTerminal" ∋ "parent"        ↦ "Person"
-"rule"        ∋ "parent"        ↦ Fresh 2
-"eFst"        ∋ Fresh 2         ↦ Fresh 62
-"eSnd"        ∋ Fresh 2         ↦ Fresh 63
-"eFst"        ∋ Fresh 7         ↦ Fresh 64
-"eSnd"        ∋ Fresh 7         ↦ Fresh 65
-"eFst"        ∋ Fresh 12        ↦ Fresh 66
-"eSnd"        ∋ Fresh 12        ↦ Fresh 67
+"rule"        ∋ "parent"        ↦ Fresh 1
+"eFst"        ∋ Fresh 1         ↦ Fresh 52
+"eSnd"        ∋ Fresh 1         ↦ Fresh 53
+"eFst"        ∋ Fresh 5         ↦ Fresh 54
+"eSnd"        ∋ Fresh 5         ↦ Fresh 55
+"eFst"        ∋ Fresh 9         ↦ Fresh 56
+"eSnd"        ∋ Fresh 9         ↦ Fresh 57
+"continuation"∋ Fresh 21        ↦ Fresh 24
+"recogniser"  ∋ Fresh 21        ↦ "\"Man\""
+"recogniser"  ∋ Fresh 24        ↦ "name"
 "continuation"∋ Fresh 27        ↦ Fresh 30
-"recogniser"  ∋ Fresh 27        ↦ "\"Man\""
+"recogniser"  ∋ Fresh 27        ↦ "\"Woman\""
 "recogniser"  ∋ Fresh 30        ↦ "name"
-"continuation"∋ Fresh 34        ↦ Fresh 37
-"recogniser"  ∋ Fresh 34        ↦ "\"Woman\""
-"recogniser"  ∋ Fresh 37        ↦ "name"
-"continuation"∋ Fresh 41        ↦ Fresh 44
-"recogniser"  ∋ Fresh 41        ↦ "\"Father\""
-"continuation"∋ Fresh 44        ↦ Fresh 46
-"recogniser"  ∋ Fresh 44        ↦ "\"of\""
-"continuation"∋ Fresh 46        ↦ Fresh 48
-"recogniser"  ∋ Fresh 46        ↦ "name"
-"continuation"∋ Fresh 48        ↦ Fresh 50
-"recogniser"  ∋ Fresh 48        ↦ "\"is\""
-"recogniser"  ∋ Fresh 50        ↦ "dad"
-"post"        ∋ Fresh 58        ↦ "origin"
-"pre"         ∋ Fresh 59        ↦ "origin"
-"post"        ∋ Fresh 60        ↦ "string"
-"pre"         ∋ Fresh 61        ↦ "string"
-"pre"         ∋ Fresh 62        ↦ "parent"
-"post"        ∋ Fresh 63        ↦ "parent"
-"pre"         ∋ Fresh 64        ↦ "dad"
-"post"        ∋ Fresh 65        ↦ "dad"
-"pre"         ∋ Fresh 66        ↦ "name"
-"post"        ∋ Fresh 67        ↦ "name"
+"continuation"∋ Fresh 33        ↦ Fresh 36
+"recogniser"  ∋ Fresh 33        ↦ "\"Father\""
+"continuation"∋ Fresh 36        ↦ Fresh 38
+"recogniser"  ∋ Fresh 36        ↦ "\"of\""
+"continuation"∋ Fresh 38        ↦ Fresh 40
+"recogniser"  ∋ Fresh 38        ↦ "name"
+"continuation"∋ Fresh 40        ↦ Fresh 42
+"recogniser"  ∋ Fresh 40        ↦ "\"is\""
+"recogniser"  ∋ Fresh 42        ↦ "dad"
+"post"        ∋ Fresh 48        ↦ "origin"
+"pre"         ∋ Fresh 49        ↦ "origin"
+"post"        ∋ Fresh 50        ↦ "string"
+"pre"         ∋ Fresh 51        ↦ "string"
+"pre"         ∋ Fresh 52        ↦ "parent"
+"post"        ∋ Fresh 53        ↦ "parent"
+"pre"         ∋ Fresh 54        ↦ "dad"
+"post"        ∋ Fresh 55        ↦ "dad"
+"pre"         ∋ Fresh 56        ↦ "name"
+"post"        ∋ Fresh 57        ↦ "name"
 
 
 Man Han
@@ -135,8 +127,8 @@ Father of Bas is Man Stef
 
 
 parent :: Person * Person
-dad :: Person * Man
-name :: Person * String -- string is built-in (has a parser defined for it)
+dad    :: Person * Man
+name   :: Person * String -- string is built-in (has a parser defined for it)
 
 CLASSIFY Man IS Man /\ Person
 CLASSIFY Woman IS Woman /\ Person
@@ -161,7 +153,7 @@ CLASSIFY Person IS Statement /\ Person -- Parser will parse a list of statements
     12	CLASSIFY Person IS Statement /\ Person -- Parser will parse a list of statements
     13	
     14	RULE dad |- parent
-375
+297
 195
 195
 Man := "Man", "name" "String"
