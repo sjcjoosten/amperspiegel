@@ -57,22 +57,22 @@ getRel mps r = [ (v1,Set.toList resSet)
 -- | Returns whether or not it was already present
 insertTriple :: (Ord a, Ord b)
              => Triple a b -> TripleStore a b -> (TripleStore a b, Bool)
-insertTriple (Triple rel' a' b') revLk
+insertTriple (Triple !rel' !a' !b') !revLk
   = addRv True (a',rel',b') (addRv False (b',rel',a') (revLk,True))
   where 
-    addRv _ _ (mp,False) = (mp,False) -- no change needed
-    addRv firstNotSecond (a,rel,b) (mp,True) -- TODO: use lenses, but check which approach is faster! (Requires benchmarks)
+    addRv !firstNotSecond (!a,!rel,!b) (!mp,True) -- TODO: use lenses, but check which approach is faster! (Requires benchmarks)
      = ( if change then insert a newPair mp else mp -- TODO: check whether this if-then-else is actually faster then just leaving the Map.insert
        , change
        )
-     where mapPair = findInMap a mp
-           (mapElem,newPair)
-            = if firstNotSecond then (fst mapPair, (newElem,snd mapPair))
-                                else (snd mapPair, (fst mapPair,newElem))
-           newElem = insert rel newSet mapElem
-           relSet = findInMap rel mapElem
-           change = not (Set.member b relSet)
-           newSet = Set.insert b relSet
+     where (!f,!s) = findInMap a mp
+           (!mapElem,!newPair)
+            = if firstNotSecond then (f, (newElem,s))
+                                else (s, (f,newElem))
+           !newElem = insert rel newSet mapElem
+           !relSet = findInMap rel mapElem
+           !change = not (Set.member b relSet)
+           !newSet = Set.insert b relSet
+    addRv _ _ (mp,False) = (mp,False) -- no change needed
 
 type TripleStore a b = (Map b (Map a (Set b), Map a (Set b)))
 data Triple r a = Triple{relation::r, t_fst::a, t_snd::a} deriving Functor

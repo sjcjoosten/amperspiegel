@@ -72,10 +72,10 @@ parseOf bi (pg,ps)
             (first (Prelude.map (fmap (fmap (fmap (fmap runLinePos))))) .
              fullParses (parser (readGrammar showT exactMatch' bi freshTokenSt (\a b c -> [Triple a b c]) (pg',ps))))
  where
-  stringOp v
+  stringOp !v
     = case scan (LinePos 0 0 v) of
-          (r,LinePos _ _ Success) -> Right (v,Prelude.map (fmap (first runLinePos))
-                                   (partitionTokens False r))
+          (!r,LinePos _ _ Success) -> Right (v,Prelude.map (fmap (first runLinePos))
+                                    (partitionTokens False r))
           _ -> Left v
   exactMatch' (b,t) = exactMatch (\a->terminal a <?> "Token "<>showT b) t
 
@@ -97,7 +97,7 @@ builtIns
 -- convenient way to use the parser
 parseText :: forall y a b t t1. (Show y)
           => (b -> Text) -> Either y (t -> (([a], Report Text [t1]), LinePos (ScanResult b)))
-          -> (t1 -> Text -> Maybe Text -> Either Text a) -> t -> Either Text a
+          -> (Maybe t1 -> Text -> Maybe Text -> Either Text a) -> t -> Either Text a
 parseText showC parseOf' showUnexpected t
   = case parseOf' of
       Left v -> Left ("Invalid parser. Not a valid token: "<>showT v)
@@ -106,9 +106,9 @@ parseText showC parseOf' showUnexpected t
         , Report _ _ []) -- no tokens are left to be scanned
       , LinePos _ _ Success -- result of the scanner. When unsuccesful, the succesfully scanned part is still sent to the parser
       ) -> return r;
-      ((_, Report _ e (u:_)) -- expected: e, found: u
+      (([], Report _ e r) -- expected: e, found: u
       ,scanResult -- regardless of the scanner, if there were tokens left to be scanned, the error should be about the unexpected token
-      ) -> showUnexpected u (showTokens e) $ (showPos id <$> (traverse scanError scanResult));
+      ) -> showUnexpected (listToMaybe r) (showTokens e) $ (showPos id <$> (traverse scanError scanResult));
       ((p,_),scanResult) ->
         Left (fromMaybe ("Ambiguous input:\n"<>showT (length p)<>" possible parses.")
           $ showPos id <$> traverse scanError scanResult)
@@ -269,37 +269,41 @@ tokenToPreToken (QuotedString a) = QuotedString_Pre a
 tokenToPreToken (NonQuoted o _) = o
 
 instance Scannable Text where
-  scan (LinePos lineNr colNr p)
-   | isPrefixOf "{-" p = case completeComment 2 1 p (Helpers.drop 2 p) of
-                           Nothing -> done ExpectClosingComment
-                           Just (h,t) -> simple (h,t) mlc
-   | isPrefixOf "--" p = simple (Helpers.break ((==) '\n') p)
-                                (EndOfLineComment . Helpers.drop 2)
-   | isPrefixOf "\"" p = case completeQuoted lineNr (colNr + 1)
+  scan (LinePos lineNr colNr !p)
+   | tnull p = done Success
+   | otherwise
+     = let !h = Helpers.head p
+           c = cont (SingleCharacter (Helpers.take 1 p))
+                      (LinePos lineNr (colNr+1) (Helpers.drop 1 p)) in
+        if isSpace h then simple (Helpers.span isSpace p) WhiteSpace else
+        if h == '-' then (if isPrefixOf "--" p then
+                          simple (Helpers.break ((==) '\n') p)
+                                (EndOfLineComment . Helpers.drop 2) else c) else
+        if isSeqChar h then simple (Helpers.span isSeqChar p) CharacterSequence else
+        if h == '"' then case completeQuoted lineNr (colNr + 1)
                                              "" (Helpers.tail p) of
                               Left e -> done e
-                              Right (h,t) -> cont (QuotedString_Pre h) t
-   | isPrefixOf "\\" p = let isSep v = elem v sepChars
-                             sepChars :: String
-                             sepChars = "[]{}()<>,;.\\ \t\r\n"
-                             (h,t) = Helpers.break isSep (Helpers.tail p)
-                         in cont (LaTeXString (mappend (Helpers.take 1 p) h))
-                                 (incrPos (LinePos lineNr (colNr+1) t) h)
-   | tnull p = done Success
-   | isSpace (Helpers.head p) = simple (Helpers.span isSpace p) WhiteSpace
-   | isSeqChar (Helpers.head p) = simple (Helpers.span isSeqChar p)
-                                      CharacterSequence
-   | otherwise = cont (SingleCharacter (Helpers.take 1 p))
-                      (LinePos lineNr (colNr+1) (Helpers.drop 1 p))
+                              Right (!h',!t) -> cont (QuotedString_Pre h') t else
+        if h == '{' then (if isPrefixOf "{-" p then 
+                         case completeComment 2 1 p (Helpers.drop 2 p) of
+                           Nothing -> done ExpectClosingComment
+                           Just (h',t) -> simple (h',t) mlc else c) else
+        if h == '\\' then (let isSep v = elem v sepChars
+                               sepChars :: String
+                               sepChars = "[]{}()<>,;:.\\ \t\r\n"
+                               (!h',!t) = Helpers.break isSep (Helpers.tail p)
+                           in cont (LaTeXString (mappend (Helpers.take 1 p) h'))
+                                   (incrPos (LinePos lineNr (colNr+1) t) h'))
+        else c
    where done e = ([],LinePos lineNr colNr e)
-         isSeqChar c = isAlphaNum c || c == '-' || c == '_'
-         cont r newTail = let (scanTail,scanRest) = scan newTail
-                            in (LinePos lineNr colNr r:scanTail, scanRest)
-         simple (h,t) f = cont (f h) (incrPos (LinePos lineNr colNr t) h)
+         isSeqChar !c = isAlphaNum c || c == '-' || c == ':' || c == '_'
+         cont !r !newTail = let (!scanTail,!scanRest) = scan newTail
+                              in (LinePos lineNr colNr r:scanTail, scanRest)
+         simple (!h,!t) f = cont (f h) (incrPos (LinePos lineNr colNr t) h)
          mlc = MultiLineComment . Helpers.lines . Helpers.drop 2 . dropEnd 2
          completeComment :: Int -> Int -> Text -> Text -> Maybe (Text, Text)
-         completeComment !pos' 0 str _ = Just (Helpers.splitAt (fromIntegral pos') str)
-         completeComment !pos' lvl str remainder
+         completeComment !pos' 0 !str _ = Just (Helpers.splitAt (fromIntegral pos') str)
+         completeComment !pos' !lvl !str !remainder
            | tnull remainder = Nothing -- expecting closing comment - }
            | otherwise = let (h,t) = Helpers.break ((==) '-') remainder
               in case (isSuffixOf "{" h,stripPrefix "-}" t) of
@@ -310,9 +314,9 @@ instance Scannable Text where
                  (_,_)    -> completeComment (pos'+tlength h+1)
                                              lvl str (Helpers.drop 1 t)
          completeQuoted !l !c res remainder
-           = let (h,t) = Helpers.break (\v -> v == '\\' || v == '"'
-                                    || v == '\n') remainder
-                 c' = c + (tlength h)
+           = let (!h,!t) = Helpers.break (\ !v -> v == '\\' || v == '"'
+                                               || v == '\n') remainder
+                 !c' = c + (tlength h)
               in case (tnull t,Helpers.head t) of
                   (False,'"') -> Right (mappend res h,LinePos l (c'+1) (Helpers.tail t))
                   (False,'\\')

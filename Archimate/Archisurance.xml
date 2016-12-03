@@ -1,0 +1,4 @@
+<element identifier="id-1311" xsi:type="BusinessProcess">
+  <label xml:lang="en" value="Collect Premium"/>
+</element>
+<relationship identifier="id-1329" source="id-1311" target="id-1208" xsi:type="RealisationRelationship" />

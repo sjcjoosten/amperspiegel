@@ -46,13 +46,14 @@ doCommand cmd
        cmd lkp'
  where lkp' = fmap snd (fromListWith const commands)
 
-showUnexpected :: Token (LinePos Text, Bool)
+showUnexpected :: Maybe (Token (LinePos Text, Bool))
                -> Text -> Maybe Text
                -> Either Text x
 showUnexpected tk expc mby
  = Left $ "Parse error, unexpected "<> (showPs tk)<>"\n  Expecting: "<> expc
      <> (case mby of {Nothing -> "";Just v ->"\n  mby(TODO: fix me into something more descriptive):"<> v})
- where showPs = showPos id . fst . runToken
+ where showPs (Just tk') = (showPos id . fst . runToken) tk'
+       showPs _ = "end of file"
 
 parse :: (Monad m, IsString z, Ord z, Show z)
       => [ParseRule (Atom Text) Text z] -> Text

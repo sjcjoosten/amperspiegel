@@ -1,7 +1,7 @@
 
 parent :: Person * Person
-dad :: Person * Man
-name :: Person * String -- string is built-in (has a parser defined for it)
+dad    :: Person * Man
+name   :: Person * String -- string is built-in (has a parser defined for it)
 
 CLASSIFY Man IS Man /\ Person
 CLASSIFY Woman IS Woman /\ Person
