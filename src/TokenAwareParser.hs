@@ -192,7 +192,7 @@ fmap23' f2 f3 (ParseRef a rid b) = ParseRef a <$> f3 rid <*> traverse f2 b
 
 instance (Show a,Show b,Show refId) => Show (ParseAtom a b refId) where
   show (ParseString b) = show b
-  show (ParseRef a refId b) = show a ++ " " ++ show refId ++ show b
+  show (ParseRef a refId _) = show a ++ " " ++ show refId
 
 instance IsString b => IsString (ParseAtom a b c) where
   fromString = ParseString . fromString
