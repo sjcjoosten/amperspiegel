@@ -2,8 +2,7 @@
 module Main (main) where
 import Helpers 
 import Data.Set as Set (toList)
-import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),tripleStoreToParseRules,fmap23)
-import TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
+import TokenAwareParser(ParseRule(..),ParseAtom(..),tripleStoreToParseRules,fmap23,Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted)
 import RuleSet(oldNewSystem,prePostRuleSet,Rule(..),Expression(..))
 import System.IO (stderr)
 import System.Exit (exitFailure)
@@ -176,22 +175,22 @@ commands
     -- parse map based on all parse rules (faster lookup)
     pm :: Map Text [[ParseAtom (Atom Text) Text Text]]
     pm = Map.fromListWith merge [(k,[v]) | ParseRule k v <-
-      ParseRule "StringAndOrigin" [(ParseRef "string" "String")] : pr]
+      ParseRule "StringAndOrigin" [(ParseRef "string" "String" Nothing)] : pr]
     merge [] l = l
     merge l [] = l
     merge o1@(h1:l1) o2@(h2:l2)
      = if numRefs h1 < numRefs h2 then h2 : merge o1 l2 else h1 : merge l1 o2
-    numRefs lst = length [() | ParseRef _ _ <- lst]
+    numRefs lst = length [() | ParseRef _ _ _ <- lst]
     matchStart :: [ParseAtom (Atom Text) Text Text] -> SpiegelState [Text]
     matchStart [] = pure []
     matchStart (ParseString v:r) = map ((v<>" ")<>) <$> matchStart r
-    matchStart (ParseRef rel cont:r)
-     = sequence [ mappend . intercalate " " <$> sequence h <*> 
+    matchStart (ParseRef rel cont sep:r)
+     = sequence [ mappend . intercalate sep' <$> sequence h <*> 
                    (intercalate " " <$> sequence r')
                 | (k,v@(_:_))<-getRel pop rel
-                -- we might want to make sure that (length v == 1)?
-                -- otherwise, parsing back yields different source objects
+                -- if there's no sep, do want to make sure that (length v == 1)?
                 , Just h <- [traverse (printAs cont) v]
+                , let sep' = case sep of {Nothing -> " "; Just v' -> v'}
                 , Just r' <- [traverse (match k) r]
                 ]
     printAs :: Text -> Atom Text -> Maybe (SpiegelState Text)
@@ -208,10 +207,11 @@ commands
           -> Maybe (SpiegelState Text)
     match _ (ParseString v) = Just (pure v)
     -- maybe throw an error upon multiple
-    match v (ParseRef rel cont)
-     = case forEachOf pop rel v of
-         [] -> Nothing -- no match
-         (h:_) -> (printAs cont h)
+    match v (ParseRef rel cont sep)
+     = case (forEachOf pop rel v,sep) of
+         ([],_)        -> Nothing -- no match
+         (h:_,Nothing) -> (printAs cont h)
+         (hs,Just s) -> (Just . fmap (intercalate s) . sequence . catMaybes . map (printAs cont)) hs
     pickBest :: [SpiegelState [Text]] -> Maybe (SpiegelState Text)
     pickBest [] = Nothing
     pickBest (h:tl)

@@ -1,9 +1,8 @@
 {-# OPTIONS_GHC -Wall #-} {-# LANGUAGE TupleSections,RankNTypes, TypeFamilies, BangPatterns, LambdaCase, ApplicativeDo, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts #-}
-module TokenAwareParser(Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted) where
+module TokenAwareParser(ParseRule(..),ParseAtom(..),tripleStoreToParseRules,fmap23,Atom(..),freshTokenSt,parseText,deAtomize,deAtomizeString,freshenUp,parseOf,runToken,Token,LinePos,showPos,builtIns,makeQuoted) where
 import Text.Earley
 import Data.IntMap as IntMap
 import Data.Map as Map
-import ParseRulesFromTripleStore(ParseRule(..),ParseAtom(..),traverseStrings)
 import Helpers
 
 data Atom a
@@ -154,7 +153,7 @@ readGrammar shw matchToken builtIn getFresh buildFn (grammar,gelem)
            addAsChoice atms
              = (insNew . sequenceA <$> traverse atmToProd atms)
            atmToProd :: ParseAtom y x z -> Prod r e a (m (c -> res))
-           atmToProd (ParseRef relName ref)
+           atmToProd (ParseRef relName ref _)
              = r relName (findInMap ref lookupMp)
            atmToProd (ParseString a)
              = matchToken a *> pure (pure (const mempty))
@@ -170,7 +169,91 @@ readGrammar shw matchToken builtIn getFresh buildFn (grammar,gelem)
    r w1 x1
     = fmap (\(v1,lst1) -> (\new -> mappend (buildFn w1 new v1) lst1)) <$> x1
 
-    
+-- A grammar
+data ParseRule a b refId = ParseRule refId [ParseAtom a b refId] deriving (Functor,Foldable,Traversable,Show)-- concatenation of strings
+data ParseAtom a b refId = ParseString b | ParseRef a refId (Maybe b) deriving (Functor,Foldable,Traversable)
+
+{-
+fmap12 :: Applicative m => (t1 -> m a) -> (t -> m b) -> ParseRule t1 t refId -> m (ParseRule a b refId)
+fmap12 f1 f2 (ParseRule r lst) = ParseRule r <$> (traverse (fmap12' f1 f2) lst)
+fmap12' :: Applicative m => (t1 -> m a) -> (t -> m b) -> ParseAtom t1 t refId -> m (ParseAtom a b refId)
+fmap12' _ f2 (ParseString b) = ParseString <$> f2 b
+fmap12' f1 _ (ParseRef a rid) = flip ParseRef rid <$> (f1 a)
+fmap13 :: Applicative m => (t1 -> m a) -> (refId -> m b) -> ParseRule t1 t refId -> m (ParseRule a t b)
+fmap13 f1 f3 (ParseRule r lst) = ParseRule <$> f3 r <*> traverse (fmap13' f1 f3) lst
+fmap13' :: Applicative f => (t -> f a) -> (t1 -> f refId) -> ParseAtom t b t1 -> f (ParseAtom a b refId)
+fmap13' _ _ (ParseString b) = pure (ParseString b)
+fmap13' f1 f3 (ParseRef a rid) = ParseRef <$> f1 a <*> f3 rid -}
+fmap23 :: Applicative m => (t -> m a) -> (refId -> m b) -> ParseRule t1 t refId -> m (ParseRule t1 a b)
+fmap23 f2 f3 (ParseRule r lst) = ParseRule <$> f3 r <*> traverse (fmap23' f2 f3) lst
+fmap23' :: Applicative f => (t -> f b) -> (t1 -> f refId) -> ParseAtom a t t1 -> f (ParseAtom a b refId)
+fmap23' f2 _ (ParseString b) = ParseString <$> f2 b
+fmap23' f2 f3 (ParseRef a rid b) = ParseRef a <$> f3 rid <*> traverse f2 b
+
+instance (Show a,Show b,Show refId) => Show (ParseAtom a b refId) where
+  show (ParseString b) = show b
+  show (ParseRef a refId b) = show a ++ " " ++ show refId ++ show b
+
+instance IsString b => IsString (ParseAtom a b c) where
+  fromString = ParseString . fromString
+instance ( string ~ String -- delay the conversion to a and force it to be a String here still, to avoid having to write a type: Ambiguous type variable ‘t0’ arising from the literal ‘"firstString"’ prevents the constraint ‘(IsString (t0 -> ParseAtom Text Text Text))’ from being solved
+         , IsString a, IsString c)
+      => IsString (string -> ParseAtom a b c) where
+  fromString s = (\v -> ParseRef (fromString s) v Nothing) . fromString
+
+traverseStrings :: Applicative f => (a -> f b) -> ParseRule x a z -> f (ParseRule x b z)
+traverseStrings f (ParseRule r lst)
+ = ParseRule r <$> traverse (traverseString f) lst
+
+traverseString :: Applicative f => (a -> f b) -> ParseAtom x a z -> f (ParseAtom x b z)
+traverseString f (ParseString a) = ParseString <$> f a
+traverseString f (ParseRef x i b) = ParseRef x i <$> traverse f b
+
+-- tripleStoreToParseRules takes a triple store that describes a parser, and turns it into the set of parserules that can be turned into a parser by parseListOf or readListGrammar
+-- Requires the following relations:
+  -- choice :: ParseRule*Expansion
+  -- continuation :: Expansion*Expansion [UNI]
+  -- recogniser :: Expension*Element [UNI]
+  -- nonTerminal :: Reference*ParseRule [UNI,TOT]
+  -- Reference ISA Element, String ISA Element
+-- Requirements are cardinality constraints plus:
+  -- I[Element] = I[Reference] (+) I[String]
+  -- where (+) denotes the disjoint sum
+-- The atom 'Statement' is returned as the thing to be parsed.
+-- For [ParseRule x y z], we have: x ~ Reference, y ~ String, z ~ ParseRule
+-- It makes sense for a list to satisfy the following (not-required):
+--  recogniser;V = continuation;V[Expansion*ONE]
+-- Totality of nonTerminal is used as a test between x and y.
+  -- Consequently, anything other than x which may be an ELEMENT will be treated as an y.
+  -- Additionally, anything used to describe the final relation (i.e. anything in x) will not be usable as an y.
+  -- In other words: it is your own responsibility that the intersection of x and y is empty. This is why we require I[Element] = I[Reference] (+) I[String]
+-- TODO: write this function in an &-INTERFACE-like syntax
+tripleStoreToParseRules :: forall z v m y. ( Applicative m, IsString y, Ord v, Ord y)
+                    => (forall x. Text -> m x) -> (v -> m z) -> TripleStore y v -> m [ParseRule z z z]
+tripleStoreToParseRules fl transAtom ts
+ = do r<-fA "choice" makeParseRule
+      return r
+ where
+   fA :: y -> ((v,v) -> m (ParseRule z z z)) -> m [ParseRule z z z]
+   fA c f = traversePair f (getRel ts c)
+   traversePair :: ((v, v)    -> m (ParseRule z z z))
+                -> [(v, [v])] -> m [ParseRule z z z]
+   traversePair _ [] = pure []
+   traversePair f ((src',tgts):as) = (++) <$> sequenceA [f (src', tgt') | tgt'<-tgts]
+                                          <*> traversePair f as
+   makeParseRule :: (v, v) -> m (ParseRule z z z)
+   makeParseRule (s,t) = ParseRule <$> transAtom s <*> makeList t
+   forOON :: String -> v -> (v -> m x) -> m x -> m x
+   forOON a = forOneOrNone (fl$ "too many "<>fromString a<>"s") ts (fromString a)
+   makeList :: v -> m [ParseAtom z z z]
+   makeList cl
+        = forOON "recogniser" cl (fmap (:) . makeAtom) (pure id) <*>
+          forOON "continuation" cl makeList (pure [])
+   makeAtom :: v -> m (ParseAtom z z z)
+   makeAtom atm = forOON "nonTerminal" atm (makeRef atm) (makeString atm)
+   makeRef atm v = ParseRef <$> transAtom atm <*> transAtom v <*> forOON "separator" atm (fmap Just . transAtom) (pure Nothing)
+   makeString atm = ParseString <$> transAtom atm
+
 
 -- Tokenizer.
 -- We want expressions like "3+-4" to be interpretable as "(+) 3 (- 4)",

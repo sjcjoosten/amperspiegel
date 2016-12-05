@@ -17,7 +17,6 @@ executable amperspiegel
   main-is:             amperspiegel.hs
   other-modules:       RuleSet,
                        Helpers,
-                       ParseRulesFromTripleStore,
                        TokenAwareParser,
                        BaseState
   other-extensions:    BangPatterns, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts, TypeFamilies, RankNTypes, DeriveFoldable, TypeSynonymInstances
