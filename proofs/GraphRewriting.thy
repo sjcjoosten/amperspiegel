@@ -1,6 +1,6 @@
 theory GraphRewriting
 imports
-  Limit
+  MissingCategory
 begin
 
 datatype ('l,'v) labeled_graph = LG (edges:"('l \<times> 'v \<times> 'v) set")
@@ -25,10 +25,8 @@ proof -
   thus ?thesis by auto
 qed
 
-datatype ('l,'v1,'v2) pre_graph_homomorphism
-  = GH (source:"('l,'v1) labeled_graph")
-       (target:"('l,'v2) labeled_graph")
-       (homomp:"('v1\<times>'v2) set")
+type_synonym ('l, 'v) pre_graph_homomorphism
+  = "(('l,'v) labeled_graph, 'v rel) Arrow"
 
 definition edge_preserving where
   "edge_preserving h e1 e2 \<equiv> (\<forall> (k,v1,v2) \<in> e1. \<forall> v1' v2'. ((v1, v1') \<in> h \<and> (v2,v2') \<in> h) \<longrightarrow> (k,v1',v2') \<in> e2)"
@@ -56,27 +54,27 @@ lemma edge_preserving_Id[intro]:
 unfolding edge_preserving_def by auto
 
 fun is_graph_homomorphism where
-  "is_graph_homomorphism (GH s t h) = (entire h \<and> edge_preserving h (edges s) (edges t))"
+  "is_graph_homomorphism (Arrow s t h) = (entire h \<and> edge_preserving h (edges s) (edges t))"
 
 fun id_on where
-"id_on v = GH v v Id"
+"id_on v = Arrow v v Id"
 
 lemma id_is_graph_homomorphism:
   "is_graph_homomorphism (id_on v)"
 by(cases "id_on v";auto)
 
 typedef (overloaded) ('l,'v) graph_homomorphism
-  = "{ h :: ('l,'v,'v) pre_graph_homomorphism. is_graph_homomorphism h}"
+  = "{ h :: ('l,'v) pre_graph_homomorphism. is_graph_homomorphism h}"
   morphisms get_GH IsGH
 proof -
-  have "is_graph_homomorphism (GH empty_graph empty_graph Id)" by (auto simp:edge_preserving_def)
+  have "is_graph_homomorphism (Arrow empty_graph empty_graph Id)" by (auto simp:edge_preserving_def)
   thus ?thesis by blast
 qed
 setup_lifting type_definition_graph_homomorphism
 
 fun pre_graph_homomorphism_comp where
-  "pre_graph_homomorphism_comp (GH s1 t1 h1) (GH s2 t2 h2)
-    = (if t1 = s2 then Some (GH s1 t2 (h1 O h2)) else None)"
+  "pre_graph_homomorphism_comp (Arrow s1 t1 h1) (Arrow s2 t2 h2)
+    = (if t1 = s2 then Some (Arrow s1 t2 (h1 O h2)) else None)"
 
 lemma pre_graph_homomorphism_comp_assoc :
   "Option.bind (pre_graph_homomorphism_comp b c) (    pre_graph_homomorphism_comp a) =
@@ -93,8 +91,8 @@ lemma pre_graph_homomorphism_preserves_graph_homomorphism:
   using assms by(cases gh1,cases gh2,auto)
 
 lemma pre_graph_homomorphism_id [simp]:
-  "pre_graph_homomorphism_comp a (GH (target a) (target a) Id) = Some a"
-  "pre_graph_homomorphism_comp (GH (source a) (source a) Id) a = Some a"
+  "pre_graph_homomorphism_comp a (Arrow (target a) (target a) Id) = Some a"
+  "pre_graph_homomorphism_comp (Arrow (source a) (source a) Id) a = Some a"
 by(cases a,auto)+
 
 lift_definition graph_homomorphism_comp ::
@@ -103,7 +101,7 @@ lift_definition graph_homomorphism_comp ::
 
 lift_definition src :: "('l,'v) graph_homomorphism \<Rightarrow> ('l,'v) labeled_graph" is source.
 lift_definition tgt :: "('l,'v) graph_homomorphism \<Rightarrow> ('l,'v) labeled_graph" is target.
-lift_definition fnc :: "('l,'v) graph_homomorphism \<Rightarrow> 'v rel" is homomp.
+lift_definition fnc :: "('l,'v) graph_homomorphism \<Rightarrow> 'v rel" is morphism.
 lift_definition idt :: "('l,'v) labeled_graph \<Rightarrow> ('l,'v) graph_homomorphism" is id_on by auto
 
 lemma exists_subset :
