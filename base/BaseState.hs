@@ -830,385 +830,473 @@ baseState =
       , "post" ∋ Fresh 920 ↦ "mapsTo"
       , "post" ∋ Fresh 921 ↦ "relaxSnd"
       ])
+  , ( "cfg2"
+    , [ "nonTerminal" ∋ "QuotedString" ↦ "QuotedString"
+      , "choice" ∋ "Start" ↦ Fresh 1362
+      , "choice" ∋ "Start" ↦ Fresh 1368
+      , "nonTerminal" ∋ "Start" ↦ "Start"
+      , "nonTerminal" ∋ "UnquotedString" ↦ "UnquotedString"
+      , "choice" ∋ "choice" ↦ Fresh 1370
+      , "nonTerminal" ∋ "choice" ↦ "choice"
+      , "choice" ∋ "continuation" ↦ Fresh 1373
+      , "choice" ∋ "continuation" ↦ Fresh 1377
+      , "nonTerminal" ∋ "continuation" ↦ "continuation"
+      , "choice" ∋ "nonTerminal" ↦ Fresh 1386
+      , "nonTerminal" ∋ "nonTerminal" ↦ "nonTerminal"
+      , "choice" ∋ "recogniser" ↦ Fresh 1380
+      , "choice" ∋ "recogniser" ↦ Fresh 1383
+      , "nonTerminal" ∋ "recogniser" ↦ "recogniser"
+      , "continuation" ∋ Fresh 1362 ↦ Fresh 1363
+      , "continuation" ∋ Fresh 1363 ↦ Fresh 1364
+      , "recogniser" ∋ Fresh 1363 ↦ "UnquotedString"
+      , "continuation" ∋ Fresh 1364 ↦ Fresh 1365
+      , "recogniser" ∋ Fresh 1364 ↦ "\">\""
+      , "continuation" ∋ Fresh 1365 ↦ Fresh 1366
+      , "recogniser" ∋ Fresh 1365 ↦ "choice"
+      , "continuation" ∋ Fresh 1366 ↦ Fresh 1367
+      , "recogniser" ∋ Fresh 1366 ↦ "Start"
+      , "continuation" ∋ Fresh 1368 ↦ Fresh 1369
+      , "continuation" ∋ Fresh 1370 ↦ Fresh 1371
+      , "continuation" ∋ Fresh 1371 ↦ Fresh 1372
+      , "recogniser" ∋ Fresh 1371 ↦ "continuation"
+      , "continuation" ∋ Fresh 1373 ↦ Fresh 1374
+      , "continuation" ∋ Fresh 1374 ↦ Fresh 1375
+      , "recogniser" ∋ Fresh 1374 ↦ "recogniser"
+      , "continuation" ∋ Fresh 1375 ↦ Fresh 1376
+      , "recogniser" ∋ Fresh 1375 ↦ "continuation"
+      , "continuation" ∋ Fresh 1377 ↦ Fresh 1378
+      , "continuation" ∋ Fresh 1378 ↦ Fresh 1379
+      , "recogniser" ∋ Fresh 1378 ↦ "\".\""
+      , "continuation" ∋ Fresh 1380 ↦ Fresh 1381
+      , "continuation" ∋ Fresh 1381 ↦ Fresh 1382
+      , "recogniser" ∋ Fresh 1381 ↦ "QuotedString"
+      , "continuation" ∋ Fresh 1383 ↦ Fresh 1384
+      , "continuation" ∋ Fresh 1384 ↦ Fresh 1385
+      , "recogniser" ∋ Fresh 1384 ↦ "nonTerminal"
+      , "continuation" ∋ Fresh 1386 ↦ Fresh 1387
+      , "continuation" ∋ Fresh 1387 ↦ Fresh 1388
+      , "recogniser" ∋ Fresh 1387 ↦ "UnquotedString"
+      ])
   , ( "parser"
-    , [ "choice" ∋ "Classification" ↦ Fresh 1382
-      , "choice" ∋ "ClassificationStatement" ↦ Fresh 1379
-      , "choice" ∋ "Compose" ↦ Fresh 1452
-      , "choice" ∋ "ConceptList" ↦ Fresh 1386
-      , "choice" ∋ "ConceptList" ↦ Fresh 1389
-      , "choice" ∋ "Conjunct" ↦ Fresh 1449
-      , "choice" ∋ "ConsConceptList" ↦ Fresh 1386
-      , "choice" ∋ "ConsSyntaxList" ↦ Fresh 1407
-      , "choice" ∋ "Declaration" ↦ Fresh 1393
-      , "choice" ∋ "DeclarationStatement" ↦ Fresh 1380
-      , "choice" ∋ "DeclarationType" ↦ Fresh 1390
-      , "choice" ∋ "EmptySyntax" ↦ Fresh 1402
-      , "choice" ∋ "Expression" ↦ Fresh 1429
-      , "choice" ∋ "Expression" ↦ Fresh 1432
-      , "choice" ∋ "Expression" ↦ Fresh 1435
-      , "choice" ∋ "Expression" ↦ Fresh 1437
-      , "choice" ∋ "Expression" ↦ Fresh 1439
-      , "choice" ∋ "Expression" ↦ Fresh 1441
-      , "choice" ∋ "Expression" ↦ Fresh 1443
-      , "choice" ∋ "Expression" ↦ Fresh 1448
+    , [ "choice" ∋ "Classification" ↦ Fresh 1454
+      , "choice" ∋ "ClassificationStatement" ↦ Fresh 1451
+      , "choice" ∋ "Compose" ↦ Fresh 1524
+      , "choice" ∋ "ConceptList" ↦ Fresh 1458
+      , "choice" ∋ "ConceptList" ↦ Fresh 1461
+      , "choice" ∋ "Conjunct" ↦ Fresh 1521
+      , "choice" ∋ "ConsConceptList" ↦ Fresh 1458
+      , "choice" ∋ "ConsSyntaxList" ↦ Fresh 1479
+      , "choice" ∋ "Declaration" ↦ Fresh 1465
+      , "choice" ∋ "DeclarationStatement" ↦ Fresh 1452
+      , "choice" ∋ "DeclarationType" ↦ Fresh 1462
+      , "choice" ∋ "EmptySyntax" ↦ Fresh 1474
+      , "choice" ∋ "Expression" ↦ Fresh 1501
+      , "choice" ∋ "Expression" ↦ Fresh 1504
+      , "choice" ∋ "Expression" ↦ Fresh 1507
+      , "choice" ∋ "Expression" ↦ Fresh 1509
+      , "choice" ∋ "Expression" ↦ Fresh 1511
+      , "choice" ∋ "Expression" ↦ Fresh 1513
+      , "choice" ∋ "Expression" ↦ Fresh 1515
+      , "choice" ∋ "Expression" ↦ Fresh 1520
       , "continuation" ∋ "NextStatement" ↦ "gotoStart"
       , "recogniser" ∋ "NextStatement" ↦ "Statement"
-      , "choice" ∋ "QuotedStringElement" ↦ Fresh 1411
-      , "choice" ∋ "RelationElement" ↦ Fresh 1412
-      , "choice" ∋ "RuleStatement" ↦ Fresh 1424
-      , "choice" ∋ "RuleSubset" ↦ Fresh 1426
+      , "choice" ∋ "QuotedStringElement" ↦ Fresh 1483
+      , "choice" ∋ "RelationElement" ↦ Fresh 1484
+      , "choice" ∋ "RuleStatement" ↦ Fresh 1496
+      , "choice" ∋ "RuleSubset" ↦ Fresh 1498
       , "choice" ∋ "Start" ↦ "NextStatement"
       , "choice" ∋ "Start" ↦ "endOfFile"
       , "nonTerminal" ∋ "Start" ↦ "Start"
-      , "choice" ∋ "Statement" ↦ Fresh 1379
-      , "choice" ∋ "Statement" ↦ Fresh 1380
-      , "choice" ∋ "Statement" ↦ Fresh 1381
-      , "choice" ∋ "Statement" ↦ Fresh 1424
+      , "choice" ∋ "Statement" ↦ Fresh 1451
+      , "choice" ∋ "Statement" ↦ Fresh 1452
+      , "choice" ∋ "Statement" ↦ Fresh 1453
+      , "choice" ∋ "Statement" ↦ Fresh 1496
       , "nonTerminal" ∋ "Statement" ↦ "Statement"
-      , "choice" ∋ "Syntax" ↦ Fresh 1396
-      , "choice" ∋ "Syntax" ↦ Fresh 1402
-      , "choice" ∋ "SyntaxElement" ↦ Fresh 1411
-      , "choice" ∋ "SyntaxElement" ↦ Fresh 1412
-      , "choice" ∋ "SyntaxList" ↦ Fresh 1407
-      , "choice" ∋ "SyntaxList" ↦ Fresh 1410
-      , "choice" ∋ "SyntaxStatement" ↦ Fresh 1381
-      , "choice" ∋ "TwoExpressionArguments" ↦ Fresh 1426
-      , "choice" ∋ "TwoExpressionArguments" ↦ Fresh 1449
-      , "choice" ∋ "TwoExpressionArguments" ↦ Fresh 1452
+      , "choice" ∋ "Syntax" ↦ Fresh 1468
+      , "choice" ∋ "Syntax" ↦ Fresh 1474
+      , "choice" ∋ "SyntaxElement" ↦ Fresh 1483
+      , "choice" ∋ "SyntaxElement" ↦ Fresh 1484
+      , "choice" ∋ "SyntaxList" ↦ Fresh 1479
+      , "choice" ∋ "SyntaxList" ↦ Fresh 1482
+      , "choice" ∋ "SyntaxStatement" ↦ Fresh 1453
+      , "choice" ∋ "TwoExpressionArguments" ↦ Fresh 1498
+      , "choice" ∋ "TwoExpressionArguments" ↦ Fresh 1521
+      , "choice" ∋ "TwoExpressionArguments" ↦ Fresh 1524
       , "nonTerminal" ∋ "classification" ↦ "Classification"
-      , "rule" ∋ "classification" ↦ Fresh 1362
+      , "rule" ∋ "classification" ↦ Fresh 1434
       , "nonTerminal" ∋ "compose" ↦ "Compose"
-      , "rule" ∋ "compose" ↦ Fresh 1418
+      , "rule" ∋ "compose" ↦ Fresh 1490
       , "nonTerminal" ∋ "concept" ↦ "String"
-      , "rule" ∋ "concept" ↦ Fresh 1373
+      , "rule" ∋ "concept" ↦ Fresh 1445
       , "nonTerminal" ∋ "conceptList" ↦ "ConceptList"
-      , "rule" ∋ "conceptList" ↦ Fresh 1364
+      , "rule" ∋ "conceptList" ↦ Fresh 1436
       , "nonTerminal" ∋ "concepts" ↦ "DeclarationType"
-      , "rule" ∋ "concepts" ↦ Fresh 1369
+      , "rule" ∋ "concepts" ↦ Fresh 1441
       , "nonTerminal" ∋ "conjunct" ↦ "Conjunct"
-      , "rule" ∋ "conjunct" ↦ Fresh 1416
+      , "rule" ∋ "conjunct" ↦ Fresh 1488
       , "nonTerminal" ∋ "converse" ↦ "Expression"
-      , "rule" ∋ "converse" ↦ Fresh 1417
+      , "rule" ∋ "converse" ↦ Fresh 1489
       , "nonTerminal" ∋ "declaration" ↦ "Declaration"
-      , "rule" ∋ "declaration" ↦ Fresh 1367
+      , "rule" ∋ "declaration" ↦ Fresh 1439
       , "nonTerminal" ∋ "during" ↦ "UnquotedString"
-      , "rule" ∋ "during" ↦ Fresh 1421
+      , "rule" ∋ "during" ↦ Fresh 1493
       , "nonTerminal" ∋ "eFst" ↦ "Expression"
-      , "rule" ∋ "eFst" ↦ Fresh 1414
+      , "rule" ∋ "eFst" ↦ Fresh 1486
       , "nonTerminal" ∋ "eSnd" ↦ "Expression"
-      , "rule" ∋ "eSnd" ↦ Fresh 1415
+      , "rule" ∋ "eSnd" ↦ Fresh 1487
       , "nonTerminal" ∋ "fst" ↦ "String"
-      , "rule" ∋ "fst" ↦ Fresh 1370
+      , "rule" ∋ "fst" ↦ Fresh 1442
       , "recogniser" ∋ "gotoStart" ↦ "Start"
       , "nonTerminal" ∋ "head1" ↦ "String"
-      , "rule" ∋ "head1" ↦ Fresh 1365
+      , "rule" ∋ "head1" ↦ Fresh 1437
       , "nonTerminal" ∋ "head2" ↦ "SyntaxElement"
-      , "rule" ∋ "head2" ↦ Fresh 1376
-      , "eFst" ∋ "keepOrigin" ↦ Fresh 1456
-      , "eSnd" ∋ "keepOrigin" ↦ Fresh 1455
+      , "rule" ∋ "head2" ↦ Fresh 1448
+      , "eFst" ∋ "keepOrigin" ↦ Fresh 1528
+      , "eSnd" ∋ "keepOrigin" ↦ Fresh 1527
       , "rule" ∋ "keepOrigin" ↦ "keepOrigin"
-      , "eFst" ∋ "keepString" ↦ Fresh 1458
-      , "eSnd" ∋ "keepString" ↦ Fresh 1457
+      , "eFst" ∋ "keepString" ↦ Fresh 1530
+      , "eSnd" ∋ "keepString" ↦ Fresh 1529
       , "rule" ∋ "keepString" ↦ "keepString"
       , "nonTerminal" ∋ "mainConcept" ↦ "String"
-      , "rule" ∋ "mainConcept" ↦ Fresh 1363
+      , "rule" ∋ "mainConcept" ↦ Fresh 1435
       , "nonTerminal" ∋ "pair1" ↦ "String"
-      , "rule" ∋ "pair1" ↦ Fresh 1422
+      , "rule" ∋ "pair1" ↦ Fresh 1494
       , "nonTerminal" ∋ "pair2" ↦ "String"
-      , "rule" ∋ "pair2" ↦ Fresh 1423
+      , "rule" ∋ "pair2" ↦ Fresh 1495
       , "nonTerminal" ∋ "post" ↦ "UnquotedString"
-      , "rule" ∋ "post" ↦ Fresh 1420
+      , "rule" ∋ "post" ↦ Fresh 1492
       , "nonTerminal" ∋ "pre" ↦ "UnquotedString"
-      , "rule" ∋ "pre" ↦ Fresh 1419
+      , "rule" ∋ "pre" ↦ Fresh 1491
       , "nonTerminal" ∋ "qstring" ↦ "QuotedString"
-      , "rule" ∋ "qstring" ↦ Fresh 1378
+      , "rule" ∋ "qstring" ↦ Fresh 1450
       , "nonTerminal" ∋ "relation" ↦ "StringAndOrigin"
-      , "rule" ∋ "relation" ↦ Fresh 1368
+      , "rule" ∋ "relation" ↦ Fresh 1440
       , "nonTerminal" ∋ "relationName" ↦ "UnquotedString"
-      , "rule" ∋ "relationName" ↦ Fresh 1374
+      , "rule" ∋ "relationName" ↦ Fresh 1446
       , "nonTerminal" ∋ "rule" ↦ "RuleSubset"
-      , "rule" ∋ "rule" ↦ Fresh 1413
+      , "rule" ∋ "rule" ↦ Fresh 1485
       , "nonTerminal" ∋ "snd" ↦ "String"
-      , "rule" ∋ "snd" ↦ Fresh 1371
+      , "rule" ∋ "snd" ↦ Fresh 1443
       , "nonTerminal" ∋ "syntax" ↦ "Syntax"
-      , "rule" ∋ "syntax" ↦ Fresh 1372
+      , "rule" ∋ "syntax" ↦ Fresh 1444
       , "nonTerminal" ∋ "syntaxList" ↦ "SyntaxList"
-      , "rule" ∋ "syntaxList" ↦ Fresh 1375
+      , "rule" ∋ "syntaxList" ↦ Fresh 1447
       , "nonTerminal" ∋ "tail1" ↦ "ConceptList"
-      , "rule" ∋ "tail1" ↦ Fresh 1366
+      , "rule" ∋ "tail1" ↦ Fresh 1438
       , "nonTerminal" ∋ "tail2" ↦ "SyntaxList"
-      , "rule" ∋ "tail2" ↦ Fresh 1377
-      , "eFst" ∋ Fresh 1362 ↦ Fresh 1459
-      , "eSnd" ∋ Fresh 1362 ↦ Fresh 1460
-      , "eFst" ∋ Fresh 1363 ↦ Fresh 1461
-      , "eSnd" ∋ Fresh 1363 ↦ Fresh 1462
-      , "eFst" ∋ Fresh 1364 ↦ Fresh 1463
-      , "eSnd" ∋ Fresh 1364 ↦ Fresh 1464
-      , "eFst" ∋ Fresh 1365 ↦ Fresh 1465
-      , "eSnd" ∋ Fresh 1365 ↦ Fresh 1466
-      , "eFst" ∋ Fresh 1366 ↦ Fresh 1467
-      , "eSnd" ∋ Fresh 1366 ↦ Fresh 1468
-      , "eFst" ∋ Fresh 1367 ↦ Fresh 1469
-      , "eSnd" ∋ Fresh 1367 ↦ Fresh 1470
-      , "eFst" ∋ Fresh 1368 ↦ Fresh 1471
-      , "eSnd" ∋ Fresh 1368 ↦ Fresh 1472
-      , "eFst" ∋ Fresh 1369 ↦ Fresh 1473
-      , "eSnd" ∋ Fresh 1369 ↦ Fresh 1474
-      , "eFst" ∋ Fresh 1370 ↦ Fresh 1475
-      , "eSnd" ∋ Fresh 1370 ↦ Fresh 1476
-      , "eFst" ∋ Fresh 1371 ↦ Fresh 1477
-      , "eSnd" ∋ Fresh 1371 ↦ Fresh 1478
-      , "eFst" ∋ Fresh 1372 ↦ Fresh 1479
-      , "eSnd" ∋ Fresh 1372 ↦ Fresh 1480
-      , "eFst" ∋ Fresh 1373 ↦ Fresh 1481
-      , "eSnd" ∋ Fresh 1373 ↦ Fresh 1482
-      , "eFst" ∋ Fresh 1374 ↦ Fresh 1483
-      , "eSnd" ∋ Fresh 1374 ↦ Fresh 1484
-      , "eFst" ∋ Fresh 1375 ↦ Fresh 1485
-      , "eSnd" ∋ Fresh 1375 ↦ Fresh 1486
-      , "eFst" ∋ Fresh 1376 ↦ Fresh 1487
-      , "eSnd" ∋ Fresh 1376 ↦ Fresh 1488
-      , "eFst" ∋ Fresh 1377 ↦ Fresh 1489
-      , "eSnd" ∋ Fresh 1377 ↦ Fresh 1490
-      , "eFst" ∋ Fresh 1378 ↦ Fresh 1491
-      , "eSnd" ∋ Fresh 1378 ↦ Fresh 1492
-      , "recogniser" ∋ Fresh 1379 ↦ "classification"
-      , "recogniser" ∋ Fresh 1380 ↦ "declaration"
-      , "recogniser" ∋ Fresh 1381 ↦ "syntax"
-      , "continuation" ∋ Fresh 1382 ↦ Fresh 1383
-      , "recogniser" ∋ Fresh 1382 ↦ "\"CLASSIFY\""
-      , "continuation" ∋ Fresh 1383 ↦ Fresh 1384
-      , "recogniser" ∋ Fresh 1383 ↦ "mainConcept"
-      , "continuation" ∋ Fresh 1384 ↦ Fresh 1385
-      , "recogniser" ∋ Fresh 1384 ↦ "\"IS\""
-      , "recogniser" ∋ Fresh 1385 ↦ "conceptList"
-      , "continuation" ∋ Fresh 1386 ↦ Fresh 1387
-      , "recogniser" ∋ Fresh 1386 ↦ "head1"
-      , "continuation" ∋ Fresh 1387 ↦ Fresh 1388
-      , "recogniser" ∋ Fresh 1387 ↦ "\"/\\\\\""
-      , "recogniser" ∋ Fresh 1388 ↦ "tail1"
-      , "recogniser" ∋ Fresh 1389 ↦ "head1"
-      , "continuation" ∋ Fresh 1390 ↦ Fresh 1391
-      , "recogniser" ∋ Fresh 1390 ↦ "fst"
-      , "continuation" ∋ Fresh 1391 ↦ Fresh 1392
-      , "recogniser" ∋ Fresh 1391 ↦ "\"*\""
-      , "recogniser" ∋ Fresh 1392 ↦ "snd"
-      , "continuation" ∋ Fresh 1393 ↦ Fresh 1394
-      , "recogniser" ∋ Fresh 1393 ↦ "relation"
-      , "continuation" ∋ Fresh 1394 ↦ Fresh 1395
-      , "recogniser" ∋ Fresh 1394 ↦ "\"::\""
-      , "recogniser" ∋ Fresh 1395 ↦ "concepts"
-      , "continuation" ∋ Fresh 1396 ↦ Fresh 1397
-      , "recogniser" ∋ Fresh 1396 ↦ "\"VIEW\""
-      , "continuation" ∋ Fresh 1397 ↦ Fresh 1398
-      , "recogniser" ∋ Fresh 1397 ↦ "concept"
-      , "continuation" ∋ Fresh 1398 ↦ Fresh 1399
-      , "recogniser" ∋ Fresh 1398 ↦ "\"=\""
-      , "continuation" ∋ Fresh 1399 ↦ Fresh 1400
-      , "recogniser" ∋ Fresh 1399 ↦ "\"[\""
-      , "continuation" ∋ Fresh 1400 ↦ Fresh 1401
-      , "recogniser" ∋ Fresh 1400 ↦ "syntaxList"
-      , "recogniser" ∋ Fresh 1401 ↦ "\"]\""
-      , "continuation" ∋ Fresh 1402 ↦ Fresh 1403
-      , "recogniser" ∋ Fresh 1402 ↦ "\"VIEW\""
-      , "continuation" ∋ Fresh 1403 ↦ Fresh 1404
-      , "recogniser" ∋ Fresh 1403 ↦ "concept"
-      , "continuation" ∋ Fresh 1404 ↦ Fresh 1405
-      , "recogniser" ∋ Fresh 1404 ↦ "\"=\""
-      , "continuation" ∋ Fresh 1405 ↦ Fresh 1406
-      , "recogniser" ∋ Fresh 1405 ↦ "\"[\""
-      , "recogniser" ∋ Fresh 1406 ↦ "\"]\""
-      , "continuation" ∋ Fresh 1407 ↦ Fresh 1408
-      , "recogniser" ∋ Fresh 1407 ↦ "head2"
-      , "continuation" ∋ Fresh 1408 ↦ Fresh 1409
-      , "recogniser" ∋ Fresh 1408 ↦ "\",\""
-      , "recogniser" ∋ Fresh 1409 ↦ "tail2"
-      , "recogniser" ∋ Fresh 1410 ↦ "head2"
-      , "recogniser" ∋ Fresh 1411 ↦ "qstring"
-      , "recogniser" ∋ Fresh 1412 ↦ "relationName"
-      , "eFst" ∋ Fresh 1413 ↦ Fresh 1493
-      , "eSnd" ∋ Fresh 1413 ↦ Fresh 1494
-      , "eFst" ∋ Fresh 1414 ↦ Fresh 1495
-      , "eSnd" ∋ Fresh 1414 ↦ Fresh 1496
-      , "eFst" ∋ Fresh 1415 ↦ Fresh 1497
-      , "eSnd" ∋ Fresh 1415 ↦ Fresh 1498
-      , "eFst" ∋ Fresh 1416 ↦ Fresh 1499
-      , "eSnd" ∋ Fresh 1416 ↦ Fresh 1500
-      , "eFst" ∋ Fresh 1417 ↦ Fresh 1501
-      , "eSnd" ∋ Fresh 1417 ↦ Fresh 1502
-      , "eFst" ∋ Fresh 1418 ↦ Fresh 1503
-      , "eSnd" ∋ Fresh 1418 ↦ Fresh 1504
-      , "eFst" ∋ Fresh 1419 ↦ Fresh 1505
-      , "eSnd" ∋ Fresh 1419 ↦ Fresh 1506
-      , "eFst" ∋ Fresh 1420 ↦ Fresh 1507
-      , "eSnd" ∋ Fresh 1420 ↦ Fresh 1508
-      , "eFst" ∋ Fresh 1421 ↦ Fresh 1509
-      , "eSnd" ∋ Fresh 1421 ↦ Fresh 1510
-      , "eFst" ∋ Fresh 1422 ↦ Fresh 1511
-      , "eSnd" ∋ Fresh 1422 ↦ Fresh 1512
-      , "eFst" ∋ Fresh 1423 ↦ Fresh 1513
-      , "eSnd" ∋ Fresh 1423 ↦ Fresh 1514
-      , "continuation" ∋ Fresh 1424 ↦ Fresh 1425
-      , "recogniser" ∋ Fresh 1424 ↦ "\"RULE\""
-      , "recogniser" ∋ Fresh 1425 ↦ "rule"
-      , "continuation" ∋ Fresh 1426 ↦ Fresh 1427
-      , "recogniser" ∋ Fresh 1426 ↦ "eFst"
-      , "continuation" ∋ Fresh 1427 ↦ Fresh 1428
-      , "recogniser" ∋ Fresh 1427 ↦ "\"|-\""
-      , "recogniser" ∋ Fresh 1428 ↦ "eSnd"
-      , "continuation" ∋ Fresh 1429 ↦ Fresh 1430
-      , "recogniser" ∋ Fresh 1429 ↦ "\"(\""
-      , "continuation" ∋ Fresh 1430 ↦ Fresh 1431
-      , "recogniser" ∋ Fresh 1430 ↦ "conjunct"
-      , "recogniser" ∋ Fresh 1431 ↦ "\")\""
-      , "continuation" ∋ Fresh 1432 ↦ Fresh 1433
-      , "recogniser" ∋ Fresh 1432 ↦ "\"(\""
-      , "continuation" ∋ Fresh 1433 ↦ Fresh 1434
-      , "recogniser" ∋ Fresh 1433 ↦ "compose"
-      , "recogniser" ∋ Fresh 1434 ↦ "\")\""
-      , "continuation" ∋ Fresh 1435 ↦ Fresh 1436
-      , "recogniser" ∋ Fresh 1435 ↦ "converse"
-      , "recogniser" ∋ Fresh 1436 ↦ "\"~\""
-      , "continuation" ∋ Fresh 1437 ↦ Fresh 1438
-      , "recogniser" ∋ Fresh 1437 ↦ "\"pre\""
-      , "recogniser" ∋ Fresh 1438 ↦ "pre"
-      , "continuation" ∋ Fresh 1439 ↦ Fresh 1440
-      , "recogniser" ∋ Fresh 1439 ↦ "\"post\""
-      , "recogniser" ∋ Fresh 1440 ↦ "post"
-      , "continuation" ∋ Fresh 1441 ↦ Fresh 1442
-      , "recogniser" ∋ Fresh 1441 ↦ "\"during\""
-      , "recogniser" ∋ Fresh 1442 ↦ "during"
-      , "continuation" ∋ Fresh 1443 ↦ Fresh 1444
-      , "recogniser" ∋ Fresh 1443 ↦ "\"<\""
-      , "continuation" ∋ Fresh 1444 ↦ Fresh 1445
-      , "recogniser" ∋ Fresh 1444 ↦ "pair1"
-      , "continuation" ∋ Fresh 1445 ↦ Fresh 1446
-      , "recogniser" ∋ Fresh 1445 ↦ "\",\""
-      , "continuation" ∋ Fresh 1446 ↦ Fresh 1447
-      , "recogniser" ∋ Fresh 1446 ↦ "pair2"
-      , "recogniser" ∋ Fresh 1447 ↦ "\">\""
-      , "recogniser" ∋ Fresh 1448 ↦ "\"I\""
-      , "continuation" ∋ Fresh 1449 ↦ Fresh 1450
-      , "recogniser" ∋ Fresh 1449 ↦ "eFst"
-      , "continuation" ∋ Fresh 1450 ↦ Fresh 1451
-      , "recogniser" ∋ Fresh 1450 ↦ "\"/\\\\\""
-      , "recogniser" ∋ Fresh 1451 ↦ "eSnd"
-      , "continuation" ∋ Fresh 1452 ↦ Fresh 1453
-      , "recogniser" ∋ Fresh 1452 ↦ "eFst"
-      , "continuation" ∋ Fresh 1453 ↦ Fresh 1454
-      , "recogniser" ∋ Fresh 1453 ↦ "\";\""
-      , "recogniser" ∋ Fresh 1454 ↦ "eSnd"
-      , "post" ∋ Fresh 1455 ↦ "origin"
-      , "pre" ∋ Fresh 1456 ↦ "origin"
-      , "post" ∋ Fresh 1457 ↦ "string"
-      , "pre" ∋ Fresh 1458 ↦ "string"
-      , "pre" ∋ Fresh 1459 ↦ "classification"
-      , "post" ∋ Fresh 1460 ↦ "classification"
-      , "pre" ∋ Fresh 1461 ↦ "mainConcept"
-      , "post" ∋ Fresh 1462 ↦ "mainConcept"
-      , "pre" ∋ Fresh 1463 ↦ "conceptList"
-      , "post" ∋ Fresh 1464 ↦ "conceptList"
-      , "pre" ∋ Fresh 1465 ↦ "head1"
-      , "post" ∋ Fresh 1466 ↦ "head1"
-      , "pre" ∋ Fresh 1467 ↦ "tail1"
-      , "post" ∋ Fresh 1468 ↦ "tail1"
-      , "pre" ∋ Fresh 1469 ↦ "declaration"
-      , "post" ∋ Fresh 1470 ↦ "declaration"
-      , "pre" ∋ Fresh 1471 ↦ "relation"
-      , "post" ∋ Fresh 1472 ↦ "relation"
-      , "pre" ∋ Fresh 1473 ↦ "concepts"
-      , "post" ∋ Fresh 1474 ↦ "concepts"
-      , "pre" ∋ Fresh 1475 ↦ "fst"
-      , "post" ∋ Fresh 1476 ↦ "fst"
-      , "pre" ∋ Fresh 1477 ↦ "snd"
-      , "post" ∋ Fresh 1478 ↦ "snd"
-      , "pre" ∋ Fresh 1479 ↦ "syntax"
-      , "post" ∋ Fresh 1480 ↦ "syntax"
-      , "pre" ∋ Fresh 1481 ↦ "concept"
-      , "post" ∋ Fresh 1482 ↦ "concept"
-      , "pre" ∋ Fresh 1483 ↦ "relationName"
-      , "post" ∋ Fresh 1484 ↦ "relationName"
-      , "pre" ∋ Fresh 1485 ↦ "syntaxList"
-      , "post" ∋ Fresh 1486 ↦ "syntaxList"
-      , "pre" ∋ Fresh 1487 ↦ "head2"
-      , "post" ∋ Fresh 1488 ↦ "head2"
-      , "pre" ∋ Fresh 1489 ↦ "tail2"
-      , "post" ∋ Fresh 1490 ↦ "tail2"
-      , "pre" ∋ Fresh 1491 ↦ "qstring"
-      , "post" ∋ Fresh 1492 ↦ "qstring"
-      , "pre" ∋ Fresh 1493 ↦ "rule"
-      , "post" ∋ Fresh 1494 ↦ "rule"
-      , "pre" ∋ Fresh 1495 ↦ "eFst"
-      , "post" ∋ Fresh 1496 ↦ "eFst"
-      , "pre" ∋ Fresh 1497 ↦ "eSnd"
-      , "post" ∋ Fresh 1498 ↦ "eSnd"
-      , "pre" ∋ Fresh 1499 ↦ "conjunct"
-      , "post" ∋ Fresh 1500 ↦ "conjunct"
-      , "pre" ∋ Fresh 1501 ↦ "converse"
-      , "post" ∋ Fresh 1502 ↦ "converse"
-      , "pre" ∋ Fresh 1503 ↦ "compose"
-      , "post" ∋ Fresh 1504 ↦ "compose"
-      , "pre" ∋ Fresh 1505 ↦ "pre"
-      , "post" ∋ Fresh 1506 ↦ "pre"
-      , "pre" ∋ Fresh 1507 ↦ "post"
-      , "post" ∋ Fresh 1508 ↦ "post"
-      , "pre" ∋ Fresh 1509 ↦ "during"
-      , "post" ∋ Fresh 1510 ↦ "during"
-      , "pre" ∋ Fresh 1511 ↦ "pair1"
-      , "post" ∋ Fresh 1512 ↦ "pair1"
-      , "pre" ∋ Fresh 1513 ↦ "pair2"
-      , "post" ∋ Fresh 1514 ↦ "pair2"
+      , "rule" ∋ "tail2" ↦ Fresh 1449
+      , "eFst" ∋ Fresh 1434 ↦ Fresh 1531
+      , "eSnd" ∋ Fresh 1434 ↦ Fresh 1532
+      , "eFst" ∋ Fresh 1435 ↦ Fresh 1533
+      , "eSnd" ∋ Fresh 1435 ↦ Fresh 1534
+      , "eFst" ∋ Fresh 1436 ↦ Fresh 1535
+      , "eSnd" ∋ Fresh 1436 ↦ Fresh 1536
+      , "eFst" ∋ Fresh 1437 ↦ Fresh 1537
+      , "eSnd" ∋ Fresh 1437 ↦ Fresh 1538
+      , "eFst" ∋ Fresh 1438 ↦ Fresh 1539
+      , "eSnd" ∋ Fresh 1438 ↦ Fresh 1540
+      , "eFst" ∋ Fresh 1439 ↦ Fresh 1541
+      , "eSnd" ∋ Fresh 1439 ↦ Fresh 1542
+      , "eFst" ∋ Fresh 1440 ↦ Fresh 1543
+      , "eSnd" ∋ Fresh 1440 ↦ Fresh 1544
+      , "eFst" ∋ Fresh 1441 ↦ Fresh 1545
+      , "eSnd" ∋ Fresh 1441 ↦ Fresh 1546
+      , "eFst" ∋ Fresh 1442 ↦ Fresh 1547
+      , "eSnd" ∋ Fresh 1442 ↦ Fresh 1548
+      , "eFst" ∋ Fresh 1443 ↦ Fresh 1549
+      , "eSnd" ∋ Fresh 1443 ↦ Fresh 1550
+      , "eFst" ∋ Fresh 1444 ↦ Fresh 1551
+      , "eSnd" ∋ Fresh 1444 ↦ Fresh 1552
+      , "eFst" ∋ Fresh 1445 ↦ Fresh 1553
+      , "eSnd" ∋ Fresh 1445 ↦ Fresh 1554
+      , "eFst" ∋ Fresh 1446 ↦ Fresh 1555
+      , "eSnd" ∋ Fresh 1446 ↦ Fresh 1556
+      , "eFst" ∋ Fresh 1447 ↦ Fresh 1557
+      , "eSnd" ∋ Fresh 1447 ↦ Fresh 1558
+      , "eFst" ∋ Fresh 1448 ↦ Fresh 1559
+      , "eSnd" ∋ Fresh 1448 ↦ Fresh 1560
+      , "eFst" ∋ Fresh 1449 ↦ Fresh 1561
+      , "eSnd" ∋ Fresh 1449 ↦ Fresh 1562
+      , "eFst" ∋ Fresh 1450 ↦ Fresh 1563
+      , "eSnd" ∋ Fresh 1450 ↦ Fresh 1564
+      , "recogniser" ∋ Fresh 1451 ↦ "classification"
+      , "recogniser" ∋ Fresh 1452 ↦ "declaration"
+      , "recogniser" ∋ Fresh 1453 ↦ "syntax"
+      , "continuation" ∋ Fresh 1454 ↦ Fresh 1455
+      , "recogniser" ∋ Fresh 1454 ↦ "\"CLASSIFY\""
+      , "continuation" ∋ Fresh 1455 ↦ Fresh 1456
+      , "recogniser" ∋ Fresh 1455 ↦ "mainConcept"
+      , "continuation" ∋ Fresh 1456 ↦ Fresh 1457
+      , "recogniser" ∋ Fresh 1456 ↦ "\"IS\""
+      , "recogniser" ∋ Fresh 1457 ↦ "conceptList"
+      , "continuation" ∋ Fresh 1458 ↦ Fresh 1459
+      , "recogniser" ∋ Fresh 1458 ↦ "head1"
+      , "continuation" ∋ Fresh 1459 ↦ Fresh 1460
+      , "recogniser" ∋ Fresh 1459 ↦ "\"/\\\\\""
+      , "recogniser" ∋ Fresh 1460 ↦ "tail1"
+      , "recogniser" ∋ Fresh 1461 ↦ "head1"
+      , "continuation" ∋ Fresh 1462 ↦ Fresh 1463
+      , "recogniser" ∋ Fresh 1462 ↦ "fst"
+      , "continuation" ∋ Fresh 1463 ↦ Fresh 1464
+      , "recogniser" ∋ Fresh 1463 ↦ "\"*\""
+      , "recogniser" ∋ Fresh 1464 ↦ "snd"
+      , "continuation" ∋ Fresh 1465 ↦ Fresh 1466
+      , "recogniser" ∋ Fresh 1465 ↦ "relation"
+      , "continuation" ∋ Fresh 1466 ↦ Fresh 1467
+      , "recogniser" ∋ Fresh 1466 ↦ "\"::\""
+      , "recogniser" ∋ Fresh 1467 ↦ "concepts"
+      , "continuation" ∋ Fresh 1468 ↦ Fresh 1469
+      , "recogniser" ∋ Fresh 1468 ↦ "\"VIEW\""
+      , "continuation" ∋ Fresh 1469 ↦ Fresh 1470
+      , "recogniser" ∋ Fresh 1469 ↦ "concept"
+      , "continuation" ∋ Fresh 1470 ↦ Fresh 1471
+      , "recogniser" ∋ Fresh 1470 ↦ "\"=\""
+      , "continuation" ∋ Fresh 1471 ↦ Fresh 1472
+      , "recogniser" ∋ Fresh 1471 ↦ "\"[\""
+      , "continuation" ∋ Fresh 1472 ↦ Fresh 1473
+      , "recogniser" ∋ Fresh 1472 ↦ "syntaxList"
+      , "recogniser" ∋ Fresh 1473 ↦ "\"]\""
+      , "continuation" ∋ Fresh 1474 ↦ Fresh 1475
+      , "recogniser" ∋ Fresh 1474 ↦ "\"VIEW\""
+      , "continuation" ∋ Fresh 1475 ↦ Fresh 1476
+      , "recogniser" ∋ Fresh 1475 ↦ "concept"
+      , "continuation" ∋ Fresh 1476 ↦ Fresh 1477
+      , "recogniser" ∋ Fresh 1476 ↦ "\"=\""
+      , "continuation" ∋ Fresh 1477 ↦ Fresh 1478
+      , "recogniser" ∋ Fresh 1477 ↦ "\"[\""
+      , "recogniser" ∋ Fresh 1478 ↦ "\"]\""
+      , "continuation" ∋ Fresh 1479 ↦ Fresh 1480
+      , "recogniser" ∋ Fresh 1479 ↦ "head2"
+      , "continuation" ∋ Fresh 1480 ↦ Fresh 1481
+      , "recogniser" ∋ Fresh 1480 ↦ "\",\""
+      , "recogniser" ∋ Fresh 1481 ↦ "tail2"
+      , "recogniser" ∋ Fresh 1482 ↦ "head2"
+      , "recogniser" ∋ Fresh 1483 ↦ "qstring"
+      , "recogniser" ∋ Fresh 1484 ↦ "relationName"
+      , "eFst" ∋ Fresh 1485 ↦ Fresh 1565
+      , "eSnd" ∋ Fresh 1485 ↦ Fresh 1566
+      , "eFst" ∋ Fresh 1486 ↦ Fresh 1567
+      , "eSnd" ∋ Fresh 1486 ↦ Fresh 1568
+      , "eFst" ∋ Fresh 1487 ↦ Fresh 1569
+      , "eSnd" ∋ Fresh 1487 ↦ Fresh 1570
+      , "eFst" ∋ Fresh 1488 ↦ Fresh 1571
+      , "eSnd" ∋ Fresh 1488 ↦ Fresh 1572
+      , "eFst" ∋ Fresh 1489 ↦ Fresh 1573
+      , "eSnd" ∋ Fresh 1489 ↦ Fresh 1574
+      , "eFst" ∋ Fresh 1490 ↦ Fresh 1575
+      , "eSnd" ∋ Fresh 1490 ↦ Fresh 1576
+      , "eFst" ∋ Fresh 1491 ↦ Fresh 1577
+      , "eSnd" ∋ Fresh 1491 ↦ Fresh 1578
+      , "eFst" ∋ Fresh 1492 ↦ Fresh 1579
+      , "eSnd" ∋ Fresh 1492 ↦ Fresh 1580
+      , "eFst" ∋ Fresh 1493 ↦ Fresh 1581
+      , "eSnd" ∋ Fresh 1493 ↦ Fresh 1582
+      , "eFst" ∋ Fresh 1494 ↦ Fresh 1583
+      , "eSnd" ∋ Fresh 1494 ↦ Fresh 1584
+      , "eFst" ∋ Fresh 1495 ↦ Fresh 1585
+      , "eSnd" ∋ Fresh 1495 ↦ Fresh 1586
+      , "continuation" ∋ Fresh 1496 ↦ Fresh 1497
+      , "recogniser" ∋ Fresh 1496 ↦ "\"RULE\""
+      , "recogniser" ∋ Fresh 1497 ↦ "rule"
+      , "continuation" ∋ Fresh 1498 ↦ Fresh 1499
+      , "recogniser" ∋ Fresh 1498 ↦ "eFst"
+      , "continuation" ∋ Fresh 1499 ↦ Fresh 1500
+      , "recogniser" ∋ Fresh 1499 ↦ "\"|-\""
+      , "recogniser" ∋ Fresh 1500 ↦ "eSnd"
+      , "continuation" ∋ Fresh 1501 ↦ Fresh 1502
+      , "recogniser" ∋ Fresh 1501 ↦ "\"(\""
+      , "continuation" ∋ Fresh 1502 ↦ Fresh 1503
+      , "recogniser" ∋ Fresh 1502 ↦ "conjunct"
+      , "recogniser" ∋ Fresh 1503 ↦ "\")\""
+      , "continuation" ∋ Fresh 1504 ↦ Fresh 1505
+      , "recogniser" ∋ Fresh 1504 ↦ "\"(\""
+      , "continuation" ∋ Fresh 1505 ↦ Fresh 1506
+      , "recogniser" ∋ Fresh 1505 ↦ "compose"
+      , "recogniser" ∋ Fresh 1506 ↦ "\")\""
+      , "continuation" ∋ Fresh 1507 ↦ Fresh 1508
+      , "recogniser" ∋ Fresh 1507 ↦ "converse"
+      , "recogniser" ∋ Fresh 1508 ↦ "\"~\""
+      , "continuation" ∋ Fresh 1509 ↦ Fresh 1510
+      , "recogniser" ∋ Fresh 1509 ↦ "\"pre\""
+      , "recogniser" ∋ Fresh 1510 ↦ "pre"
+      , "continuation" ∋ Fresh 1511 ↦ Fresh 1512
+      , "recogniser" ∋ Fresh 1511 ↦ "\"post\""
+      , "recogniser" ∋ Fresh 1512 ↦ "post"
+      , "continuation" ∋ Fresh 1513 ↦ Fresh 1514
+      , "recogniser" ∋ Fresh 1513 ↦ "\"during\""
+      , "recogniser" ∋ Fresh 1514 ↦ "during"
+      , "continuation" ∋ Fresh 1515 ↦ Fresh 1516
+      , "recogniser" ∋ Fresh 1515 ↦ "\"<\""
+      , "continuation" ∋ Fresh 1516 ↦ Fresh 1517
+      , "recogniser" ∋ Fresh 1516 ↦ "pair1"
+      , "continuation" ∋ Fresh 1517 ↦ Fresh 1518
+      , "recogniser" ∋ Fresh 1517 ↦ "\",\""
+      , "continuation" ∋ Fresh 1518 ↦ Fresh 1519
+      , "recogniser" ∋ Fresh 1518 ↦ "pair2"
+      , "recogniser" ∋ Fresh 1519 ↦ "\">\""
+      , "recogniser" ∋ Fresh 1520 ↦ "\"I\""
+      , "continuation" ∋ Fresh 1521 ↦ Fresh 1522
+      , "recogniser" ∋ Fresh 1521 ↦ "eFst"
+      , "continuation" ∋ Fresh 1522 ↦ Fresh 1523
+      , "recogniser" ∋ Fresh 1522 ↦ "\"/\\\\\""
+      , "recogniser" ∋ Fresh 1523 ↦ "eSnd"
+      , "continuation" ∋ Fresh 1524 ↦ Fresh 1525
+      , "recogniser" ∋ Fresh 1524 ↦ "eFst"
+      , "continuation" ∋ Fresh 1525 ↦ Fresh 1526
+      , "recogniser" ∋ Fresh 1525 ↦ "\";\""
+      , "recogniser" ∋ Fresh 1526 ↦ "eSnd"
+      , "post" ∋ Fresh 1527 ↦ "origin"
+      , "pre" ∋ Fresh 1528 ↦ "origin"
+      , "post" ∋ Fresh 1529 ↦ "string"
+      , "pre" ∋ Fresh 1530 ↦ "string"
+      , "pre" ∋ Fresh 1531 ↦ "classification"
+      , "post" ∋ Fresh 1532 ↦ "classification"
+      , "pre" ∋ Fresh 1533 ↦ "mainConcept"
+      , "post" ∋ Fresh 1534 ↦ "mainConcept"
+      , "pre" ∋ Fresh 1535 ↦ "conceptList"
+      , "post" ∋ Fresh 1536 ↦ "conceptList"
+      , "pre" ∋ Fresh 1537 ↦ "head1"
+      , "post" ∋ Fresh 1538 ↦ "head1"
+      , "pre" ∋ Fresh 1539 ↦ "tail1"
+      , "post" ∋ Fresh 1540 ↦ "tail1"
+      , "pre" ∋ Fresh 1541 ↦ "declaration"
+      , "post" ∋ Fresh 1542 ↦ "declaration"
+      , "pre" ∋ Fresh 1543 ↦ "relation"
+      , "post" ∋ Fresh 1544 ↦ "relation"
+      , "pre" ∋ Fresh 1545 ↦ "concepts"
+      , "post" ∋ Fresh 1546 ↦ "concepts"
+      , "pre" ∋ Fresh 1547 ↦ "fst"
+      , "post" ∋ Fresh 1548 ↦ "fst"
+      , "pre" ∋ Fresh 1549 ↦ "snd"
+      , "post" ∋ Fresh 1550 ↦ "snd"
+      , "pre" ∋ Fresh 1551 ↦ "syntax"
+      , "post" ∋ Fresh 1552 ↦ "syntax"
+      , "pre" ∋ Fresh 1553 ↦ "concept"
+      , "post" ∋ Fresh 1554 ↦ "concept"
+      , "pre" ∋ Fresh 1555 ↦ "relationName"
+      , "post" ∋ Fresh 1556 ↦ "relationName"
+      , "pre" ∋ Fresh 1557 ↦ "syntaxList"
+      , "post" ∋ Fresh 1558 ↦ "syntaxList"
+      , "pre" ∋ Fresh 1559 ↦ "head2"
+      , "post" ∋ Fresh 1560 ↦ "head2"
+      , "pre" ∋ Fresh 1561 ↦ "tail2"
+      , "post" ∋ Fresh 1562 ↦ "tail2"
+      , "pre" ∋ Fresh 1563 ↦ "qstring"
+      , "post" ∋ Fresh 1564 ↦ "qstring"
+      , "pre" ∋ Fresh 1565 ↦ "rule"
+      , "post" ∋ Fresh 1566 ↦ "rule"
+      , "pre" ∋ Fresh 1567 ↦ "eFst"
+      , "post" ∋ Fresh 1568 ↦ "eFst"
+      , "pre" ∋ Fresh 1569 ↦ "eSnd"
+      , "post" ∋ Fresh 1570 ↦ "eSnd"
+      , "pre" ∋ Fresh 1571 ↦ "conjunct"
+      , "post" ∋ Fresh 1572 ↦ "conjunct"
+      , "pre" ∋ Fresh 1573 ↦ "converse"
+      , "post" ∋ Fresh 1574 ↦ "converse"
+      , "pre" ∋ Fresh 1575 ↦ "compose"
+      , "post" ∋ Fresh 1576 ↦ "compose"
+      , "pre" ∋ Fresh 1577 ↦ "pre"
+      , "post" ∋ Fresh 1578 ↦ "pre"
+      , "pre" ∋ Fresh 1579 ↦ "post"
+      , "post" ∋ Fresh 1580 ↦ "post"
+      , "pre" ∋ Fresh 1581 ↦ "during"
+      , "post" ∋ Fresh 1582 ↦ "during"
+      , "pre" ∋ Fresh 1583 ↦ "pair1"
+      , "post" ∋ Fresh 1584 ↦ "pair1"
+      , "pre" ∋ Fresh 1585 ↦ "pair2"
+      , "post" ∋ Fresh 1586 ↦ "pair2"
+      ])
+  , ( "rules"
+    , [ "rule" ∋ Fresh 1914 ↦ Fresh 1915
+      , "eFst" ∋ Fresh 1915 ↦ Fresh 1916
+      , "eSnd" ∋ Fresh 1915 ↦ Fresh 1917
+      , "relaxSnd" ∋ Fresh 1915 ↦ Fresh 1917
+      , "pre" ∋ Fresh 1916 ↦ "UnquotedString"
+      , "rule" ∋ Fresh 1918 ↦ Fresh 1919
+      , "eFst" ∋ Fresh 1919 ↦ Fresh 1920
+      , "eSnd" ∋ Fresh 1919 ↦ Fresh 1921
+      , "relaxSnd" ∋ Fresh 1919 ↦ Fresh 1921
+      , "pre" ∋ Fresh 1920 ↦ "QuotedString"
+      , "rule" ∋ Fresh 1922 ↦ Fresh 1923
+      , "eFst" ∋ Fresh 1923 ↦ Fresh 1924
+      , "eSnd" ∋ Fresh 1923 ↦ Fresh 1925
+      , "relaxSnd" ∋ Fresh 1923 ↦ Fresh 1925
+      , "pre" ∋ Fresh 1924 ↦ "nonTerminal"
+      , "keep" ∋ Fresh 1926 ↦ "choice"
+      , "rule" ∋ Fresh 1926 ↦ Fresh 1930
+      , "keep" ∋ Fresh 1927 ↦ "continuation"
+      , "rule" ∋ Fresh 1927 ↦ Fresh 1933
+      , "keep" ∋ Fresh 1928 ↦ "recogniser"
+      , "rule" ∋ Fresh 1928 ↦ Fresh 1936
+      , "keep" ∋ Fresh 1929 ↦ "nonTerminal"
+      , "rule" ∋ Fresh 1929 ↦ Fresh 1939
+      , "eFst" ∋ Fresh 1930 ↦ Fresh 1932
+      , "eSnd" ∋ Fresh 1930 ↦ Fresh 1931
+      , "post" ∋ Fresh 1931 ↦ "choice"
+      , "pre" ∋ Fresh 1932 ↦ "choice"
+      , "eFst" ∋ Fresh 1933 ↦ Fresh 1935
+      , "eSnd" ∋ Fresh 1933 ↦ Fresh 1934
+      , "post" ∋ Fresh 1934 ↦ "continuation"
+      , "pre" ∋ Fresh 1935 ↦ "continuation"
+      , "eFst" ∋ Fresh 1936 ↦ Fresh 1938
+      , "eSnd" ∋ Fresh 1936 ↦ Fresh 1937
+      , "post" ∋ Fresh 1937 ↦ "recogniser"
+      , "pre" ∋ Fresh 1938 ↦ "recogniser"
+      , "eFst" ∋ Fresh 1939 ↦ Fresh 1941
+      , "eSnd" ∋ Fresh 1939 ↦ Fresh 1940
+      , "post" ∋ Fresh 1940 ↦ "nonTerminal"
+      , "pre" ∋ Fresh 1941 ↦ "nonTerminal"
       ])
   , ( "switches"
-    , [ "cur" ∋ Fresh 1842 ↦ Fresh 1842
-      , "first" ∋ Fresh 1842 ↦ Fresh 1852
-      , "next" ∋ Fresh 1842 ↦ Fresh 1843
-      , "string" ∋ Fresh 1842 ↦ "\"i\""
-      , "next" ∋ Fresh 1843 ↦ Fresh 1844
-      , "string" ∋ Fresh 1843 ↦ "\"asParser\""
-      , "first" ∋ Fresh 1844 ↦ Fresh 1853
-      , "next" ∋ Fresh 1844 ↦ Fresh 1845
-      , "string" ∋ Fresh 1844 ↦ "\"i\""
-      , "first" ∋ Fresh 1845 ↦ Fresh 1854
-      , "next" ∋ Fresh 1845 ↦ Fresh 1846
-      , "string" ∋ Fresh 1845 ↦ "\"apply\""
-      , "first" ∋ Fresh 1846 ↦ Fresh 1857
-      , "next" ∋ Fresh 1846 ↦ Fresh 1847
-      , "string" ∋ Fresh 1846 ↦ "\"i\""
-      , "first" ∋ Fresh 1847 ↦ Fresh 1858
-      , "next" ∋ Fresh 1847 ↦ Fresh 1848
-      , "string" ∋ Fresh 1847 ↦ "\"apply\""
-      , "first" ∋ Fresh 1848 ↦ Fresh 1861
-      , "next" ∋ Fresh 1848 ↦ Fresh 1849
-      , "string" ∋ Fresh 1848 ↦ "\"apply\""
-      , "first" ∋ Fresh 1849 ↦ Fresh 1863
-      , "next" ∋ Fresh 1849 ↦ Fresh 1850
-      , "string" ∋ Fresh 1849 ↦ "\"apply\""
-      , "first" ∋ Fresh 1850 ↦ Fresh 1865
-      , "next" ∋ Fresh 1850 ↦ Fresh 1851
-      , "string" ∋ Fresh 1850 ↦ "\"collect\""
-      , "first" ∋ Fresh 1851 ↦ Fresh 1866
-      , "string" ∋ Fresh 1851 ↦ "\"showTS\""
-      , "string" ∋ Fresh 1852 ↦ "\"boot.ASL\""
-      , "string" ∋ Fresh 1853 ↦ "\"asParser.ASL\""
-      , "next" ∋ Fresh 1854 ↦ Fresh 1855
-      , "string" ∋ Fresh 1854 ↦ "\"parser\""
-      , "next" ∋ Fresh 1855 ↦ Fresh 1856
-      , "string" ∋ Fresh 1855 ↦ "\"population\""
-      , "string" ∋ Fresh 1856 ↦ "\"asParser\""
-      , "string" ∋ Fresh 1857 ↦ "\"cfg.ASL\""
-      , "next" ∋ Fresh 1858 ↦ Fresh 1859
-      , "string" ∋ Fresh 1858 ↦ "\"asParser\""
-      , "next" ∋ Fresh 1859 ↦ Fresh 1860
-      , "string" ∋ Fresh 1859 ↦ "\"population\""
-      , "string" ∋ Fresh 1860 ↦ "\"cfg\""
-      , "next" ∋ Fresh 1861 ↦ Fresh 1862
-      , "string" ∋ Fresh 1861 ↦ "\"del\""
-      , "string" ∋ Fresh 1862 ↦ "\"switches\""
-      , "next" ∋ Fresh 1863 ↦ Fresh 1864
-      , "string" ∋ Fresh 1863 ↦ "\"del\""
-      , "string" ∋ Fresh 1864 ↦ "\"population\""
-      , "string" ∋ Fresh 1865 ↦ "\"state\""
-      , "string" ∋ Fresh 1866 ↦ "\"state\""
+    , [ "cur" ∋ Fresh 1981 ↦ Fresh 1981
+      , "first" ∋ Fresh 1981 ↦ Fresh 1991
+      , "next" ∋ Fresh 1981 ↦ Fresh 1982
+      , "string" ∋ Fresh 1981 ↦ "\"i\""
+      , "next" ∋ Fresh 1982 ↦ Fresh 1983
+      , "string" ∋ Fresh 1982 ↦ "\"asParser\""
+      , "first" ∋ Fresh 1983 ↦ Fresh 1992
+      , "next" ∋ Fresh 1983 ↦ Fresh 1984
+      , "string" ∋ Fresh 1983 ↦ "\"i\""
+      , "first" ∋ Fresh 1984 ↦ Fresh 1993
+      , "next" ∋ Fresh 1984 ↦ Fresh 1985
+      , "string" ∋ Fresh 1984 ↦ "\"apply\""
+      , "first" ∋ Fresh 1985 ↦ Fresh 1996
+      , "next" ∋ Fresh 1985 ↦ Fresh 1986
+      , "string" ∋ Fresh 1985 ↦ "\"i\""
+      , "first" ∋ Fresh 1986 ↦ Fresh 1997
+      , "next" ∋ Fresh 1986 ↦ Fresh 1987
+      , "string" ∋ Fresh 1986 ↦ "\"apply\""
+      , "first" ∋ Fresh 1987 ↦ Fresh 2000
+      , "next" ∋ Fresh 1987 ↦ Fresh 1988
+      , "string" ∋ Fresh 1987 ↦ "\"apply\""
+      , "first" ∋ Fresh 1988 ↦ Fresh 2002
+      , "next" ∋ Fresh 1988 ↦ Fresh 1989
+      , "string" ∋ Fresh 1988 ↦ "\"apply\""
+      , "first" ∋ Fresh 1989 ↦ Fresh 2004
+      , "next" ∋ Fresh 1989 ↦ Fresh 1990
+      , "string" ∋ Fresh 1989 ↦ "\"collect\""
+      , "first" ∋ Fresh 1990 ↦ Fresh 2005
+      , "string" ∋ Fresh 1990 ↦ "\"showTS\""
+      , "string" ∋ Fresh 1991 ↦ "\"boot.ASL\""
+      , "string" ∋ Fresh 1992 ↦ "\"asParser.ASL\""
+      , "next" ∋ Fresh 1993 ↦ Fresh 1994
+      , "string" ∋ Fresh 1993 ↦ "\"parser\""
+      , "next" ∋ Fresh 1994 ↦ Fresh 1995
+      , "string" ∋ Fresh 1994 ↦ "\"population\""
+      , "string" ∋ Fresh 1995 ↦ "\"asParser\""
+      , "string" ∋ Fresh 1996 ↦ "\"cfg.ASL\""
+      , "next" ∋ Fresh 1997 ↦ Fresh 1998
+      , "string" ∋ Fresh 1997 ↦ "\"asParser\""
+      , "next" ∋ Fresh 1998 ↦ Fresh 1999
+      , "string" ∋ Fresh 1998 ↦ "\"population\""
+      , "string" ∋ Fresh 1999 ↦ "\"cfg\""
+      , "next" ∋ Fresh 2000 ↦ Fresh 2001
+      , "string" ∋ Fresh 2000 ↦ "\"del\""
+      , "string" ∋ Fresh 2001 ↦ "\"switches\""
+      , "next" ∋ Fresh 2002 ↦ Fresh 2003
+      , "string" ∋ Fresh 2002 ↦ "\"del\""
+      , "string" ∋ Fresh 2003 ↦ "\"population\""
+      , "string" ∋ Fresh 2004 ↦ "\"state\""
+      , "string" ∋ Fresh 2005 ↦ "\"state\""
       ])
   ];}
