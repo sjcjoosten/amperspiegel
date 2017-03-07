@@ -3,18 +3,11 @@ imports
   MissingCategory
 begin
 
-datatype ('l,'v) labeled_graph = LG (edges:"('l \<times> 'v \<times> 'v) set")
+datatype ('l,'v) labeled_graph
+  = LG (edges:"('l \<times> 'v \<times> 'v) set") (vertices:"'v set")
 
-abbreviation entire where
-  "entire R \<equiv> Domain R = UNIV"
-
-lemma entire_compose[simp]:
-  assumes "entire h1" "entire h2"
-  shows "x \<in> Domain (h1 O h2)"
-proof -
-  obtain y z where "(x,y) \<in> h1" "(y,z) \<in> h2" using assms by blast
-  thus ?thesis by auto
-qed
+fun restrict where
+  "restrict (LG e v) = LG {(l,v1,v2) \<in> e. v1 \<in> v \<and> v2 \<in> v } v"
 
 type_synonym ('l, 'v) graph_homomorphism
   = "(('l,'v) labeled_graph, 'v rel) Arrow"
@@ -40,21 +33,59 @@ proof(standard,standard,standard,standard,standard,standard,goal_cases)
   show ?case by metis
 qed
 
-lemma edge_preserving_Id[intro!]:
-  "edge_preserving Id x x"
+lemma edge_preserving_Id[intro!]: "edge_preserving (Id_on y) x x"
 unfolding edge_preserving_def by auto
 
-fun is_graph_homomorphism where
-  "is_graph_homomorphism s t h = (entire h \<and> edge_preserving h (edges s) (edges t))"
+definition is_graph_homomorphism where
+  "is_graph_homomorphism s t h 
+    = ( vertices s = Domain h
+      \<and> h `` vertices s \<subseteq> vertices t
+      \<and> edge_preserving h (edges s) (edges t))"
+
+lemma is_graph_homomorphism_composes[intro]:
+  assumes "is_graph_homomorphism a b x"
+          "is_graph_homomorphism b c y"
+  shows "is_graph_homomorphism a c (x O y)"
+  using assms unfolding is_graph_homomorphism_def by auto blast+
+
+lemma is_graph_homomorphism_Id[intro]:
+  shows "is_graph_homomorphism a a (Id_on (vertices a))"
+        "is_graph_homomorphism a (restrict a) (Id_on (vertices a))"
+        "is_graph_homomorphism (restrict a) a (Id_on (vertices a))"
+  unfolding is_graph_homomorphism_def by (cases a;auto simp:edge_preserving_def)+
+
+lemma Id_on_vertices_is_identity[intro]:
+  assumes "is_graph_homomorphism a b f"
+          "(aa, ba) \<in> f"
+  shows "(aa, ba) \<in> Id_on (vertices a) O f"
+        "(aa, ba) \<in> f O Id_on (vertices b)"
+  using assms unfolding is_graph_homomorphism_def by auto
+
+context fixes graphtype :: "('l, 'a) labeled_graph \<Rightarrow> bool"
+begin
+  interpretation gc:
+    ArrowCategory is_graph_homomorphism graphtype "\<lambda> _ _ _. op O" "Id_on o vertices"
+    by(standard,auto)
+  
+  lemma assumes "graphtype g" "graphtype (restrict g)"
+        shows "gc.c.iso (gc.arr g (restrict g) (Id_on (vertices g)))"
+  by standard (insert assms,cases g,auto)+
+  
+end
 
 context fixes K::"'l set" begin
   definition constant_respecting where
-    "constant_respecting G \<equiv> \<exists> \<alpha>. inj_on \<alpha> K \<and> (\<forall> k\<in>K. \<forall> v1 v2. (k,v1,v2) \<in> edges G \<longleftrightarrow> (\<alpha> k = v1 \<and> \<alpha> k = v2))"
+    "constant_respecting G \<equiv> \<exists> \<alpha>. inj_on \<alpha> K
+       \<and> (\<forall> k\<in>K. \<alpha> k \<in> vertices G
+               \<and> (\<forall> v1 v2. (k,v1,v2) \<in> edges G
+                       \<longleftrightarrow> (\<alpha> k = v1 \<and> \<alpha> k = v2)))"
 
-  interpretation gc:
-    ArrowCategory is_graph_homomorphism constant_respecting "\<lambda> _ _ _. op O" "\<lambda> _. Id"
-    by(standard,auto)
-  find_theorems name:gc
+  
+  
+  
+  find_theorems name:"local.gc.c."
   (* TODO: find a cone in gc.op *)
+
+end
 
 end
