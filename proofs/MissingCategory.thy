@@ -630,10 +630,21 @@ for C F a \<chi>
 *)
 find_consts name:cones_map
 
+(*
+  valid_obj and valid_arr require that:
+
+  D —k\<longrightarrow> Y
+  |       |
+  h       g
+  \<down>       \<down>
+  X —f\<longrightarrow>Z
+
+  is_cone requires that the diagram above commutes.
+  It is a pullback because it is also universal:
+    any D' h' k' forming a diagram like the above will have a unique arrow u from D' to D.
+*)
 locale arrow_pullback =
-  C: arrow_category Cat +
-  co: arrow_functor span.dual Cat "C.span_of_obj X Y Z" "C.cospan_of_m X Y Z f g" +
-  sp: arrow_functor span Cat "C.span_of_obj X Y D" "C.span_of_m X Y D h k"
+  C: arrow_category Cat
   for Cat :: "('o, 'm) Category" and X Y Z D f g h k +
   assumes valid_obj[intro]:"C.vo X" "C.vo Y" "C.vo Z" "C.vo D"
   and valid_arr[intro]: "C.va X Z f" "C.va Y Z g" "C.va D X h" "C.va D Y k"
@@ -642,8 +653,12 @@ locale arrow_pullback =
                  \<Longrightarrow> \<exists>!u. C.va D' D u \<and> C.cmp D' D X u h = h' \<and> C.cmp D' D Y u k = k'"
 begin
   abbreviation "diagonal \<equiv> C.cmp D Y Z k g"
-  interpretation cf:constant_functor co.c1.c.comp C.c.comp "Some (C.ID D)"
-    using co.c1.c.category_axioms by auto
+  sublocale co: arrow_functor span.dual Cat "C.span_of_obj X Y Z" "C.cospan_of_m X Y Z f g"
+    by auto
+  interpretation sp: arrow_functor span Cat "C.span_of_obj X Y D" "C.span_of_m X Y D h k"
+    by auto
+  interpretation cf:constant_functor span.dual.c.comp C.c.comp "Some (C.ID D)"
+    using span.dual.c.category_axioms by auto
   fun \<chi> :: "(Enum.finite_3, unit) Arrow option \<Rightarrow> ('o, 'm) Arrow option"  where
   "\<chi> (Some (Arrow _ finite_3.a\<^sub>1 ())) = Some (Arrow D Z diagonal)" |
   "\<chi> (Some (Arrow finite_3.a\<^sub>2 finite_3.a\<^sub>2 ())) = Some (Arrow D X h)" |
@@ -659,7 +674,7 @@ begin
         C.dom_cod_simps[OF valid_obj(4,1) valid_arr(3)]
         by auto
 
-  interpretation cone: cone co.c1.c.comp C.c.comp co.Functor "Some (C.ID D)" \<chi>
+  interpretation cone: cone span.dual.c.comp C.c.comp co.Functor "Some (C.ID D)" \<chi>
   proof(standard,goal_cases)
     case (1 f)
     then show ?case by (cases f;cases "the f";cases "source (the f)";cases "target (the f)",auto)
@@ -688,25 +703,25 @@ begin
   sublocale pullback : pullback C.c.comp co.Functor "Some (C.ID D)" \<chi>
   proof(intro_locales,standard,goal_cases)
     case (1 a' \<chi>')
-    let ?cf = "constant_functor.map co.c1.c.comp C.c.comp a'"
-    have cf:"constant_functor_axioms C.c.comp a'" "constant_functor co.c1.c.comp C.c.comp a'"
-     and nt:"\<And> f. co.c1.c.arr f \<Longrightarrow> C.c.dom (\<chi>' f) = constant_functor.map co.c1.c.comp C.c.comp a' (co.c1.c.dom f)"
-            "\<And> f. co.c1.c.arr f \<Longrightarrow> C.c.cod (\<chi>' f) = co.Functor (co.c1.c.cod f)"
-            "\<And> f. co.c1.c.arr f \<Longrightarrow> C.C (\<chi>' (co.c1.c.dom f)) (co.Functor f) = \<chi>' f"
-            "\<And> f. co.c1.c.arr f \<Longrightarrow> C.C (constant_functor.map co.c1.c.comp C.c.comp a' f) (\<chi>' (co.c1.c.cod f)) = \<chi>' f"
-     and nt_not:"\<And> f. \<not> co.c1.c.arr f \<Longrightarrow> \<chi>' f = None"
+    let ?cf = "constant_functor.map span.dual.c.comp C.c.comp a'"
+    have cf:"constant_functor_axioms C.c.comp a'" "constant_functor span.dual.c.comp C.c.comp a'"
+     and nt:"\<And> f. span.dual.c.arr f \<Longrightarrow> C.c.dom (\<chi>' f) = constant_functor.map span.dual.c.comp C.c.comp a' (span.dual.c.dom f)"
+            "\<And> f. span.dual.c.arr f \<Longrightarrow> C.c.cod (\<chi>' f) = co.Functor (span.dual.c.cod f)"
+            "\<And> f. span.dual.c.arr f \<Longrightarrow> C.C (\<chi>' (span.dual.c.dom f)) (co.Functor f) = \<chi>' f"
+            "\<And> f. span.dual.c.arr f \<Longrightarrow> C.C (constant_functor.map span.dual.c.comp C.c.comp a' f) (\<chi>' (span.dual.c.cod f)) = \<chi>' f"
+     and nt_not:"\<And> f. \<not> span.dual.c.arr f \<Longrightarrow> \<chi>' f = None"
       using 1[unfolded cone_def natural_transformation_def natural_transformation_axioms_def]
       by (auto simp:constant_functor_def)
-    note nt = nt[OF co.c1.has_dom_cod_arrI(3)[OF cospan_object cospan_object],of "Arrow _ _ ()",unfolded Arrow.sel]
+    note nt = nt[OF span.dual.has_dom_cod_arrI(3)[OF cospan_object cospan_object],of "Arrow _ _ ()",unfolded Arrow.sel]
     define D' where D': "D' = source (the a')"
     note [simp] = span_valids[THEN span_dom_cod(1)] span_valids[THEN span_dom_cod(2)]
     have D [intro]:"C.vo D'" "a' = Some (C.ID D')"
      using cf unfolding D' constant_functor_axioms_def by auto
     note [simp] = constant_functor.map_def[OF cf(2),unfolded D]
     { fix x y
-      assume spx:"co.c1.va x y ()"
+      assume spx:"span.dual.va x y ()"
       have "\<chi>' (Some (Arrow x y ())) \<noteq> None"
-      using nt(2)[OF spx] co.c1.dom_cod_simps[OF cospan_object cospan_object spx,simplified]
+      using nt(2)[OF spx] span.dual.dom_cod_simps[OF cospan_object cospan_object spx,simplified]
       by (cases x;cases y,auto simp: C.c.cod_char split:if_splits)
     }
     from cospan_valids[THEN this]
@@ -764,12 +779,12 @@ begin
     from assms(2,3) obtain u' where u' [simp]:"f = Some (Arrow D' D u')"
       by (cases "the f",auto simp:C.c.dom_char split:if_splits)
     have arrf [intro]:"C.c.arr (Some (Arrow D' D u'))" using assms(1)[unfolded u'].
-    hence f_char:"\<And> j. (if sp.c1.va (target (the j)) (source (the j)) () \<and> j \<noteq> None
+    hence f_char:"\<And> j. (if span.va (target (the j)) (source (the j)) () \<and> j \<noteq> None
                          then C.c.comp (\<chi> j) f else None) = \<chi>' j"
       and diacone:"co.diagram.cone (C.c.cod (Some (Arrow D' D u'))) \<chi>"
       using assms(4) by auto
     { fix s t
-      have "sp.c1.va t s () \<Longrightarrow> C.c.comp (\<chi> (C.arr s t ())) f = \<chi>' (C.arr s t ())"
+      have "span.va t s () \<Longrightarrow> C.c.comp (\<chi> (C.arr s t ())) f = \<chi>' (C.arr s t ())"
         using f_char[of "Some (Arrow s t ())"] by (auto split:if_splits) }
     note f_char = this
     have [simp]: "u' = u" proof(standard,goal_cases)
@@ -788,4 +803,17 @@ begin
   qed qed
 end
 
+locale arrow_pushout =
+  C: arrow_category Cat
+  for Cat :: "('o, 'm) Category" and X Y Z D f g h k +
+  assumes valid_obj[intro]:"C.vo X" "C.vo Y" "C.vo Z" "C.vo D"
+  and valid_arr[intro]: "C.va Z X f" "C.va Z Y g" "C.va X D h" "C.va Y D k"
+  and is_cone:"C.cmp Z X D f h = C.cmp Z Y D g k"
+  and is_universal: "C.cmp Z X D' f h' = C.cmp Z Y D' g k' \<and> C.vo D' \<and> C.va X D' h' \<and> C.va Y D' k'
+                 \<Longrightarrow> \<exists>!u. C.va D D' u \<and> C.cmp X D D' h u = h' \<and> C.cmp Y D D' k u = k'"
+begin
+  interpretation arrow_category_with_dual Cat by standard
+  interpretation pb : arrow_pullback dual apply standard using is_cone is_universal by auto
+  sublocale pushout : pullback dual.c.comp pb.co.Functor "Some (C.ID D)" pb.\<chi>
+    using pb.pullback.pullback_axioms by auto
 end
