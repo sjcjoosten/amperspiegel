@@ -213,11 +213,11 @@ CLASSIFY Person IS Statement /\ Person -- Parser will parse a list of statements
 
 RULE pre dad |- post parent
  -- names identify the person (name is INJ)
-RULE (pre name;pre name ~) |- I -- symbol for identity relation is . for now
+RULE (pre name;pre name ~) |- I
 
-RULE pre name |- I
-"dad"   ∋ "Bas"  ↦ "Stef"
-"name"  ∋ "Bas"  ↦ "Bas"
-"parent"∋ "Bas"  ↦ "Stef"
-"name"  ∋ "Stef" ↦ "Stef"
+
+"dad"   ∋ Fresh 1 ↦ Fresh 4
+"name"  ∋ Fresh 1 ↦ "Bas"
+"parent"∋ Fresh 1 ↦ Fresh 4
+"name"  ∋ Fresh 4 ↦ "Stef"
 

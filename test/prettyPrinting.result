@@ -91,13 +91,17 @@ pre declaration |- post rule
 
 asParser
 cfg
+cfg2
 parser
 population
+rules
 switches
 
 asParser
 cfg
+cfg2
 parser
+rules
 switches
 Classification := "CLASSIFY", "mainConcept" "String", "IS", "conceptList" "ConceptList"
 ClassificationStatement := "classification" "Classification"

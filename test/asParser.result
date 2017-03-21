@@ -48,4 +48,11 @@ pre declaration |- post rule
 < "Start" , "Start" > |- post nonTerminal
 < "Statement" , "Statement" > |- post nonTerminal
 
+pre UnquotedString |- I
+pre QuotedString |- I
+pre nonTerminal |- I
+pre choice |- post choice
+pre continuation |- post continuation
+pre recogniser |- post recogniser
+pre nonTerminal |- post nonTerminal
 
