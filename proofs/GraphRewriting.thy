@@ -33,7 +33,7 @@ proof(standard,standard,standard,standard,standard,standard,goal_cases)
   show ?case by metis
 qed
 
-lemma edge_preserving_Id[intro!]: "edge_preserving (Id_on y) x x"
+lemma edge_preserving_Id[intro]: "edge_preserving (Id_on y) x x"
 unfolding edge_preserving_def by auto
 
 definition is_graph_homomorphism where
@@ -63,14 +63,25 @@ lemma Id_on_vertices_is_identity[intro]:
 
 context fixes graphtype :: "('l, 'a) labeled_graph \<Rightarrow> bool"
 begin
-  interpretation gc:
-    ArrowCategory is_graph_homomorphism graphtype "\<lambda> _ _ _. op O" "Id_on o vertices"
-    by(standard,auto)
+  abbreviation "comp_rel \<equiv> \<lambda> _ _ _. op O"
+  abbreviation "id_vertices \<equiv> Id_on o vertices"
+  abbreviation "Graph_Cat \<equiv> (Category is_graph_homomorphism graphtype comp_rel id_vertices)"
+  interpretation gc: arrow_category_with_dual Graph_Cat by(standard,auto)
   
-  lemma assumes "graphtype g" "graphtype (restrict g)"
+  lemma restrict_iso:
+        assumes "graphtype g" "graphtype (restrict g)"
         shows "gc.c.iso (gc.arr g (restrict g) (Id_on (vertices g)))"
   by standard (insert assms,cases g,auto)+
   
+  context fixes m_o m_a
+  assumes span:"arrow_functor span gc.dual m_o m_a"
+  begin
+  interpretation af:arrow_functor span gc.dual m_o m_a using span by auto
+  
+  (* TODO: create a Arrow_Pushout that:
+      - combines the two functors "op_arr \<circ> af.Functor" for us
+      - only asks for an object "a", rather than "Some (gc.ID a)" *)
+
 end
 
 context fixes K::"'l set" begin
