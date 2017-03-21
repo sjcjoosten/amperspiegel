@@ -817,3 +817,5 @@ begin
   sublocale pushout : pullback dual.c.comp pb.co.Functor "Some (C.ID D)" pb.\<chi>
     using pb.pullback.pullback_axioms by auto
 end
+
+end
