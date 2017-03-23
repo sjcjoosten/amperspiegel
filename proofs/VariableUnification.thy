@@ -40,12 +40,12 @@ lemma idempotent_impl_trans: "idempotent r \<Longrightarrow> trans r"
   by(auto simp:trans_def idempotent_def)
 
 definition cluster :: "('a \<times> 'b) set \<Rightarrow> (('a \<times> 'b) \<times> ('a \<times> 'b) set) set" where
-  "cluster R \<equiv> (\<lambda> p. (p,{e \<in> R . fst e = fst p \<or> snd e = snd p})) ` R"
+  "cluster R \<equiv> (\<lambda> p. (p,{(a,b) \<in> R. (a, snd p) \<in> R \<and> (fst p, b) \<in> R})) ` R"
 
-lemma cluster_dest:
-  assumes "((a', b'), S) \<in> cluster eqs"
-  shows "(a',b') \<in> eqs" "S = {(a,b) \<in> eqs . a = a'} \<union> {(a,b) \<in> eqs . b = b'}"
-using assms unfolding cluster_def by auto
+lemma cluster4:
+  assumes "x \<in> eqs"
+  shows "(x, {(a, b). (a,b) \<in> eqs \<and> (a, snd x) \<in> eqs \<and> (fst x, b) \<in> eqs}) \<in> cluster eqs"
+  using assms unfolding cluster_def by auto
 
 locale variable_distinctness =
   fixes eqs :: "('a \<times> 'b) set"
@@ -63,24 +63,33 @@ begin
     using trans unfolding trans_def refl_on_def by auto
   lemma sym [intro]:"sym eqs_a" "sym eqs_b" by (rule symI, auto)+
   lemma trans_part_2[simp]:"converse eqs O eqs O converse eqs = converse eqs" using trans_ish by blast
+  lemma trans_part_3[intro]:"(a', b') \<in> eqs \<Longrightarrow> (a, b') \<in> eqs \<Longrightarrow> (a', b) \<in> eqs \<Longrightarrow> (a, b) \<in> eqs" 
+    using trans_part_2 trans_ish by blast
   lemma idempotent[intro]:"idempotent eqs_a" "idempotent eqs_b"
     by (auto simp:idempotent_def O_assoc)
   lemma trans[intro]:"trans eqs_a" "trans eqs_b" by (intro idempotent[THEN idempotent_impl_trans])+
   lemma eqs_equiv[intro]:
     "equiv (Domain eqs) eqs_a" "equiv (Range eqs) eqs_b" by (rule equivI,auto)+
+  lemma cluster_dest:
+    assumes "((a', b'), S) \<in> cluster eqs"
+    shows "(a',b') \<in> eqs" "S = {(a,b). (a, b') \<in> eqs \<and> (a', b) \<in> eqs}"
+  proof -
+    show el:"(a',b') \<in> eqs" using assms by (auto simp:cluster_def)
+    have "S = {(a,b). (a, b) \<in> eqs \<and> (a, b') \<in> eqs \<and> (a', b) \<in> eqs}" using assms cluster4[OF el] by (auto simp:cluster_def)
+    thus "S = {(a,b). (a, b') \<in> eqs \<and> (a', b) \<in> eqs}" using trans_part_3[OF el] by auto
+  qed
   lemma cluster1:
     assumes "((a,b1),c1) \<in> cluster eqs" "((a,b2),c2) \<in> cluster eqs"
-    shows "c1 = c2" sorry
+    shows "c1 = c2"
+  using cluster_dest[OF assms(2)] cluster_dest[OF assms(1)] by auto
   lemma cluster2:
     assumes "((b1,a),c1) \<in> cluster eqs" "((b2,a),c2) \<in> cluster eqs"
-    shows "c1 = c2" sorry
+    shows "c1 = c2" 
+  using cluster_dest[OF assms(2)] cluster_dest[OF assms(1)] by auto
   lemma cluster3:
     assumes "((aa, ba), bd) \<in> cluster eqs" "((ab, bc), bd) \<in> cluster eqs"
-    shows "(aa, bc) \<in> eqs" sorry
-  lemma cluster4:
-    assumes "x \<in> eqs"
-    shows "(x, {e \<in> eqs . fst e = fst x \<or> snd e = snd x}) \<in> cluster eqs"
-    using assms unfolding cluster_def by auto
+    shows "(aa, bc) \<in> eqs" 
+  using cluster_dest[OF assms(2)] cluster_dest[OF assms(1)] by auto
 end
 
 locale valid_unification =
@@ -93,15 +102,14 @@ lemma exI_partial:
   shows "\<exists> a \<in> X. P a"
 using assms by blast
 
-datatype ('a,'b) freenaming = L 'a | R 'b  | P "('a \<times> 'b) set"
+datatype ('a,'b) freenaming = freenaming_L 'a | freenaming_R 'b  | freenaming_P "('a \<times> 'b) set"
 definition freename :: "('a \<times> 'b) set \<Rightarrow> 'a set \<Rightarrow> 'b set \<Rightarrow> ('a \<times> ('a, 'b) freenaming) set \<times> ('b \<times> ('a, 'b) freenaming) set" 
-  where "freename eqs lhs rhs = ( (\<lambda> ((a,b),c). (a,P c)) ` cluster eqs \<union> (\<lambda> a. (a,L a)) ` lhs
-                                , (\<lambda> ((a,b),c). (b,P c)) ` cluster eqs \<union> (\<lambda> a. (a,R a)) ` rhs )"
+  where "freename eqs lhs rhs = ( (\<lambda> ((a,b),c). (a,freenaming_P c)) ` cluster eqs \<union> (\<lambda> a. (a,freenaming_L a)) ` lhs
+                                , (\<lambda> ((a,b),c). (b,freenaming_P c)) ` cluster eqs \<union> (\<lambda> a. (a,freenaming_R a)) ` rhs )"
 interpretation freename : valid_unification freename
   proof(standard,goal_cases)
     case (1 eqs lhs rhs)
     interpret variable_distinctness eqs lhs rhs using 1.
-
     show ?case unfolding freename_def prod.case proof(standard,goal_cases)
       case 1
       show ?case unfolding set_eq_iff proof(standard,standard,goal_cases)
@@ -111,13 +119,13 @@ interpretation freename : valid_unification freename
         case (2 x)
         { fix xa z
           assume a:"x = (xa, z)"
-          with cluster4[OF 2] have e:"(x, {e \<in> eqs. fst e = xa \<or> snd e = z}) \<in> cluster eqs" by auto
-          let "?y" = "P {e \<in> eqs. fst e = xa \<or> snd e = z}"
-          have "\<exists>x'\<in>cluster eqs. \<forall>a b x2. x' = ((a, b), x2) \<longrightarrow> xa = a \<and> ?y = P x2"
-               "\<exists>x'\<in>cluster eqs. \<forall>a b x2. x' = ((a, b), x2) \<longrightarrow> z = b \<and> ?y = P x2"
-            using e a by (metis (no_types, lifting) Pair_inject prod.case)+
+          with cluster4[OF 2] have e:"(x, {(a, b). (a, b) \<in> eqs \<and> (a, snd x) \<in> eqs \<and> (fst x, b) \<in> eqs}) \<in> cluster eqs" by auto
+          let "?y" = "freenaming_P {(a, b). (a, b) \<in> eqs \<and> (a, snd x) \<in> eqs \<and> (fst x, b) \<in> eqs}"
+          have "\<exists>x'\<in>cluster eqs. \<forall>a b x2. x' = ((a, b), x2) \<longrightarrow> xa = a \<and> ?y = freenaming_P x2"
+               "\<exists>x'\<in>cluster eqs. \<forall>a b x2. x' = ((a, b), x2) \<longrightarrow> z = b \<and> ?y = freenaming_P x2"
+            using e a by (metis (lifting) Pair_inject)+
         } note [intro] = this
-        hence i:"x \<in> ((\<lambda>((a, b), c). (a, P c)) ` cluster eqs O ((\<lambda>((a, b), c). (b, P c)) ` cluster eqs)\<inverse>)"
+        hence i:"x \<in> ((\<lambda>((a, b), c). (a, freenaming_P c)) ` cluster eqs O ((\<lambda>((a, b), c). (b, freenaming_P c)) ` cluster eqs)\<inverse>)"
           by (auto simp:relcomp_unfold image_iff prod.split)
         show ?case by (rule subsetD[OF relcomp_mono i]) auto
       qed
