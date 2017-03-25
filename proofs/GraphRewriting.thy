@@ -81,8 +81,18 @@ definition on_triple where "on_triple R \<equiv> {((l,s,t),(l',s',t')) . l=l' \<
    This helps us get more precise types, so that we know what we're doing.
    When used, 'V = 'R = 'G = 'v
  *)
+lemma refl_on_trancl :
+  assumes "refl_on A r"
+  shows "refl_on A (trancl r)"
+  proof
+    show "r\<^sup>+ \<subseteq> A \<times> A"
+      by( rule trancl_subset_Sigma
+        , auto simp: assms[THEN refl_onD1] assms[THEN refl_onD2])
+    show "\<And>x. x \<in> A \<Longrightarrow> (x, x) \<in> r\<^sup>+"
+      using assms[THEN refl_onD] by auto
+  qed
 
-locale pre_graph_pushout =
+locale defs_graph_pushout =
  fixes unif :: "('G \<times> 'R) set \<Rightarrow> 'G set \<Rightarrow> 'R set \<Rightarrow> ('G \<times> 'v) set \<times> ('R \<times> 'v) set"
    and f :: "('L \<times> 'R) set" and g :: "('L \<times> 'G) set"
    and L :: "('l, 'L) labeled_graph"
@@ -94,9 +104,51 @@ begin
      - Vertices in G, with no counterpart in R, i.e. with no counterpart in L
      - Vertices in both R and G, i.e. sharing some node in L
   *)
-  definition "G_only_vertices \<equiv> {v . \<not> (\<exists> l \<in> vertices L. (l,v) \<in> g)}"
-  definition "R_only_vertices \<equiv> {v . \<not> (\<exists> l \<in> vertices L. (l,v) \<in> f)}"
-  definition "shared_vertices \<equiv> converse g O f"
+  definition "G_only_vertices \<equiv> {v . \<not> (\<exists> l. (l,v) \<in> g)}"
+  definition "R_only_vertices \<equiv> {v . \<not> (\<exists> l. (l,v) \<in> f)}"
+  definition "equiv_vertices  \<equiv> trancl (g O converse g \<union> f O converse f)"
+  definition "shared_vertices \<equiv> converse g O equiv_vertices O f"
+  lemma equiv_vertices_equiv:
+    "equiv (Domain g \<union> Domain f) equiv_vertices"
+    "trans equiv_vertices" "sym equiv_vertices"
+    "idempotent equiv_vertices"
+  proof -
+    let ?inner = "g O g\<inverse> \<union> f O f\<inverse>"
+    have "sym ?inner" by(rule sym_Un,auto simp:sym_def)
+    from sym_trancl[OF this]
+    show sym[intro]: "sym equiv_vertices" unfolding equiv_vertices_def.
+    show trans[intro]: "trans equiv_vertices" unfolding equiv_vertices_def by auto
+    have "refl_on (Domain g \<union> Domain f) ?inner" by (rule refl_on_Un,auto simp:refl_on_def)
+    hence [intro]:"refl_on (Domain g \<union> Domain f) equiv_vertices"
+      unfolding equiv_vertices_def by (auto intro:refl_on_trancl)
+    show "equiv (Domain g \<union> Domain f) equiv_vertices" by(auto intro:equivI)
+    thus "idempotent equiv_vertices" by auto
+  qed
+  
+  lemma equiv_vertices_composites:
+    shows "f O f\<inverse> \<subseteq> equiv_vertices" "g O g\<inverse> \<subseteq> equiv_vertices"
+    unfolding equiv_vertices_def by auto
+  sublocale variable_distinctness : variable_distinctness shared_vertices G_only_vertices R_only_vertices
+  proof(standard,goal_cases)
+    case 3 find_theorems converse sym
+    then show ?case
+    proof
+      from idempotent_subset(1)[OF equiv_vertices_equiv(4) equiv_vertices_composites(1)]
+           idempotent_subset(1)[OF equiv_vertices_equiv(4) equiv_vertices_composites(2)]
+      have "(f O f\<inverse>) O equiv_vertices \<subseteq> equiv_vertices"
+           "(g O g\<inverse>) O equiv_vertices \<subseteq> equiv_vertices".
+      from relcomp_mono[OF relcomp_mono[OF subset_refl[of "equiv_vertices"] relcomp_mono[OF this]] subset_refl]
+      have eq:"\<And> r s. equiv_vertices O f O f\<inverse> O equiv_vertices O g O g\<inverse> O equiv_vertices O s \<subseteq> equiv_vertices O s"
+       unfolding O_assoc equiv_vertices_equiv[unfolded idempotent_def].
+      from relcomp_mono[OF subset_refl this]
+      show "shared_vertices O shared_vertices\<inverse> O shared_vertices \<subseteq> shared_vertices"
+        unfolding shared_vertices_def equiv_vertices_equiv[unfolded sym_conv_converse_eq]
+                  converse_relcomp converse_converse O_assoc.
+      show "shared_vertices \<subseteq> shared_vertices O shared_vertices\<inverse> O shared_vertices"
+        unfolding shared_vertices_def using equiv_vertices_equiv[unfolded sym_conv_converse_eq]
+        by (auto intro!:relcomp.intros)
+    qed
+  qed (auto simp:shared_vertices_def G_only_vertices_def R_only_vertices_def)
   definition "unifs \<equiv> unif shared_vertices G_only_vertices R_only_vertices"
   abbreviation "G_to_G' \<equiv> fst unifs"
   abbreviation "R_to_G' \<equiv> snd unifs"
@@ -104,6 +156,7 @@ begin
                       (G_to_G' `` vertices G \<union> R_to_G' `` vertices R)"
 end
 
+locale pre_graph_pushout = defs_graph_pushout + valid_unification unif
 
 context fixes graphtype :: "('l, 'v) labeled_graph \<Rightarrow> bool"
 begin

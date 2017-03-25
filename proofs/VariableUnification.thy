@@ -39,6 +39,14 @@ lemma trans_def: "trans r = ((Id \<union> r) O r = r)" "trans r = (r O (Id \<uni
 lemma idempotent_impl_trans: "idempotent r \<Longrightarrow> trans r"
   by(auto simp:trans_def idempotent_def)
 
+lemma refl_trans_impl_idempotent[intro]: "refl_on A r \<Longrightarrow> trans r \<Longrightarrow> idempotent r"
+  by(auto simp:refl_on_def trans_def idempotent_def)
+
+lemma idempotent_subset:
+  assumes "idempotent R" "S \<subseteq> R"
+  shows "S O R \<subseteq> R" "R O S \<subseteq> R" "S O R O S \<subseteq> R"
+  using assms by(auto simp:idempotent_def)
+
 definition cluster :: "('a \<times> 'b) set \<Rightarrow> (('a \<times> 'b) \<times> ('a \<times> 'b) set) set" where
   "cluster R \<equiv> (\<lambda> p. (p,{(a,b) \<in> R. (a, snd p) \<in> R \<and> (fst p, b) \<in> R})) ` R"
 
