@@ -3,6 +3,22 @@ imports
   Main
 begin
 
+definition univalent where "univalent R = (\<forall> x y z. (x,y)\<in> R \<and> (x,z)\<in> R \<longrightarrow> z = y)"
+
+lemma univalent_char : "univalent R \<longleftrightarrow> converse R O R \<subseteq> Id"
+  unfolding univalent_def by auto
+
+lemma univalentD [dest]: "univalent R \<Longrightarrow> (x,y)\<in> R \<Longrightarrow> (x,z)\<in> R \<Longrightarrow> z = y"
+  unfolding univalent_def by auto
+
+lemma univalentI: "converse R O R \<subseteq> Id \<Longrightarrow> univalent R"
+  unfolding univalent_def by auto
+
+lemma univalent_composes[intro]:assumes "univalent R" "univalent S"
+ shows "univalent (R O S)" using assms unfolding univalent_char by auto
+
+lemma id_univalent[intro]:"univalent (Id_on x)" unfolding univalent_char by auto
+
 locale variable_unification =
   fixes eqs :: "('a \<times> 'b) set"
     and lhs :: "'a set"
@@ -10,12 +26,12 @@ locale variable_unification =
     and nms_a :: "('a \<times> 'c) set"
     and nms_b :: "('b \<times> 'c) set"
   assumes eqs:"nms_a O converse nms_b = eqs"
-      and dom:"lhs \<subseteq> Domain nms_a"
-      and ran:"rhs \<subseteq> Domain nms_b"
-      and inj_a:"\<And> a c a'. a \<in> lhs \<Longrightarrow> a' \<in> lhs \<Longrightarrow> (a,c) \<in> nms_a \<Longrightarrow> (a',c) \<in> nms_a \<Longrightarrow> a = a'"
-      and inj_b:"\<And> a c a'. a \<in> rhs \<Longrightarrow> a' \<in> rhs \<Longrightarrow> (a,c) \<in> nms_b \<Longrightarrow> (a',c) \<in> nms_b \<Longrightarrow> a = a'"
-      and uni_a:"\<And> a c c'. (a,c) \<in> nms_a \<Longrightarrow> (a,c') \<in> nms_a \<Longrightarrow> c = c'"
-      and uni_b:"\<And> a c c'. (a,c) \<in> nms_b \<Longrightarrow> (a,c') \<in> nms_b \<Longrightarrow> c = c'"
+      and dom:"Domain eqs \<union> lhs = Domain nms_a"
+      and ran:"Range eqs  \<union> rhs = Domain nms_b"
+      and inj_a:"\<And> a c a'. a \<in> lhs \<Longrightarrow> (a,c) \<in> nms_a \<Longrightarrow> (a',c) \<in> nms_a \<Longrightarrow> a = a'"
+      and inj_b:"\<And> a c a'. a \<in> rhs \<Longrightarrow> (a,c) \<in> nms_b \<Longrightarrow> (a',c) \<in> nms_b \<Longrightarrow> a = a'"
+      and uni_a:"univalent nms_a"
+      and uni_b:"univalent nms_b"
 begin
   lemma eqs_two_routes:
     assumes "(a,b) \<in> eqs" shows "(a,c) \<in> nms_a \<longleftrightarrow> (b,c) \<in> nms_b"
@@ -29,6 +45,17 @@ begin
 end
 
 declare sym_Un_converse[intro]
+
+lemma refl_on_trancl :
+  assumes "refl_on A r"
+  shows "refl_on A (trancl r)"
+  proof
+    show "r\<^sup>+ \<subseteq> A \<times> A"
+      by( rule trancl_subset_Sigma
+        , auto simp: assms[THEN refl_onD1] assms[THEN refl_onD2])
+    show "\<And>x. x \<in> A \<Longrightarrow> (x, x) \<in> r\<^sup>+"
+      using assms[THEN refl_onD] by auto
+  qed
 
 definition idempotent where
   "idempotent r \<equiv> r O r = r"
@@ -46,6 +73,59 @@ lemma idempotent_subset:
   assumes "idempotent R" "S \<subseteq> R"
   shows "S O R \<subseteq> R" "R O S \<subseteq> R" "S O R O S \<subseteq> R"
   using assms by(auto simp:idempotent_def)
+
+(* equivalence class core *)
+abbreviation eqcc where "eqcc f g \<equiv> trancl (g O converse g \<union> f O converse f)"
+definition eq_class_from2 where
+  "eq_class_from2 f g  \<equiv> converse g O eqcc f g O f"
+
+lemma eqcc_equiv:
+  "equiv (Domain g \<union> Domain f) (eqcc f g)"
+  "trans (eqcc f g)" "sym (eqcc f g)"
+  "idempotent (eqcc f g)" "refl_on (Domain g \<union> Domain f) (eqcc f g)"
+proof -
+  let ?inner = "g O g\<inverse> \<union> f O f\<inverse>"
+  have "sym ?inner" by(rule sym_Un,auto simp:sym_def)
+  from sym_trancl[OF this]
+  show sym[intro]: "sym (eqcc f g)".
+  show trans[intro]: "trans (eqcc f g)" by auto
+  have "refl_on (Domain g \<union> Domain f) ?inner" by (rule refl_on_Un,auto simp:refl_on_def)
+  thus [intro]:"refl_on (Domain g \<union> Domain f) (eqcc f g)"
+     by (auto intro:refl_on_trancl)
+  show "equiv (Domain g \<union> Domain f) (eqcc f g)" by(auto intro:equivI)
+  thus "idempotent (eqcc f g)" by auto
+qed
+
+lemma equiv_vertices_composites:
+  shows "f O f\<inverse> \<subseteq> eqcc f g"
+        "g O g\<inverse> \<subseteq> eqcc f g" by auto
+
+lemma range_eqcc:"Range (eq_class_from2 f g) \<subseteq> Range f"
+  by (auto simp:eq_class_from2_def)
+
+lemma domain_eqcc:"Domain (eq_class_from2 f g) \<subseteq> Range g"
+  by (auto simp:eq_class_from2_def)
+
+lemma eq_class_from2_trans_ish[intro]:
+  "eq_class_from2 f g O converse (eq_class_from2 f g) O eq_class_from2 f g = eq_class_from2 f g"
+proof
+  let ?ev = "trancl (g O converse g \<union> f O converse f)"
+  let ?sv = "converse g O ?ev O f"
+  from idempotent_subset(1)[OF eqcc_equiv(4) equiv_vertices_composites(1)]
+       idempotent_subset(1)[OF eqcc_equiv(4) equiv_vertices_composites(2)]
+  have "(f O f\<inverse>) O eqcc f g \<subseteq> eqcc f g"
+       "(g O g\<inverse>) O eqcc f g \<subseteq> eqcc f g".
+  from relcomp_mono[OF relcomp_mono[OF subset_refl[of "eqcc f g"] relcomp_mono[OF this]] subset_refl]
+  have eq:"\<And> r s. eqcc f g O f O f\<inverse> O eqcc f g O g O g\<inverse> O eqcc f g O s \<subseteq> eqcc f g O s"
+   unfolding O_assoc eqcc_equiv[unfolded idempotent_def].
+  from relcomp_mono[OF subset_refl this]
+  show "eq_class_from2 f g O (eq_class_from2 f g)\<inverse> O eq_class_from2 f g \<subseteq> eq_class_from2 f g"
+    unfolding eq_class_from2_def eqcc_equiv[unfolded sym_conv_converse_eq]
+              converse_relcomp converse_converse O_assoc.
+  show "eq_class_from2 f g \<subseteq> eq_class_from2 f g O (eq_class_from2 f g)\<inverse> O eq_class_from2 f g"
+    by (auto simp:eq_class_from2_def)
+qed
+
 
 definition cluster :: "('a \<times> 'b) set \<Rightarrow> (('a \<times> 'b) \<times> ('a \<times> 'b) set) set" where
   "cluster R \<equiv> (\<lambda> p. (p,{(a,b) \<in> R. (a, snd p) \<in> R \<and> (fst p, b) \<in> R})) ` R"
@@ -144,12 +224,27 @@ interpretation freename : valid_unification freename
       case (5 a c a')
       then show ?case using disj by (auto elim!:cluster_dest)
     next
-      case (6 a c c')
-      then show ?case using disj by (auto elim!:cluster_dest cluster1)
+      case 6
+      then show ?case using disj by (auto elim!:cluster_dest cluster1 simp:univalent_def)
     next
-      case (7 a c c')
-      then show ?case using disj by (auto elim!:cluster_dest cluster2)
-    qed auto
+      case 7
+      then show ?case using disj by (auto elim!:cluster_dest cluster2 simp:univalent_def)
+    next
+      { fix a x
+        assume "(a, x) \<in> eqs" from cluster4[OF this]
+        have " x \<in> Domain ((\<lambda>((a, b), c). (b, freenaming_P c)) ` cluster eqs)"
+          by (auto intro!:Domain.intros image_eqI)
+      } note [intro] = this
+      { fix b x
+        assume "(x, b) \<in> eqs" from cluster4[OF this]
+        have "x \<in> Domain ((\<lambda>((a, b), c). (a, freenaming_P c)) ` cluster eqs)"
+          by (auto intro!:Domain.intros image_eqI)
+      } note [intro] = this
+      have*: "\<And> a b c d. a = Domain c \<Longrightarrow> b = Domain d \<Longrightarrow> a \<union> b = Domain (c \<union> d)"
+             "\<And> a b c d. a = Range  c \<Longrightarrow> b = Range  d \<Longrightarrow> a \<union> b = Range  (c \<union> d)" by auto
+      case 2 show ?case by (intro *(1),auto elim!:cluster_dest)
+      case 3 show ?case by (intro *(1),auto elim!:cluster_dest)
+    qed
   qed
 
 
