@@ -391,7 +391,17 @@ begin
       hence va_u:"is_graph_homomorphism G' D' u"
         and via_uh:"R_to_G' O u = h'"
         and via_uk:"G_to_G' O u = k'" by auto
-      then show "u = ?a" sorry
+      show "u = ?a" proof
+        have "G_to_G'\<inverse> O k' \<subseteq> u" "R_to_G'\<inverse> O h' \<subseteq> u" using via_uk via_uh univalent_RG by auto
+        thus subs:"?a \<subseteq> u" by auto
+        have d:"Domain ?a = Domain u" using va_a va_u unfolding is_graph_homomorphism_def by auto
+        { fix x assume a:"x \<in> u" hence "fst x \<in> Domain ?a" using d by (cases x, auto)
+          then obtain v where v:"(fst x,v) \<in> ?a" by auto
+          hence "(fst x,v) \<in> u" using subs by auto
+          hence "v = snd x" using a va_u unfolding is_graph_homomorphism_def by (cases x, auto)
+          hence "x \<in> ?a" using v by auto }
+        thus "u \<subseteq> ?a" by auto
+      qed
     qed
   qed auto
 end
