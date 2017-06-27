@@ -1,115 +1,28 @@
 theory GraphRewriting
 imports
   MissingCategory
+  LabeledGraphs
   VariableUnification
 begin
 
-datatype ('l,'v) labeled_graph
-  = LG (edges:"('l \<times> 'v \<times> 'v) set") (vertices:"'v set")
-
-fun restrict where
-  "restrict (LG e v) = LG {(l,v1,v2) \<in> e. v1 \<in> v \<and> v2 \<in> v } v"
-
-(* Given a relation on vertices, make one on edges *)
-definition on_triple where "on_triple R \<equiv> {((l,s,t),(l',s',t')) . l=l' \<and> (s,s') \<in> R \<and> (t,t') \<in> R}"
-
-lemma on_triple[simp]:
-  "((l,v1,v2),(l,v3,v4)) \<in> on_triple R \<longleftrightarrow> (v1,v3)\<in> R \<and> (v2,v4) \<in> R"
-unfolding on_triple_def by auto
-
-lemma on_tripleD[dest]:
-  assumes "((l1,v1,v2),(l2,v3,v4)) \<in> on_triple R"
-  shows "l2 = l1" "(v1,v3)\<in> R" "(v2,v4) \<in> R"
- using assms unfolding on_triple_def by auto
-
-lemma relcomp_on_triple[simp]:
-  shows "on_triple (R O S) = on_triple R O on_triple S"
- unfolding on_triple_def by fast
-
+(* Labeled Graphs form a category *)
 type_synonym ('l, 'v) graph_homomorphism
   = "(('l,'v) labeled_graph, 'v rel) Arrow"
 
-definition edge_preserving where
-  "edge_preserving h e1 e2 \<equiv> (\<forall> (k,v1,v2) \<in> e1. \<forall> v1' v2'. ((v1, v1') \<in> h \<and> (v2,v2') \<in> h) \<longrightarrow> (k,v1',v2') \<in> e2)"
+locale labeled_graph_category =
+  fixes graphtype :: "('l, 'v) labeled_graph \<Rightarrow> bool"
+begin
 
-lemma edge_preserving_atomic:
-  assumes "(v1, v1') \<in> h1" "(v2, v2') \<in> h1" "edge_preserving h1 e1 e2" "(k, v1, v2) \<in> e1"
-  shows "(k, v1', v2') \<in> e2"
-using assms unfolding edge_preserving_def by auto
+  abbreviation "Graph_Cat \<equiv> Category is_graph_homomorphism graphtype (\<lambda> _ _ _. op O) (Id_on o vertices)"
+  sublocale arrow_category_with_dual Graph_Cat
+    by(standard,auto dest:Id_on_vertices_is_identity)
 
-lemma edge_preserving[intro]:
-  assumes "on_triple R `` E \<subseteq> G"
-  shows "edge_preserving R E G"
-  unfolding edge_preserving_def proof(clarify,goal_cases)
-  case (1 a s t v1' v2')
-  thus ?case by (intro assms[THEN subsetD]) (auto simp:on_triple_def)
-  qed
+  lemma restrict_iso: (* TODO: move, or clean up 'restrict' altogether *)
+        assumes "graphtype X" "graphtype (restrict X)"
+        shows "c.iso (arr X (restrict X) (Id_on (vertices X)))"
+  by standard (insert assms,cases X,auto)+
 
-lemma compose_preserves_edge_preserving[intro]:
-  assumes "edge_preserving h1 e1 e2" "edge_preserving h2 e2 e3"
-  shows "edge_preserving (h1 O h2) e1 e3" unfolding edge_preserving_def
-proof(standard,standard,standard,standard,standard,standard,goal_cases)
-  case (1 _ k _ v1 v2 v1'' v2'')
-  hence 1:"(k, v1, v2) \<in> e1" "(v1, v1'') \<in> h1 O h2" "(v2, v2'') \<in> h1 O h2" by auto
-  then obtain v1' v2' where
-    v:"(v1,v1') \<in> h1" "(v1',v1'') \<in> h2" "(v2,v2') \<in> h1" "(v2',v2'') \<in> h2" by auto
-  from edge_preserving_atomic[OF v(1,3) assms(1) 1(1)]
-       edge_preserving_atomic[OF v(2,4) assms(2)]
-  show ?case by metis
-qed
-
-lemma edge_preserving_Id[intro]: "edge_preserving (Id_on y) x x"
-unfolding edge_preserving_def by auto
-
-definition is_graph_homomorphism where
-  "is_graph_homomorphism s t h 
-    = ( vertices s = Domain h
-      \<and> h `` vertices s \<subseteq> vertices t
-      \<and> univalent h
-      \<and> edge_preserving h (edges s) (edges t) (* Same applies here, for doing edge deletions or renaming *)
-      )"
-
-lemma is_graph_homomorphismI[intro]:
-  assumes "vertices s = Domain h"
-          "h `` vertices s \<subseteq> vertices t"
-          "univalent h"
-          "edge_preserving h (edges s) (edges t)"
-  shows "is_graph_homomorphism s t h" using assms unfolding is_graph_homomorphism_def by auto
-
-lemma Domain_O:
-  assumes "Range x \<subseteq> Domain y"
-  shows "Domain x \<subseteq> Domain (x O y)"
-  proof fix xa assume "xa \<in> Domain x"
-    then obtain w where xa:"(xa,w) \<in> x" by auto
-    with assms obtain v where "(w,v) \<in> y" by auto
-    with xa have "(xa,v) \<in> x O y" by auto
-    thus "xa \<in> Domain (x O y)" by auto qed
-
-lemma is_graph_homomorphism_composes[intro]:
-  assumes "is_graph_homomorphism a b x"
-          "is_graph_homomorphism b c y"
-  shows "is_graph_homomorphism a c (x O y)" proof(standard,goal_cases)
-  case 1
-    have "Range x \<subseteq> Domain y" using assms(1,2)[unfolded is_graph_homomorphism_def] by blast
-    from this[THEN Domain_O]
-    have "vertices a \<subseteq> Domain (x O y)" using assms(1)[unfolded is_graph_homomorphism_def] by auto
-    thus ?case using assms[unfolded is_graph_homomorphism_def] by auto
-  next
-  case 2 from assms show ?case unfolding is_graph_homomorphism_def by auto blast 
-  qed (insert assms,auto simp:is_graph_homomorphism_def)
-
-lemma is_graph_homomorphism_Id[intro]:
-  shows "is_graph_homomorphism a a (Id_on (vertices a))"
-        "is_graph_homomorphism a (restrict a) (Id_on (vertices a))"
-        "is_graph_homomorphism (restrict a) a (Id_on (vertices a))"
-  by (cases a;auto simp:edge_preserving_def)+
-
-lemma Id_on_vertices_is_identity:
-  assumes "is_graph_homomorphism a b f"
-          "(aa, ba) \<in> f"
-  shows "(aa, ba) \<in> Id_on (vertices a) O f"
-        "(aa, ba) \<in> f O Id_on (vertices b)"
-  using assms unfolding is_graph_homomorphism_def by auto
+end
 
 (* We can think of f and g in a rewrite setting as follows:
    let f be a graph-rewrite-rule, that rewrites L to R: L —f\<longrightarrow> R
@@ -130,7 +43,6 @@ lemma Id_on_vertices_is_identity:
 locale defs_graph_pushout =
  fixes unif :: "('G \<times> 'R) set \<Rightarrow> 'G set \<Rightarrow> 'R set \<Rightarrow> ('G \<times> 'v) set \<times> ('R \<times> 'v) set"
    and f :: "('L \<times> 'R) set" and g :: "('L \<times> 'G) set"
-   and L :: "('l, 'L) labeled_graph"
    and R :: "('l, 'R) labeled_graph"
    and G :: "('l, 'G) labeled_graph"
 begin
@@ -171,11 +83,11 @@ begin
 end
 
 locale pre_graph_pushout
-  = valid_unification unif + defs_graph_pushout unif f g L R G 
+  = valid_unification unif + defs_graph_pushout unif f g R G + gc:labeled_graph_category graphtype
   for unif :: "'v rel \<Rightarrow> 'v set \<Rightarrow> 'v set \<Rightarrow> 'v rel \<times> 'v rel"
-  and f g
-  and L R G :: "('l,'v) labeled_graph" + 
-  fixes graphtype :: "('l, 'v) labeled_graph \<Rightarrow> bool"
+  and f g :: "('v \<times> 'v) set"
+  and L R G :: "('l,'v) labeled_graph"
+  and graphtype :: "('l, 'v) labeled_graph \<Rightarrow> bool" +
   assumes gt [intro]:"graphtype L" "graphtype R" "graphtype G" "graphtype G'"
       and hm [intro]: "is_graph_homomorphism L R f" "is_graph_homomorphism L G g"
 begin
@@ -185,16 +97,6 @@ begin
         hm_edg:"edge_preserving f (edges L) (edges R)" "edge_preserving g (edges L) (edges G)"
     using hm unfolding is_graph_homomorphism_def by blast+
   sublocale eq_domain using hm_dom by unfold_locales auto
-  abbreviation "comp_rel \<equiv> \<lambda> _ _ _. op O"
-  abbreviation "id_vertices \<equiv> Id_on o vertices"
-  abbreviation "Graph_Cat \<equiv> (Category is_graph_homomorphism graphtype comp_rel id_vertices)"
-  interpretation gc: arrow_category_with_dual Graph_Cat
-    by(standard,auto dest:Id_on_vertices_is_identity)
-  
-  lemma restrict_iso:
-        assumes "graphtype X" "graphtype (restrict X)"
-        shows "gc.c.iso (gc.arr X (restrict X) (Id_on (vertices X)))"
-  by standard (insert assms,cases X,auto)+
   
   sublocale valid_unification_app unif eqs G_only_vertices R_only_vertices G_to_G' R_to_G'
     by(unfold_locales,insert unifs_def,auto)
@@ -228,11 +130,11 @@ begin
     unfolding is_graph_homomorphism_def by (auto simp:G'_def)
   (* The other direction does not hold: converse R_to_G' is not total or univalent *)
 
-  lemma two_routes[simp]:
-    shows "g O G_to_G' = f O R_to_G'"
+  lemma two_routes:
+    shows "f O R_to_G' = g O G_to_G'"
     unfolding set_eq_iff relcomp_unfold
   proof(standard,standard,goal_cases)
-    case (1 x) then obtain y where y:"(fst x, y) \<in> g \<and> (y, snd x) \<in> G_to_G'" by auto
+    case (2 x) then obtain y where y:"(fst x, y) \<in> g \<and> (y, snd x) \<in> G_to_G'" by auto
     then have "fst x \<in> Domain f" using hm(1,2)[unfolded is_graph_homomorphism_def] by auto
     then obtain z where zf:"(fst x,z) \<in> f" by auto
     with y have zs: "(y,z) \<in> eqs" unfolding eq_class_from2_def by auto
@@ -240,7 +142,7 @@ begin
     have "(z, snd x) \<in> R_to_G'" by auto
     with zf show ?case by auto
   next
-    case (2 x) then obtain y where y:"(fst x, y) \<in> f \<and> (y, snd x) \<in> R_to_G'" by auto
+    case (1 x) then obtain y where y:"(fst x, y) \<in> f \<and> (y, snd x) \<in> R_to_G'" by auto
     then have "fst x \<in> Domain g" using hm(1,2)[unfolded is_graph_homomorphism_def] by auto
     then obtain z where zf:"(fst x,z) \<in> g" by auto
     with y have zs: "(z,y) \<in> eqs" unfolding eq_class_from2_def by auto
@@ -265,8 +167,8 @@ begin
     finally show ?thesis using eqsb by auto
   qed
 
-  sublocale arrow_pushout Graph_Cat R G L G' f g R_to_G' G_to_G'
-  proof(unfold_locales,goal_cases)
+  sublocale arrow_pushout gc.Graph_Cat R G L G' f g R_to_G' G_to_G'
+  proof(unfold_locales,unfold Category.sel,goal_cases)
     case (10 D' h' k')
     hence two_ways:"f O h' = g O k'"
       and vo: "graphtype D'"
@@ -313,7 +215,7 @@ begin
     from eqsb_src have "eqcc f g O g O k' \<subseteq> g O k'" unfolding two_ways by auto
     hence "eqsa O k' \<subseteq> g\<inverse> O g O k'" unfolding eqsa_is by auto
     also have "g\<inverse> O g O k' = Id_on (Range g) O k'" using hm_uni by auto
-    finally have eqsa_k: "eqsa O k' \<subseteq> k'"  by auto
+    finally have eqsa_k: "eqsa O k' \<subseteq> k'" by auto
     have eqs_two_ways: "k'\<inverse> O eqs O h' \<subseteq> Id" proof(standard,goal_cases)
       case (1 x) then obtain v1 v2 where
         v12:"(v1,fst x) \<in> k'" "(v1,v2) \<in> eqs" "(v2,snd x) \<in> h'" by auto
@@ -324,67 +226,68 @@ begin
       have two:"(org, snd x) \<in> f O h'" using a(2) v12(3) by auto
       show ?case using hm_uni vuni one two by (cases x,auto)
     qed
-     
-    show ?case unfolding Category.sel proof(standard)
-      have via_ah:"R_to_G' O ?a = h'" (is ?via_ah)
-      proof -
-        have "R_to_G' O ?a = R_to_G' O G_to_G'\<inverse> O k' \<union> R_to_G' O R_to_G'\<inverse> O h'" by auto
-        also have "R_to_G' O G_to_G'\<inverse> O k' = eqs\<inverse> O k'" using eqs by blast
-        also have "R_to_G' O R_to_G'\<inverse> O h' = eqsb O h' \<union> Id_on (vertices R) O h'"
-             using R_to_G'_eqsb by blast
-        also have "Id_on (vertices R) O h' = h'" using vrg by auto
-        also have "eqs\<inverse> O k' = f\<inverse> O (eqcc f g)\<inverse> O g O k'" unfolding eq_class_from2_def by auto
-        also have "f\<inverse> O (eqcc f g)\<inverse> O g O k' = eqsb O h'"
-             unfolding eqsb_is O_assoc two_ways eqcc_equiv[unfolded sym_conv_converse_eq]..
-        also have "eqsb O h' \<union> h' = h'" using eqsb_h by auto
-        also finally show ?thesis.
-      qed
-      have via_ak:"G_to_G' O ?a = k'" (is ?via_ak)
-      proof -
-        have "G_to_G' O ?a = G_to_G' O R_to_G'\<inverse> O h' \<union> G_to_G' O G_to_G'\<inverse> O k'" by auto
-        also have "G_to_G' O R_to_G'\<inverse> O h' = eqs O h'" using eqs by blast
-        also have "G_to_G' O G_to_G'\<inverse> O k' = eqsa O k' \<union> Id_on (vertices G) O k'"
-             using G_to_G'_eqsa by blast
-        also have "Id_on (vertices G) O k' = k'" using vrg by auto
-        also have "eqs O h' = g\<inverse> O eqcc f g O f O h'" unfolding eq_class_from2_def by auto
-        also have "g\<inverse> O eqcc f g O f O h' = eqsa O k'"
-             unfolding eqsa_is O_assoc two_ways eqcc_equiv[unfolded sym_conv_converse_eq]..
-        also have "eqsa O k' \<union> k' = k'" using eqsa_k by auto
-        also finally show ?thesis.
-      qed
-      have uni[intro]:"univalent ?a"
-        proof(rule univalentI)
-        have "k'\<inverse> O (G_to_G' O G_to_G'\<inverse>) O k' \<subseteq> k'\<inverse> O eqsa\<^sup>= O k'" using G_to_G'_eqsa by blast
-        also have "eqsa\<^sup>= O k' \<subseteq> k'" using eqsa_k by auto
-        also have "k'\<inverse> O k' \<subseteq> Id" using vuni eqsa_k by auto
-        finally have a1:"k'\<inverse> O (G_to_G' O G_to_G'\<inverse>) O k' \<subseteq> Id" by auto
-        have "h'\<inverse> O (R_to_G' O R_to_G'\<inverse>) O h' \<subseteq> h'\<inverse> O eqsb\<^sup>= O h'" using R_to_G'_eqsb by blast
-        also have "eqsb\<^sup>= O h' \<subseteq> h'" using eqsb_h by auto
-        also have "h'\<inverse> O h' \<subseteq> Id" using vuni eqsa_k by auto
-        finally have a2:"(h'\<inverse> O R_to_G') O R_to_G'\<inverse> O h' \<subseteq> Id" by auto
-        have b:"h'\<inverse> O (G_to_G' O R_to_G'\<inverse>)\<inverse> O k' \<subseteq> Id"
-               "k'\<inverse> O (G_to_G' O R_to_G'\<inverse>) O h' \<subseteq> Id"
-          unfolding eqs using eqs_two_ways by auto
-        show "converse ?a O ?a \<subseteq> Id"
-          using a1 a2 b unfolding relcomp_distrib2 relcomp_distrib converse_Un converse_relcomp
-          converse_converse O_assoc by auto
-      qed
 
-      have epa[intro]: "edge_preserving ?a (edges G') (edges D')"
-        proof(standard,standard,goal_cases)
-          case (1 x)
-          obtain l s t where x:"x = (l,s,t)" by(cases x,auto)
-          from 1[unfolded G'_def labeled_graph.sel]
-          consider "x \<in> (on_triple (G_to_G' O ?a)) `` edges G" |
-                   "x \<in> (on_triple (R_to_G' O ?a)) `` edges R" unfolding relcomp_on_triple by auto
-          thus "x \<in> edges D'" unfolding via_ak via_ah proof(cases)
-            case 1 with edge_preserving_atomic ephk
-              show ?thesis unfolding x by (auto simp:on_triple_def) next
-            case 2 with edge_preserving_atomic ephk
-              show ?thesis unfolding x by (auto simp:on_triple_def)
-        qed qed
-      have va_a:"is_graph_homomorphism G' D' ?a" (is ?va_a)
-        unfolding Category.sel using vga vgd epa by (intro is_graph_homomorphismI,auto)
+    have uni[intro]:"univalent ?a"
+      proof(rule univalentI)
+      have "k'\<inverse> O (G_to_G' O G_to_G'\<inverse>) O k' \<subseteq> k'\<inverse> O eqsa\<^sup>= O k'" using G_to_G'_eqsa by blast
+      also have "eqsa\<^sup>= O k' \<subseteq> k'" using eqsa_k by auto
+      also have "k'\<inverse> O k' \<subseteq> Id" using vuni eqsa_k by auto
+      finally have a1:"k'\<inverse> O (G_to_G' O G_to_G'\<inverse>) O k' \<subseteq> Id" by auto
+      have "h'\<inverse> O (R_to_G' O R_to_G'\<inverse>) O h' \<subseteq> h'\<inverse> O eqsb\<^sup>= O h'" using R_to_G'_eqsb by blast
+      also have "eqsb\<^sup>= O h' \<subseteq> h'" using eqsb_h by auto
+      also have "h'\<inverse> O h' \<subseteq> Id" using vuni eqsa_k by auto
+      finally have a2:"(h'\<inverse> O R_to_G') O R_to_G'\<inverse> O h' \<subseteq> Id" by auto
+      have b:"h'\<inverse> O (G_to_G' O R_to_G'\<inverse>)\<inverse> O k' \<subseteq> Id"
+             "k'\<inverse> O (G_to_G' O R_to_G'\<inverse>) O h' \<subseteq> Id"
+        unfolding eqs using eqs_two_ways by auto
+      show "converse ?a O ?a \<subseteq> Id"
+        using a1 a2 b unfolding relcomp_distrib2 relcomp_distrib converse_Un converse_relcomp
+        converse_converse O_assoc by auto
+    qed
+    
+    have via_ah:"R_to_G' O ?a = h'" (is ?via_ah)
+    proof -
+      have "R_to_G' O ?a = R_to_G' O G_to_G'\<inverse> O k' \<union> R_to_G' O R_to_G'\<inverse> O h'" by auto
+      also have "R_to_G' O G_to_G'\<inverse> O k' = eqs\<inverse> O k'" using eqs by blast
+      also have "R_to_G' O R_to_G'\<inverse> O h' = eqsb O h' \<union> Id_on (vertices R) O h'"
+           using R_to_G'_eqsb by blast
+      also have "Id_on (vertices R) O h' = h'" using vrg by auto
+      also have "eqs\<inverse> O k' = f\<inverse> O (eqcc f g)\<inverse> O g O k'" unfolding eq_class_from2_def by auto
+      also have "f\<inverse> O (eqcc f g)\<inverse> O g O k' = eqsb O h'"
+           unfolding eqsb_is O_assoc two_ways eqcc_equiv[unfolded sym_conv_converse_eq]..
+      also have "eqsb O h' \<union> h' = h'" using eqsb_h by auto
+      also note this finally show ?thesis.
+    qed
+    have via_ak:"G_to_G' O ?a = k'" (is ?via_ak)
+    proof -
+      have "G_to_G' O ?a = G_to_G' O R_to_G'\<inverse> O h' \<union> G_to_G' O G_to_G'\<inverse> O k'" by auto
+      also have "G_to_G' O R_to_G'\<inverse> O h' = eqs O h'" using eqs by blast
+      also have "G_to_G' O G_to_G'\<inverse> O k' = eqsa O k' \<union> Id_on (vertices G) O k'"
+           using G_to_G'_eqsa by blast
+      also have "Id_on (vertices G) O k' = k'" using vrg by auto
+      also have "eqs O h' = g\<inverse> O eqcc f g O f O h'" unfolding eq_class_from2_def by auto
+      also have "g\<inverse> O eqcc f g O f O h' = eqsa O k'"
+           unfolding eqsa_is O_assoc two_ways eqcc_equiv[unfolded sym_conv_converse_eq]..
+      also have "eqsa O k' \<union> k' = k'" using eqsa_k by auto
+      also finally show ?thesis.
+    qed
+    have epa[intro]: "edge_preserving ?a (edges G') (edges D')"
+      proof(standard,standard,goal_cases)
+        case (1 x)
+        obtain l s t where x:"x = (l,s,t)" by(cases x,auto)
+        from 1[unfolded G'_def labeled_graph.sel]
+        consider "x \<in> (on_triple (G_to_G' O ?a)) `` edges G" |
+                 "x \<in> (on_triple (R_to_G' O ?a)) `` edges R" unfolding relcomp_on_triple by auto
+        thus "x \<in> edges D'" unfolding via_ak via_ah proof(cases)
+          case 1 with edge_preserving_atomic ephk
+            show ?thesis unfolding x by (auto simp:on_triple_def) next
+          case 2 with edge_preserving_atomic ephk
+            show ?thesis unfolding x by (auto simp:on_triple_def)
+      qed qed
+    have va_a:"is_graph_homomorphism G' D' ?a" (is ?va_a)
+      unfolding Category.sel using vga vgd epa by (intro is_graph_homomorphismI,auto)
+     
+    show ?case proof(standard)
       show "?va_a \<and> ?via_ah \<and> ?via_ak"
            using va_a via_ah via_ak by auto
       fix u assume "is_graph_homomorphism G' D' u \<and> R_to_G' O u = h' \<and> G_to_G' O u = k'"
@@ -402,14 +305,44 @@ begin
           hence "x \<in> ?a" using v by auto }
         thus "u \<subseteq> ?a" by auto
       qed
-    qed
+    qed next
+    show "f O R_to_G' = g O G_to_G'" using two_routes.
   qed auto
 end
 
-context fixes K::"'l set" begin
-  definition constant_respecting where
-    "constant_respecting G \<equiv> (\<forall> k\<in>K. \<forall> v1 v2 v3 v4. (k,v1,v2) \<in> edges G \<and> (k,v3,v4) \<in> edges G \<longrightarrow> v1 = v4)"
+definition constant_exists where
+    "constant_exists K G \<equiv>
+       \<forall> k\<in>K. (\<exists> v \<in> vertices G. (k,v,v) \<in> edges G)"
+definition error_free where
+    "error_free E G \<equiv> \<forall> k\<in>E. \<forall> v1 v2. v1 \<in> vertices G \<longrightarrow> v2 \<in> vertices G \<longrightarrow> (k,v1,v2) \<notin> edges G"
 
-end
+lemma preserving_constant_respecting:
+  assumes "is_graph_homomorphism G\<^sub>1 G\<^sub>2 f"
+          "constant_exists K G\<^sub>1"
+  shows "constant_exists K G\<^sub>2"
+  unfolding constant_exists_def
+proof(standard,goal_cases)
+  case (1 k)
+  with assms[unfolded constant_exists_def]
+  obtain v where v:"v\<in>vertices G\<^sub>1" "(k, v, v) \<in> edges G\<^sub>1" by auto
+  with assms[unfolded is_graph_homomorphism_def edge_preserving_def]
+  obtain u where u:"(k,u,u) \<in> edges G\<^sub>2" "(v,u) \<in> f" by auto
+  with assms[unfolded is_graph_homomorphism_def]
+  have "u \<in> vertices G\<^sub>2" by auto
+  with u show ?case by auto
+qed
+
+lemma copreserving_error_free:
+  assumes "is_graph_homomorphism G\<^sub>1 G\<^sub>2 f"
+          "error_free K G\<^sub>2"
+  shows "error_free K G\<^sub>1"
+unfolding error_free_def proof(standard+,goal_cases)
+  case (1 k v1 v2)
+  then obtain u1 u2 where u:"(v1,u1) \<in> f" "(v2,u2) \<in> f"
+    using assms[unfolded is_graph_homomorphism_def] by auto
+  with assms[unfolded is_graph_homomorphism_def edge_preserving_def] 1
+    have "u1 \<in> vertices G\<^sub>2" "u2 \<in> vertices G\<^sub>2" "(k,u1,u2) \<in> edges G\<^sub>2" by auto
+  with assms(2)[unfolded error_free_def,rule_format,OF 1(1)] show ?case by auto
+qed
 
 end

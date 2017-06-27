@@ -22,8 +22,8 @@ VIEW Recogniser   = ["[",recRelation,"SEPBY",separator,"]",nonTerminal]
 RULE pre UnquotedString |- I
 RULE pre QuotedString |- I
 RULE pre sameTerminal |- I
-RULE pre recRelation |- I
 RULE pre sameTerminal |- pre nonTerminal
+RULE pre recRelation |- I
 
 UnquotedString :: X * UnquotedString
 QuotedString :: X * QuotedString

@@ -1,76 +1,9 @@
 theory VariableUnification
 imports
-  Main
+  MissingRelation
 begin
 
-definition univalent where "univalent R = (\<forall> x y z. (x,y)\<in> R \<and> (x,z)\<in> R \<longrightarrow> z = y)"
-
-lemma univalent_char : "univalent R \<longleftrightarrow> converse R O R \<subseteq> Id"
-  unfolding univalent_def by auto
-
-lemma univalentD [dest]: "univalent R \<Longrightarrow> (x,y)\<in> R \<Longrightarrow> (x,z)\<in> R \<Longrightarrow> z = y"
-  unfolding univalent_def by auto
-
-lemma univalentI: "converse R O R \<subseteq> Id \<Longrightarrow> univalent R"
-  unfolding univalent_def by auto
-
-lemma univalent_composes[intro]:assumes "univalent R" "univalent S"
- shows "univalent (R O S)" using assms unfolding univalent_char by auto
-
-lemma id_univalent[intro]:"univalent (Id_on x)" unfolding univalent_char by auto
-
 declare sym_Un_converse[intro]
-
-
-lemma trancl_power_least:
-  "p \<in> R\<^sup>+ \<longleftrightarrow> (\<exists>n. p \<in> R ^^ Suc n \<and> (p \<in> R ^^ n \<longrightarrow> n = 0))"
-proof
-  assume "p \<in> R\<^sup>+"
-  from this[unfolded trancl_power] obtain n where p:"n>0" "p \<in> R ^^ n" by auto
-  define n' where "n' = n - 1"
-  with p have "Suc n' = n" by auto
-  with p have "p \<in> R ^^ Suc n'" by auto
-  thus "\<exists>n. p \<in> R ^^ Suc n \<and> (p \<in> R ^^ n \<longrightarrow> n = 0)" proof (induct n')
-    case 0 hence "p \<in> R ^^ 0 O R \<and> (p \<in> R ^^ 0 \<longrightarrow> 0 = 0)" by auto
-    then show ?case by force
-  next
-    case (Suc n)
-    show ?case proof(cases "p \<in> R ^^ Suc n")
-      case False with Suc show ?thesis by blast
-    qed (rule Suc)
-  qed next
-  assume "\<exists>n. p \<in> R ^^ Suc n \<and> (p \<in> R ^^ n \<longrightarrow> n = 0)"
-  with zero_less_Suc have "\<exists>n>0. p \<in> R ^^ n" by blast
-  thus "p \<in> R\<^sup>+" unfolding trancl_power.
-qed
-
-lemma refl_on_tranclI :
-  assumes "refl_on A r"
-  shows "refl_on A (trancl r)"
-  proof
-    show "r\<^sup>+ \<subseteq> A \<times> A"
-      by( rule trancl_subset_Sigma
-        , auto simp: assms[THEN refl_onD1] assms[THEN refl_onD2])
-    show "\<And>x. x \<in> A \<Longrightarrow> (x, x) \<in> r\<^sup>+"
-      using assms[THEN refl_onD] by auto
-  qed
-
-definition idempotent where
-  "idempotent r \<equiv> r O r = r"
-
-lemma trans_def: "trans r = ((Id \<union> r) O r = r)" "trans r = (r O (Id \<union> r) = r)"
-  by(auto simp:trans_def)
-
-lemma idempotent_impl_trans: "idempotent r \<Longrightarrow> trans r"
-  by(auto simp:trans_def idempotent_def)
-
-lemma refl_trans_impl_idempotent[intro]: "refl_on A r \<Longrightarrow> trans r \<Longrightarrow> idempotent r"
-  by(auto simp:refl_on_def trans_def idempotent_def)
-
-lemma idempotent_subset:
-  assumes "idempotent R" "S \<subseteq> R"
-  shows "S O R \<subseteq> R" "R O S \<subseteq> R" "S O R O S \<subseteq> R"
-  using assms by(auto simp:idempotent_def)
 
 (* equivalence class core *)
 abbreviation eqcc where "eqcc f g \<equiv> trancl (g O converse g \<union> f O converse f)"
@@ -115,7 +48,7 @@ proof
   have eqs:"(f O f\<inverse>) O eqcc f g \<subseteq> eqcc f g"
            "(g O g\<inverse>) O eqcc f g \<subseteq> eqcc f g".
   from relcomp_mono[OF relcomp_mono[OF subset_refl[of "eqcc f g"] relcomp_mono[OF this]] subset_refl]
-  have eq:"\<And> r s. eqcc f g O f O f\<inverse> O eqcc f g O g O g\<inverse> O eqcc f g O s \<subseteq> eqcc f g O s"
+  have eq:"eqcc f g O f O f\<inverse> O eqcc f g O g O g\<inverse> O eqcc f g O s \<subseteq> eqcc f g O s" for r s
    unfolding O_assoc eqcc_equiv[unfolded idempotent_def].
   from relcomp_mono[OF subset_refl this]
   show "eq_class_from2 f g O (eq_class_from2 f g)\<inverse> O eq_class_from2 f g \<subseteq> eq_class_from2 f g"
@@ -320,7 +253,7 @@ begin
     assumes "(a,c) \<in> nms_a" "(b,c) \<in> nms_b" shows "(a,b) \<in> eqs"
     using assms eqs by auto
   lemma uni_ab:
-    "\<And> a c b c'. (a,c) \<in> nms_a \<Longrightarrow> (b,c') \<in> nms_b \<Longrightarrow> (a,b) \<in> eqs \<longleftrightarrow> c = c'"
+    "(a,c) \<in> nms_a \<Longrightarrow> (b,c') \<in> nms_b \<Longrightarrow> (a,b) \<in> eqs \<longleftrightarrow> c = c'"
     using uni_ab' eqs_two_routes_inv eqs by metis
   
   lemma lhs_only:
@@ -466,10 +399,9 @@ interpretation freename : valid_unification freename
         have "x \<in> Domain ((\<lambda>((a, b), c). (a, freenaming_P c)) ` cluster eqs)"
           by (auto intro!:Domain.intros image_eqI)
       } note [intro] = this
-      have*: "\<And> a b c d. a = Domain c \<Longrightarrow> b = Domain d \<Longrightarrow> a \<union> b = Domain (c \<union> d)"
-             "\<And> a b c d. a = Range  c \<Longrightarrow> b = Range  d \<Longrightarrow> a \<union> b = Range  (c \<union> d)" by auto
-      case 2 show ?case by (intro *(1),auto elim!:cluster_dest)
-      case 3 show ?case by (intro *(1),auto elim!:cluster_dest)
+      have*: "a = Domain c \<Longrightarrow> b = Domain d \<Longrightarrow> a \<union> b = Domain (c \<union> d)" for a b c d by auto
+      case 2 show ?case by (intro *,auto elim!:cluster_dest)
+      case 3 show ?case by (intro *,auto elim!:cluster_dest)
     qed
   qed
 
