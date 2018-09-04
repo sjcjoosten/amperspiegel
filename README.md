@@ -28,7 +28,7 @@ already installed with ghc.
 
 I put a GPL-3 license to get you started on using and modifying this software.
 For the license see the file LICENSE.
-Since I am the only contributer, you can ask me for a less restrictive license (like BSD / Apache 2.0) if you need one.
+Since I am the only contributor, you can ask me for a less restrictive license (like BSD / Apache 2.0) if you need one.
 I'll probably be open to giving it to you.
 
 #
