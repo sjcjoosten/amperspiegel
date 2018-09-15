@@ -13,7 +13,7 @@ locale labeled_graph_category =
   fixes graphtype :: "('l, 'v) labeled_graph \<Rightarrow> bool"
 begin
 
-  abbreviation "Graph_Cat \<equiv> Category is_graph_homomorphism graphtype (\<lambda> _ _ _. op O) (Id_on o vertices)"
+  abbreviation "Graph_Cat \<equiv> Category is_graph_homomorphism graphtype (\<lambda> _ _ _ x y. x O y) (Id_on o vertices)"
   sublocale arrow_category_with_dual Graph_Cat
     by(standard,auto dest:Id_on_vertices_is_identity)
 
@@ -34,8 +34,8 @@ end
    We cannot guarantee that "graphtype G'", but if it is,
      it is uniquely determined by the pushout, up to isomorphism.
 
-   Although it is defined in a more homogeneous setting,
-   we first create a pushout in a heterogeneous setting.
+   Although graph rewriting is defined in a rather homogeneous setting,
+   we define a pushout in a more heterogeneous setting.
    This helps us get more precise types, so that we know what we're doing.
    When used, 'V = 'R = 'G = 'v
  *)
@@ -313,8 +313,9 @@ end
 definition constant_exists where
     "constant_exists K G \<equiv>
        \<forall> k\<in>K. (\<exists> v \<in> vertices G. (k,v,v) \<in> edges G)"
-definition error_free where
-    "error_free E G \<equiv> \<forall> k\<in>E. \<forall> v1 v2. v1 \<in> vertices G \<longrightarrow> v2 \<in> vertices G \<longrightarrow> (k,v1,v2) \<notin> edges G"
+(* Slightly more generic than in the paper: a conflict is any label from a set, rather than a single label *)
+definition conflict_free where (* E is the set of conflict edges *)
+    "conflict_free E G \<equiv> \<forall> k\<in>E. \<forall> v1 v2. v1 \<in> vertices G \<longrightarrow> v2 \<in> vertices G \<longrightarrow> (k,v1,v2) \<notin> edges G"
 
 lemma preserving_constant_respecting:
   assumes "is_graph_homomorphism G\<^sub>1 G\<^sub>2 f"
@@ -332,17 +333,19 @@ proof(standard,goal_cases)
   with u show ?case by auto
 qed
 
-lemma copreserving_error_free:
+lemma copreserving_conflict_free:
   assumes "is_graph_homomorphism G\<^sub>1 G\<^sub>2 f"
-          "error_free K G\<^sub>2"
-  shows "error_free K G\<^sub>1"
-unfolding error_free_def proof(standard+,goal_cases)
+          "conflict_free K G\<^sub>2"
+  shows "conflict_free K G\<^sub>1"
+unfolding conflict_free_def proof(standard+,goal_cases)
   case (1 k v1 v2)
   then obtain u1 u2 where u:"(v1,u1) \<in> f" "(v2,u2) \<in> f"
     using assms[unfolded is_graph_homomorphism_def] by auto
   with assms[unfolded is_graph_homomorphism_def edge_preserving_def] 1
     have "u1 \<in> vertices G\<^sub>2" "u2 \<in> vertices G\<^sub>2" "(k,u1,u2) \<in> edges G\<^sub>2" by auto
-  with assms(2)[unfolded error_free_def,rule_format,OF 1(1)] show ?case by auto
+  with assms(2)[unfolded conflict_free_def,rule_format,OF 1(1)] show ?case by auto
 qed
+
+
 
 end
