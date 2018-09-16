@@ -6,11 +6,10 @@ imports
 begin
 
 (* Labeled Graphs form a category *)
-type_synonym ('l, 'v) graph_homomorphism
-  = "(('l,'v) labeled_graph, 'v rel) Arrow"
 
 locale labeled_graph_category =
   fixes graphtype :: "('l, 'v) labeled_graph \<Rightarrow> bool"
+  assumes graphtype[dest!]:"graphtype G \<Longrightarrow> G = restrict G"
 begin
 
   abbreviation "Graph_Cat \<equiv> Category is_graph_homomorphism graphtype (\<lambda> _ _ _ x y. x O y) (Id_on o vertices)"
@@ -124,7 +123,9 @@ begin
   lemma univalent_RG[intro]: "univalent R_to_G'" "univalent G_to_G'"
     using uni_a uni_b unfolding univalent_def 
   by (auto simp:eq_class_from2_def)
-  
+
+  lemmas [intro] = gt[THEN gc.graphtype]
+
   lemma is_hom[intro]:
     shows "is_graph_homomorphism R G' R_to_G'" "is_graph_homomorphism G G' G_to_G'"
     unfolding is_graph_homomorphism_def by (auto simp:G'_def)
@@ -283,7 +284,9 @@ begin
             show ?thesis unfolding x by (auto simp:on_triple_def) next
           case 2 with edge_preserving_atomic ephk
             show ?thesis unfolding x by (auto simp:on_triple_def)
-      qed qed
+          qed qed
+    
+    note [intro] = vo[THEN gc.graphtype]
     have va_a:"is_graph_homomorphism G' D' ?a" (is ?va_a)
       unfolding Category.sel using vga vgd epa by (intro is_graph_homomorphismI,auto)
      
@@ -345,7 +348,5 @@ unfolding conflict_free_def proof(standard+,goal_cases)
     have "u1 \<in> vertices G\<^sub>2" "u2 \<in> vertices G\<^sub>2" "(k,u1,u2) \<in> edges G\<^sub>2" by auto
   with assms(2)[unfolded conflict_free_def,rule_format,OF 1(1)] show ?case by auto
 qed
-
-
 
 end

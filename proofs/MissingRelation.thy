@@ -2,6 +2,10 @@ theory MissingRelation
 imports Main
 begin
 
+lemma range_dom[simp]:
+  "f `` Domain f = Range f"
+  "converse f `` Range f = Domain f" by auto
+
 definition univalent where "univalent R = (\<forall> x y z. (x,y)\<in> R \<and> (x,z)\<in> R \<longrightarrow> z = y)"
 
 lemma univalent_char : "univalent R \<longleftrightarrow> converse R O R \<subseteq> Id"
