@@ -162,6 +162,16 @@ lemma Id_on_vertices_is_identity:
 abbreviation subgraph :: "('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> bool"
   where "subgraph G\<^sub>1 G\<^sub>2 \<equiv> is_graph_homomorphism G\<^sub>1 G\<^sub>2 (Id_on (vertices G\<^sub>1))"
 
+lemma subgraph_trans:
+  assumes "subgraph G\<^sub>1 G\<^sub>2" "subgraph G\<^sub>2 G\<^sub>3"
+  shows "subgraph G\<^sub>1 G\<^sub>3"
+proof-
+  from assms[unfolded is_graph_homomorphism_def]
+  have "Id_on (vertices G\<^sub>1) O Id_on (vertices G\<^sub>2) = Id_on (vertices G\<^sub>1)"
+    by auto
+  with is_graph_homomorphism_composes[OF assms] show ?thesis by auto
+qed
+
 (* Introducing the map notation just above Def 7 in the paper *)
 definition map_graph :: "('c \<times> 'b) set \<Rightarrow> ('a, 'c) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph" where
   "map_graph f G = LG (on_triple f `` (edges G)) (f `` (vertices G))"

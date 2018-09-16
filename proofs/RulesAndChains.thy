@@ -7,6 +7,31 @@ type_synonym ('l,'v) graph_seq = "(nat \<Rightarrow> ('l, 'v) labeled_graph)"
 definition chain :: "('l, 'v) graph_seq \<Rightarrow> bool" where
   "chain S \<equiv> \<forall> i. subgraph (S i) (S (i + 1))"
 
+lemma chain_then_restrict:
+  assumes "chain S" shows "S i = restrict (S i)"
+  using assms[unfolded chain_def is_graph_homomorphism_def] by auto
+
+lemma chain:
+  assumes "chain S"
+  shows "j \<ge> i \<Longrightarrow> subgraph (S i) (S j)"
+proof(induct "j-i" arbitrary:i j)
+  case 0
+  then show ?case using chain_then_restrict[OF assms] assms[unfolded chain_def] by auto
+next
+  case (Suc x)
+  hence j:"i + x + 1 = j" by auto
+  thus ?case
+    using subgraph_trans[OF Suc(1) assms[unfolded chain_def,rule_format,of "i+x"],of i,unfolded j]
+    using Suc by auto
+qed
+
+lemma chain_def2:
+  "chain S = (\<forall> i j. j \<ge> i \<longrightarrow> subgraph (S i) (S j))"
+proof
+  show "chain S \<Longrightarrow> \<forall>i j. i \<le> j \<longrightarrow> subgraph (S i) (S j)" using chain by auto
+  show "\<forall>i j. i \<le> j \<longrightarrow> subgraph (S i) (S j) \<Longrightarrow> chain S" unfolding chain_def by simp
+qed
+
 definition chain_sup :: "('l, 'v) graph_seq \<Rightarrow> ('l, 'v) labeled_graph" where
   "chain_sup S \<equiv> LG (\<Union> i. edges (S i)) (\<Union> i. vertices (S i))"
 
@@ -127,11 +152,35 @@ next
     apply(rule is_graph_homomorphismI)
     using insert.prems ep unfolding dom is_graph_homomorphism_def univalent_def by auto
   with insert.hyps obtain i where i:"is_graph_homomorphism (LG ?E V) (S i) ?f" by auto
+  
   obtain v' where f:"(v,v') \<in> f" using domF by auto
   hence "v' \<in> vertices (chain_sup S)" using vert by auto
   then obtain j where j:"v' \<in> vertices (S j)" unfolding chain_sup_def by auto
+  hence v_in_j:"f `` {v} \<subseteq> vertices (S j)"
+    using f insert.prems[unfolded is_graph_homomorphism_def] by auto
   have "is_graph_homomorphism (LG E (insert v V)) (S (max i j)) f"
-    using i j f sorry
+  proof
+    have sg:"subgraph (S i) (S (max i j))" "subgraph (S j) (S (max i j))"
+      by(rule chain[OF assms(1)],force)+
+    show univ:"univalent f"
+     and "vertices (LG E (insert v V)) = Domain f"
+      using insert.prems[unfolded is_graph_homomorphism_def] by auto
+    have V:"(f \<inter> V \<times> UNIV) `` V \<subseteq> vertices (S (max i j))"
+      using i subgraph_subset[OF sg(1)]
+      unfolding is_graph_homomorphism_def by auto
+    have v:"f `` {v} \<subseteq> vertices (S (max i j))"
+      using v_in_j subgraph_subset[OF sg(2)] by auto
+    show "f `` vertices (LG E (insert v V)) \<subseteq> vertices (S (max i j))"
+      using v V by auto
+    have "on_triple f `` E \<subseteq> edges (S (max i j))"
+      using i j ep
+      sorry
+    thus "edge_preserving f (edges (LG E (insert v V))) (edges (S (max i j)))" by auto
+    show "S (max i j) = restrict (S (max i j))"
+      using assms(1) subgraph_def by auto
+    show "LG E (insert v V) = restrict (LG E (insert v V))"
+      using insert.prems is_graph_homomorphism_def by blast
+  qed
   thus ?case by blast
 qed
 
