@@ -22,7 +22,7 @@ executable amperspiegel
   other-extensions:    BangPatterns, OverloadedStrings, ScopedTypeVariables, DeriveFunctor, DeriveTraversable, FlexibleInstances, FlexibleContexts, TypeFamilies, RankNTypes, DeriveFoldable, TypeSynonymInstances
   build-depends:       base >=4.9,
                        containers >=0.5,
-                       Earley >=0.11 && <0.12, 
+                       Earley >=0.11, 
                        mtl >=2.2,
                        terminal-size >= 0.3.2.1,
                        text >=1.2
