@@ -51,7 +51,7 @@ qed
 type_synonym ('l,'v) Graph_PreRule = "('l, 'v) labeled_graph \<times> ('l, 'v) labeled_graph"
 
 abbreviation graph_rule :: "('l,'v) Graph_PreRule \<Rightarrow> bool" where
-"graph_rule R \<equiv> subgraph (fst R) (snd R) \<and> finite (vertices (snd R))"
+"graph_rule R \<equiv> subgraph (fst R) (snd R) \<and> finite (vertices (snd R)) \<and> finite (edges (snd R))"
 
 definition set_of_graph_rules :: "('l,'v) Graph_PreRule set \<Rightarrow> bool" where
 "set_of_graph_rules Rs \<equiv> \<forall> R\<in>Rs. graph_rule R"
@@ -127,61 +127,97 @@ lemma fair_chainD:
         "set_of_graph_rules Rs"
   using assms unfolding fair_chain_def by blast+
 
-lemma find_graph_occurence:
-  assumes "chain S" "finite V"
-  shows "is_graph_homomorphism (LG E V) (chain_sup S) f \<Longrightarrow> (\<exists> i. is_graph_homomorphism (LG E V) (S i) f)"
-  using assms(2)
-proof(induct V arbitrary:E f)
-  have chf:"subgraph (S i) (chain_sup S)" for i using assms(1) chain_sup_subgraph by auto
-  hence rst:"S i = restrict (S i)" for i unfolding is_graph_homomorphism_def by auto
-  case empty
-  then show ?case unfolding is_graph_homomorphism_def using rst by auto
+lemma find_graph_occurence_vertices:
+  assumes "chain S" "finite V" "univalent f" "f `` V \<subseteq> vertices (chain_sup S)"
+  shows "\<exists> i. f `` V \<subseteq> vertices (S i)"
+  using assms(2,4)
+proof(induct V)
+  case empty thus ?case by auto
 next
-  case (insert v V E f)
-  let ?E = "edges (restrict (LG E V))"
-  let ?f = "f Int (V \<times> UNIV)"
-  from insert.prems have ep:"edge_preserving f E (edges (chain_sup S))"
-    and domF:"insert v V = Domain f"
-    and vert:"f `` vertices (LG E (insert v V)) \<subseteq> vertices (chain_sup S)"
-    unfolding is_graph_homomorphism_def by auto
-  from insert.hyps have "Domain (f \<inter> V \<times> UNIV) = Domain f \<inter> V" by auto
-  with domF have dom: "Domain (f \<inter> V \<times> UNIV) = V" by (auto simp:Domain_Int_subset)
-  have ep:"edge_preserving ?f ?E (edges (chain_sup S))"
-    by (rule edge_preserving_subset[OF _ _ ep],auto)
-  have "is_graph_homomorphism (LG ?E V) (chain_sup S) ?f"
-    apply(rule is_graph_homomorphismI)
-    using insert.prems ep unfolding dom is_graph_homomorphism_def univalent_def by auto
-  with insert.hyps obtain i where i:"is_graph_homomorphism (LG ?E V) (S i) ?f" by auto
-  
-  obtain v' where f:"(v,v') \<in> f" using domF by auto
-  hence "v' \<in> vertices (chain_sup S)" using vert by auto
-  then obtain j where j:"v' \<in> vertices (S j)" unfolding chain_sup_def by auto
-  hence v_in_j:"f `` {v} \<subseteq> vertices (S j)"
-    using f insert.prems[unfolded is_graph_homomorphism_def] by auto
-  have "is_graph_homomorphism (LG E (insert v V)) (S (max i j)) f"
-  proof
-    have sg:"subgraph (S i) (S (max i j))" "subgraph (S j) (S (max i j))"
-      by(rule chain[OF assms(1)],force)+
-    show univ:"univalent f"
-     and "vertices (LG E (insert v V)) = Domain f"
-      using insert.prems[unfolded is_graph_homomorphism_def] by auto
-    have V:"(f \<inter> V \<times> UNIV) `` V \<subseteq> vertices (S (max i j))"
-      using i subgraph_subset[OF sg(1)]
-      unfolding is_graph_homomorphism_def by auto
-    have v:"f `` {v} \<subseteq> vertices (S (max i j))"
-      using v_in_j subgraph_subset[OF sg(2)] by auto
-    show "f `` vertices (LG E (insert v V)) \<subseteq> vertices (S (max i j))"
-      using v V by auto
-    have "on_triple f `` E \<subseteq> edges (S (max i j))"
-      using i j ep
-      sorry
-    thus "edge_preserving f (edges (LG E (insert v V))) (edges (S (max i j)))" by auto
-    show "S (max i j) = restrict (S (max i j))"
-      using assms(1) subgraph_def by auto
-    show "LG E (insert v V) = restrict (LG E (insert v V))"
-      using insert.prems is_graph_homomorphism_def by blast
-  qed
+  case (insert v V)
+  from insert.prems have V:"f `` V \<subseteq> vertices (chain_sup S)"
+    and v:"f `` {v} \<subseteq> vertices (chain_sup S)" by auto
+  from insert.hyps(3)[OF V] obtain i where i:"f `` V \<subseteq> vertices (S i)" by auto
+  have "\<exists> j. f `` {v} \<subseteq> vertices (S j)"
+  proof(cases "(f `` {v}) = {}")
+    case False
+    then obtain v' where f:"(v,v') \<in> f" by auto
+    hence "v' \<in> vertices (chain_sup S)" using v by auto
+    then show ?thesis using assms(3) f unfolding chain_sup_def by auto
+  qed auto
+  then obtain j where j:"f `` {v} \<subseteq> vertices (S j)" by blast
+  have sg:"subgraph (S i) (S (max i j))" "subgraph (S j) (S (max i j))"
+    by(rule chain[OF assms(1)],force)+
+  have V:"(f \<inter> V \<times> UNIV) `` V \<subseteq> vertices (S (max i j))"
+    using i subgraph_subset[OF sg(1)] by auto
+  have v:"f `` {v} \<subseteq> vertices (S (max i j))" using j subgraph_subset[OF sg(2)] by auto
+  have "f `` insert v V \<subseteq> vertices (S (max i j))" using v V by auto
   thus ?case by blast
+qed
+
+lemma find_graph_occurence_edges:
+  assumes "chain S" "finite E" "univalent f"
+        "on_triple f `` E \<subseteq> edges (chain_sup S)"
+      shows "\<exists> i. on_triple f `` E \<subseteq> edges (S i)"
+  using assms(2,4)
+proof(induct E)
+  case empty thus ?case unfolding is_graph_homomorphism_def by auto
+next
+  case (insert e E)
+  have univ:"univalent (on_triple f)" using assms(3) by auto
+  have [simp]:"restrict (S i) = S i" for i
+    using chain[OF assms(1),unfolded subgraph_def,of i i] by auto
+  from insert.prems have E:"on_triple f `` E \<subseteq> edges (chain_sup S)"
+    and e:"on_triple f `` {e} \<subseteq> edges (chain_sup S)" by auto
+  with insert.hyps obtain i where i:"on_triple f `` E \<subseteq> edges (S i)" by auto
+  have "\<exists> j. on_triple f `` {e} \<subseteq> edges (S j)"
+  proof(cases "on_triple f `` {e} = {}")
+    case False
+    then obtain e' where f:"(e,e') \<in> on_triple f" by auto
+    hence "e' \<in> edges (chain_sup S)" using e by auto
+    then show ?thesis using univ f unfolding chain_sup_def by auto
+  qed auto
+  then obtain j where j:"on_triple f `` {e} \<subseteq> edges (S j)" by blast
+  have sg:"subgraph (S i) (S (max i j))" "subgraph (S j) (S (max i j))"
+    by(rule chain[OF assms(1)],force)+
+  have E:"on_triple f `` E \<subseteq> edges (S (max i j))"
+    using i subgraph_subset[OF sg(1)] by auto
+  have e:"on_triple f `` {e} \<subseteq> edges (S (max i j))" using j subgraph_subset[OF sg(2)] by auto
+  have "on_triple f `` insert e E \<subseteq> edges (S (max i j))" using e E by auto
+  thus ?case by blast
+qed
+
+lemma find_graph_occurence:
+  assumes "chain S" "finite E" "finite V" "is_graph_homomorphism (LG E V) (chain_sup S) f"
+  shows "\<exists> i. is_graph_homomorphism (LG E V) (S i) f"
+proof -
+  have [simp]:"restrict (S i) = S i" for i
+    using chain[OF assms(1),unfolded subgraph_def,of i i] by auto
+  from assms[unfolded is_graph_homomorphism_def edge_preserving_simp labeled_graph.sel]
+  have u:"univalent f" 
+   and e:"on_triple f `` E \<subseteq> edges (chain_sup S)"
+   and v:"f `` V \<subseteq> vertices (chain_sup S)"
+    by blast+
+  from find_graph_occurence_edges[OF assms(1,2) u e]
+  obtain i where i:"on_triple f `` E \<subseteq> edges (S i)" by blast
+  from find_graph_occurence_vertices[OF assms(1,3) u v]
+  obtain j where j:"f `` V \<subseteq> vertices (S j)" by blast
+  have sg:"subgraph (S i) (S (max i j))" "subgraph (S j) (S (max i j))"
+    by(rule chain[OF assms(1)],force)+
+  have e:"on_triple f `` E \<subseteq> edges (S (max i j))"
+   and v:"f `` V \<subseteq> vertices (S (max i j))"
+    using i j subgraph_subset(2)[OF sg(1)] subgraph_subset(1)[OF sg(2)] by auto
+  have "is_graph_homomorphism (LG E V) (S (max i j)) f"
+  proof
+    from assms[unfolded is_graph_homomorphism_def edge_preserving_simp labeled_graph.sel] e v
+    show "vertices (LG E V) = Domain f"
+     and "univalent f"
+     and "LG E V = restrict (LG E V)"
+     and "f `` vertices (LG E V) \<subseteq> vertices (S (max i j))" 
+     and "edge_preserving f (edges (LG E V)) (edges (S (max i j)))"
+     and "S (max i j) = restrict (S (max i j))" by auto
+  qed
+  thus ?thesis by auto
 qed
 
 lemma fair_chain_impl_consequence_graph: (* Lemma 3 in paper *)
@@ -191,9 +227,12 @@ proof
   fix R f assume a:"R \<in> Rs" "is_graph_homomorphism (fst R) (chain_sup S) f"
   hence "fst R = restrict (fst R)" unfolding is_graph_homomorphism_def by auto
   from a fair_chainD(3)[OF assms]
-  have "finite (vertices (fst R))" unfolding set_of_graph_rules_def
+  have fin_v:"finite (vertices (fst R))" unfolding set_of_graph_rules_def
     by (meson finite_subset subgraph_subset)
-  from find_graph_occurence[OF fair_chainD(1)[OF assms] this, of "edges (fst R)"] a(2)
+  from a fair_chainD(3)[OF assms]
+  have fin_e:"finite (edges (fst R))" unfolding set_of_graph_rules_def
+    by (meson finite_subset is_graph_homomorphism_def subgraph_def2)
+  from find_graph_occurence[OF fair_chainD(1)[OF assms] fin_e fin_v] a(2)
   obtain i where "is_graph_homomorphism (fst R) (S i) f" by auto
   from fair_chainD(2)[OF assms a(1) this] obtain j where "extensible R (S j) f" by blast
   thus "extensible R (chain_sup S) f" using fair_chainD(1)[OF assms] by auto

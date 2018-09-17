@@ -41,6 +41,10 @@ lemma on_triple[simp]:
   "((l1,v1,v2),(l2,v3,v4)) \<in> on_triple R \<longleftrightarrow> (v1,v3)\<in> R \<and> (v2,v4) \<in> R \<and> l1 = l2"
 unfolding on_triple_def by auto
 
+lemma on_triple_univ[intro!]:
+  "univalent f \<Longrightarrow> univalent (on_triple f)"
+  unfolding on_triple_def univalent_def by auto
+
 lemma on_tripleD[dest]:
   assumes "((l1,v1,v2),(l2,v3,v4)) \<in> on_triple R"
   shows "l2 = l1" "(v1,v3)\<in> R" "(v2,v4) \<in> R"
@@ -211,14 +215,14 @@ qed auto
 
 lemma subgraph_subset:
   assumes "subgraph G\<^sub>1 G\<^sub>2"
-  shows "vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2 \<and> edges (restrict G\<^sub>1) \<subseteq> edges G\<^sub>2"
+  shows "vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2" "edges (restrict G\<^sub>1) \<subseteq> edges G\<^sub>2"
 proof -
   have vrt:"Id_on (vertices G\<^sub>1) `` vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2"
     and ep:"edge_preserving (Id_on (vertices G\<^sub>1)) (edges G\<^sub>1) (edges G\<^sub>2)"
     using assms unfolding is_graph_homomorphism_def by auto
   hence "edges (restrict G\<^sub>1) \<subseteq> edges G\<^sub>2"
     using assms unfolding edge_preserving_simp by auto
-  thus "vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2 \<and> edges (restrict G\<^sub>1) \<subseteq> edges G\<^sub>2"
+  thus "vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2" "edges (restrict G\<^sub>1) \<subseteq> edges G\<^sub>2"
     using vrt by auto
 qed
 
