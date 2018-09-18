@@ -8,6 +8,8 @@ lemma range_dom[simp]:
 
 definition univalent where "univalent R = (\<forall> x y z. (x,y)\<in> R \<and> (x,z)\<in> R \<longrightarrow> z = y)"
 
+lemma univalent_empty [intro]: "univalent {}" unfolding univalent_def by auto
+
 lemma univalent_char : "univalent R \<longleftrightarrow> converse R O R \<subseteq> Id"
   unfolding univalent_def by auto
 

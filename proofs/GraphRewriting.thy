@@ -336,7 +336,7 @@ proof(standard,goal_cases)
   with u show ?case by auto
 qed
 
-lemma copreserving_conflict_free:
+lemma copreserving_conflict_free: (* lemma 3 *)
   assumes "is_graph_homomorphism G\<^sub>1 G\<^sub>2 f"
           "conflict_free K G\<^sub>2"
   shows "conflict_free K G\<^sub>1"

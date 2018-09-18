@@ -51,7 +51,7 @@ qed
 type_synonym ('l,'v) Graph_PreRule = "('l, 'v) labeled_graph \<times> ('l, 'v) labeled_graph"
 
 abbreviation graph_rule :: "('l,'v) Graph_PreRule \<Rightarrow> bool" where
-"graph_rule R \<equiv> subgraph (fst R) (snd R) \<and> finite (vertices (snd R)) \<and> finite (edges (snd R))"
+"graph_rule R \<equiv> subgraph (fst R) (snd R) \<and> finite_graph (snd R)"
 
 definition set_of_graph_rules :: "('l,'v) Graph_PreRule set \<Rightarrow> bool" where
 "set_of_graph_rules Rs \<equiv> \<forall> R\<in>Rs. graph_rule R"

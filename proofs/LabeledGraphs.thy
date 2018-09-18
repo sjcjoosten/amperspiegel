@@ -8,6 +8,12 @@ datatype ('l,'v) labeled_graph
 fun restrict where
   "restrict (LG e v) = LG {(l,v1,v2) \<in> e. v1 \<in> v \<and> v2 \<in> v } v"
 
+abbreviation graph where (* is the thing a graph? *)
+  "graph X \<equiv> X = restrict X"
+
+abbreviation finite_graph where
+  "finite_graph X \<equiv> graph X \<and> finite (vertices X) \<and> finite (edges X)"
+
 lemma restrict_idemp[simp]:
   "restrict (restrict x) = restrict x"
 by(cases x,auto)
