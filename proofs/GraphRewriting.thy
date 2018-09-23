@@ -9,7 +9,7 @@ begin
 
 locale labeled_graph_category =
   fixes graphtype :: "('l, 'v) labeled_graph \<Rightarrow> bool"
-  assumes graphtype[dest!]:"graphtype G \<Longrightarrow> G = restrict G"
+  assumes graphtype[dest!]:"graphtype G \<Longrightarrow> graph G"
 begin
 
   abbreviation "Graph_Cat \<equiv> Category is_graph_homomorphism graphtype (\<lambda> _ _ _ x y. x O y) (Id_on o vertices)"
@@ -336,7 +336,7 @@ proof(standard,goal_cases)
   with u show ?case by auto
 qed
 
-lemma copreserving_conflict_free: (* lemma 3 *)
+lemma copreserving_conflict_free:
   assumes "is_graph_homomorphism G\<^sub>1 G\<^sub>2 f"
           "conflict_free K G\<^sub>2"
   shows "conflict_free K G\<^sub>1"

@@ -11,7 +11,7 @@ datatype 'v allegorical_term
  = A_Int "'v allegorical_term" "'v allegorical_term"
  | A_Cmp "'v allegorical_term" "'v allegorical_term"
  | A_Cnv "'v allegorical_term"
- | A_Lbl 'v
+ | A_Lbl (a_lbl : 'v)
 
 datatype 'v Standard_Constant = S_Top | S_Bot | S_Idt | S_Const 'v
 

@@ -238,5 +238,34 @@ proof
   thus "extensible R (chain_sup S) f" using fair_chainD(1)[OF assms] by auto
 qed (fact fair_chainD[OF assms])
 
+(* Again: the paper allows for arbitrary types in the quantifier..
+          the type used here should suffice (and we cannot quantify over types anyways) *)
+definition pushout_step ::
+    "('a, 'c) Graph_PreRule \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> bool" where
+"pushout_step R G\<^sub>1 G\<^sub>2 \<equiv> graph_rule R \<and> subgraph G\<^sub>1 G\<^sub>2 \<and> 
+  (\<exists> f\<^sub>1 f\<^sub>2. is_graph_homomorphism (fst R) G\<^sub>1 f\<^sub>1 \<and>
+           is_graph_homomorphism (snd R) G\<^sub>2 f\<^sub>2 \<and>
+           f\<^sub>1 \<subseteq> f\<^sub>2 \<and>
+           (\<forall> h\<^sub>1 h\<^sub>2 G::('a, 'b) labeled_graph.
+             (is_graph_homomorphism (snd R) G h\<^sub>1 \<and>
+              is_graph_homomorphism G\<^sub>1 G h\<^sub>2 \<and>
+              f\<^sub>1 O h\<^sub>2 \<subseteq> h\<^sub>1) \<longrightarrow> (\<exists> h. is_graph_homomorphism G\<^sub>2 G h \<and> h\<^sub>2 \<subseteq> h))
+  )"
+
+definition Simple_WPC ::
+    "(('a, 'b) Graph_PreRule) set \<Rightarrow> (('a, 'd) graph_seq) \<Rightarrow> bool" where
+"Simple_WPC Rs S \<equiv> set_of_graph_rules Rs \<and> (\<forall> i. \<exists> R \<in> Rs. pushout_step R (S i) (S (i + 1)))"
+
+(* I split up the hard case into two.
+   This makes the easy part of the hard case a bit harder,
+   but hopefully the overall becomes easier to deal with. *)
+inductive WPC ::
+    "(('a, 'b) Graph_PreRule) set \<Rightarrow> (('a, 'd) graph_seq) \<Rightarrow> bool"
+  where
+    wpc_simpl [simp, intro]: "Simple_WPC Rs S \<Longrightarrow> WPC Rs S"
+  | wpc_empty [simp, intro]: "chain S \<Longrightarrow> (\<And> i. S i = chain_sup S) \<Longrightarrow> WPC Rs S"
+  | wpc_combo [simp, intro]: "(\<And> i. \<exists> S'. S' 0 = S i \<and> chain_sup S' = S (Suc i) \<and> WPC Rs S') \<Longrightarrow> WPC Rs S"
+
+
 
 end

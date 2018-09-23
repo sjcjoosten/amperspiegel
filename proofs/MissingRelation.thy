@@ -6,7 +6,31 @@ lemma range_dom[simp]:
   "f `` Domain f = Range f"
   "converse f `` Range f = Domain f" by auto
 
+lemma Gr_Image_is_image[simp]:
+  shows "BNF_Def.Gr A f `` B = f ` (A \<inter> B)"
+  unfolding BNF_Def.Gr_def by auto
+
 definition univalent where "univalent R = (\<forall> x y z. (x,y)\<in> R \<and> (x,z)\<in> R \<longrightarrow> z = y)"
+
+lemma Gr_univalent[intro]:
+  shows "univalent (BNF_Def.Gr A f)"
+  unfolding BNF_Def.Gr_def univalent_def by auto
+
+lemma Gr_domain[simp]:
+  shows "Domain (BNF_Def.Gr A f) = A"
+    and "Domain (BNF_Def.Gr A id O R) = A \<inter> Domain R" unfolding BNF_Def.Gr_def by auto
+
+lemma Id_on_domain[simp]:
+  "Domain (Id_on A O f) = A \<inter> Domain f" by auto
+
+lemma Id_on_int:
+  "Id_on A O f = (A \<times> UNIV) \<inter> f" by auto
+
+lemma Gr_range[simp]:
+  shows "Range (BNF_Def.Gr A f) = f ` A" unfolding BNF_Def.Gr_def by auto
+
+lemma tuple_disj[simp]:
+  shows "{y. y = x \<or> y = z} = {x,z}" by auto
 
 lemma univalent_empty [intro]: "univalent {}" unfolding univalent_def by auto
 
