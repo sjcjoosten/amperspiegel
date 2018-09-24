@@ -75,6 +75,15 @@ next
   then show ?case by auto
 qed auto
 
+lemma inv_tr_card_min:
+  assumes "inv_translation r"
+  shows "card r \<ge> 2" 
+proof -
+  note [simp] = inv_translation_def
+  have "{0..<x} = r \<Longrightarrow> 2 \<le> x \<longleftrightarrow> 0 \<in> r \<and> 1 \<in> r" for x by auto
+  thus ge2:"card r\<ge>2" using assms by auto
+qed
+
 lemma verts_in_translation[intro]:
 "inv_translation (vertices (translation X))"
 proof(induct X)
@@ -83,9 +92,8 @@ proof(induct X)
     note [simp] = inv_translation_def
     from assms have a1:"finite r"
       by (intro card_ge_0_finite) auto
-    have "{0..<x} = r \<Longrightarrow> 2 \<le> x \<longleftrightarrow> 0 \<in> r \<and> 1 \<in> r" for x by auto
-    hence ge2:"card r\<ge>2" using assms by auto
     have [simp]:"{0..<Suc x} = {0..<x} \<union> {x}" for x by auto
+    note ge2 = inv_tr_card_min[OF assms]
     from ge2 assms have r0:"r \<inter> {0} = {0}" "r \<inter> {x. x < 2} = {0,1}" by auto
     have [intro!]:"\<And>x. x \<in> r \<Longrightarrow> x < card r"
      and g6:"\<And>x. x < card r \<longleftrightarrow> x \<in> r"
@@ -166,17 +174,127 @@ lemma translation: (* Lemma 5 *)
   shows "(x, y) \<in> :G:\<lbrakk>e\<rbrakk> \<longleftrightarrow> (\<exists> f. is_graph_homomorphism (translation e) G f \<and> (0,x) \<in> f \<and> (1,y) \<in> f)"
 (is "?lhs = ?rhs")
 proof
+  have [dest]:"y + card (vertices (translation (e::'a allegorical_term))) - 2 < 2 \<Longrightarrow> (y::nat) < 2"
+    for y e using inv_tr_card_min[OF verts_in_translation,of e] by linarith
+  {  fix y fix e::"'a allegorical_term"
+     assume "y + card (vertices (translation e)) - 2 \<in> vertices (translation e)"
+     hence "y + card (vertices (translation e)) - 2 < card (vertices (translation e))"
+       using verts_in_translation[of e,unfolded inv_translation_def] by auto
+     hence "y < 2" using inv_tr_card_min[OF verts_in_translation,of e] by auto
+  } note [dest!] = this
+  {  fix y fix e::"'a allegorical_term"
+     assume "y + card (vertices (translation e)) - Suc 0 \<in> vertices (translation e)"
+     hence "y + card (vertices (translation e)) - Suc 0 \<in> {0..<card (vertices (translation e))}"
+       using verts_in_translation[of e,unfolded inv_translation_def] by simp
+     hence "y = 0" using inv_tr_card_min[OF verts_in_translation,of e] by auto
+   } note [dest!] = this
+   {  fix y fix e::"'a allegorical_term"
+     assume "card (vertices (translation e)) \<in> vertices (translation e)"
+     hence "card (vertices (translation e)) \<in> {0..<card (vertices (translation e))}"
+       using verts_in_translation[of e,unfolded inv_translation_def] by auto
+     hence "False" by auto
+   } note [dest!] = this
+  {  fix y fix e::"'a allegorical_term"
+     assume "y + card (vertices (translation e)) \<le> Suc 0"
+     hence " card (vertices (translation e)) \<le> Suc 0" by auto
+     hence "False" using inv_tr_card_min[OF verts_in_translation[of e]] by auto
+   } note [dest!] = this
   assume ?lhs
   then show ?rhs
   proof(induct e arbitrary:x y)
-    case (A_Int e1 e2)
-    then show ?case sorry
+    case (A_Int e\<^sub>1 e\<^sub>2)
+    from A_Int have assm:"(x, y) \<in> :G:\<lbrakk>e\<^sub>1\<rbrakk>" "(x, y) \<in> :G:\<lbrakk>e\<^sub>2\<rbrakk>" by auto
+    from A_Int(1)[OF assm(1)] obtain f\<^sub>1 where
+      f\<^sub>1:"is_graph_homomorphism (translation e\<^sub>1) G f\<^sub>1" "(0, x) \<in> f\<^sub>1" "(1, y) \<in> f\<^sub>1" by auto
+    from A_Int(2)[OF assm(2)] obtain f\<^sub>2 where
+      f\<^sub>2:"is_graph_homomorphism (translation e\<^sub>2) G f\<^sub>2" "(0, x) \<in> f\<^sub>2" "(1, y) \<in> f\<^sub>2" by auto
+    from f\<^sub>1 f\<^sub>2 have v:"Domain f\<^sub>1 = vertices (translation e\<^sub>1)" "Domain f\<^sub>2 = vertices (translation e\<^sub>2)"
+      unfolding is_graph_homomorphism_def by auto
+    let ?f\<^sub>2 = "(\<lambda> x. if x < 2 then x else x + card (vertices (translation e\<^sub>1)) - 2)"
+    let ?tr\<^sub>2 = "on_graph (translation e\<^sub>2) ?f\<^sub>2"
+    have inj2:"inj_on ?f\<^sub>2 (vertices (translation e\<^sub>2))" unfolding inj_on_def by auto
+    have "(0,0) \<in> ?tr\<^sub>2\<inverse>" "(1,1) \<in> ?tr\<^sub>2\<inverse>" by auto
+    from this[THEN relcompI] f\<^sub>2(2,3) 
+    have zero_one:"(0,x) \<in> ?tr\<^sub>2\<inverse> O f\<^sub>2"
+                  "(1,y) \<in> ?tr\<^sub>2\<inverse> O f\<^sub>2" by auto
+    { fix yb zb
+      assume "(yb + card (vertices (translation e\<^sub>1)) - 2, zb) \<in> f\<^sub>1"
+      hence "yb + card (vertices (translation e\<^sub>1)) - 2 \<in> vertices (translation e\<^sub>1)" using v by auto
+    } note in_f[dest!] = this
+    have d_a:"Domain f\<^sub>1 \<inter>  Domain (?tr\<^sub>2\<inverse> O f\<^sub>2) = {0,1}"
+      using zero_one by (auto simp:v)
+    have d_b:"Domain (f\<^sub>1 \<inter> ?tr\<^sub>2\<inverse> O f\<^sub>2) = {0,1}"
+      using zero_one f\<^sub>1(2,3) by auto
+    note cmp2 = is_graph_homomorphism_composes[OF graph_homo_inv[OF translation_graph inj2] f\<^sub>2(1)]
+    have "is_graph_homomorphism (translation (A_Int e\<^sub>1 e\<^sub>2)) G (f\<^sub>1 \<union> ?tr\<^sub>2\<inverse> O f\<^sub>2)"
+      using graph_homo_union[OF f\<^sub>1(1) cmp2 d_a[folded d_b]]
+      by (auto simp:Let_def)
+    thus ?case using zero_one[THEN UnI2[of _ _ "f\<^sub>1"]] by blast
   next
-    case (A_Cmp e1 e2)
-    then show ?case sorry
+    case (A_Cmp e\<^sub>1 e\<^sub>2)
+    from A_Cmp obtain z where assm:"(x, z) \<in> :G:\<lbrakk>e\<^sub>1\<rbrakk>" "(z, y) \<in> :G:\<lbrakk>e\<^sub>2\<rbrakk>" by auto
+    from A_Cmp(1)[OF assm(1)] obtain f\<^sub>1 where
+      f\<^sub>1:"is_graph_homomorphism (translation e\<^sub>1) G f\<^sub>1" "(0, x) \<in> f\<^sub>1" "(1, z) \<in> f\<^sub>1" by auto
+    from A_Cmp(2)[OF assm(2)] obtain f\<^sub>2 where
+      f\<^sub>2:"is_graph_homomorphism (translation e\<^sub>2) G f\<^sub>2" "(0, z) \<in> f\<^sub>2" "(1, y) \<in> f\<^sub>2" by auto
+    from f\<^sub>1 f\<^sub>2 have v:"Domain f\<^sub>1 = vertices (translation e\<^sub>1)" "Domain f\<^sub>2 = vertices (translation e\<^sub>2)"
+      unfolding is_graph_homomorphism_def by auto
+    let ?f\<^sub>1 = "(\<lambda> x. if x=0 then 0 else x+card(vertices (translation e\<^sub>2))-1)"
+    let ?f\<^sub>2 = "(\<lambda> x. if x=0 then card (vertices (translation e\<^sub>2)) else x)"
+    let ?tr\<^sub>1 = "on_graph (translation e\<^sub>1) ?f\<^sub>1"
+    let ?tr\<^sub>2 = "on_graph (translation e\<^sub>2) ?f\<^sub>2"
+    have inj1:"inj_on ?f\<^sub>1 (vertices (translation e\<^sub>1))" unfolding inj_on_def by auto
+    have inj2:"inj_on ?f\<^sub>2 (vertices (translation e\<^sub>2))" unfolding inj_on_def by auto
+    have "(card (vertices (translation e\<^sub>2)),0) \<in> ?tr\<^sub>2\<inverse>" "(1,1) \<in> ?tr\<^sub>2\<inverse>"
+         "(0,0) \<in> ?tr\<^sub>1\<inverse>" "(card (vertices (translation e\<^sub>2)),1) \<in> ?tr\<^sub>1\<inverse>" by auto
+    from this[THEN relcompI] f\<^sub>2(2,3) f\<^sub>1(2,3) 
+    have zero_one:"(card (vertices (translation e\<^sub>2)),z) \<in> ?tr\<^sub>1\<inverse> O f\<^sub>1"
+                  "(0,x) \<in> ?tr\<^sub>1\<inverse> O f\<^sub>1"
+                  "(card (vertices (translation e\<^sub>2)),z) \<in> ?tr\<^sub>2\<inverse> O f\<^sub>2"
+                  "(1,y) \<in> ?tr\<^sub>2\<inverse> O f\<^sub>2" by auto
+    have [simp]:
+        "ye \<in> vertices (translation e\<^sub>2) \<Longrightarrow>
+       (if ye = 0 then card (vertices (translation e\<^sub>2)) else ye) =
+       (if yd = 0 then 0 else yd + card (vertices (translation e\<^sub>2)) - 1) \<longleftrightarrow> ye = 0 \<and> yd = 1"
+        for ye yd using v inv_tr_card_min[OF verts_in_translation,of "e\<^sub>2"]
+        by(cases "ye=0";cases "yd=0";auto)
+    have d_a:"Domain (?tr\<^sub>1\<inverse> O f\<^sub>1) \<inter>  Domain (?tr\<^sub>2\<inverse> O f\<^sub>2) = {card (vertices (translation e\<^sub>2))}"
+      using zero_one by (auto simp:v)
+    have d_b:"Domain (?tr\<^sub>1\<inverse> O f\<^sub>1 \<inter> ?tr\<^sub>2\<inverse> O f\<^sub>2) = {card (vertices (translation e\<^sub>2))}"
+      using zero_one f\<^sub>1(2,3) by auto
+    note cmp1 = is_graph_homomorphism_composes[OF graph_homo_inv[OF translation_graph inj1] f\<^sub>1(1)]
+    note cmp2 = is_graph_homomorphism_composes[OF graph_homo_inv[OF translation_graph inj2] f\<^sub>2(1)]
+    have "is_graph_homomorphism (translation (A_Cmp e\<^sub>1 e\<^sub>2)) G (?tr\<^sub>1\<inverse> O f\<^sub>1 \<union> ?tr\<^sub>2\<inverse> O f\<^sub>2)"
+      unfolding Let_def translation.simps
+      by (rule graph_homo_union[OF cmp1 cmp2 d_a[folded d_b]])
+    thus ?case using zero_one by blast
   next
     case (A_Cnv e)
-    then show ?case sorry
+    let ?G = "translation (A_Cnv e)"
+    from A_Cnv obtain f where
+      f:"is_graph_homomorphism (translation e) G f" "(0, y) \<in> f" "(1, x) \<in> f" by auto
+    hence v:"Domain f = vertices (translation e)"
+      unfolding is_graph_homomorphism_def by auto
+    define n where "n \<equiv> card (vertices (translation e))"
+    from verts_in_translation f inv_tr_card_min[OF verts_in_translation] v(1)
+    have n:"vertices (translation e) = {0..<n}" "{0..<n} \<inter> {x. x < 2} = {1,0}"
+      "Domain f = {0..<n}" "{0..<n} \<inter> {x. \<not> x < 2} = {2..<n}"
+      and n2: "n \<ge> 2"
+      by (auto simp:n_def inv_translation_def)
+    then have [simp]:"insert (Suc 0) {2..<n} = {1..<n}"
+      "insert 0 {Suc 0..<n} = {0..<n}" by auto
+    let ?f = "on_graph ?G (\<lambda> x. if x < 2 then 1 - x else x)"
+    have h:"is_graph_homomorphism ?G G (?f O f)"
+    proof(rule is_graph_homomorphism_composes[OF _ f(1)],standard)
+      show "vertices ?G = Domain ?f"
+        by (auto simp:Domain_int_univ)
+      show "?f `` vertices ?G \<subseteq> vertices (translation e)" using n2 by auto
+      show "univalent ?f" by auto
+      show "edge_preserving ?f (edges (translation (A_Cnv e))) (edges (translation e))"
+        by (rule edge_preserving_on_graphI,auto simp: BNF_Def.Gr_def)
+    qed (auto intro:assms)
+    have xy:"(0, x) \<in> ?f O f" "(1, y) \<in> ?f O f" using n2 f(2,3) n(1,2) by auto
+    with h show ?case by auto
   next
     case (A_Lbl l)
     let ?f = "{(0,x),(1,y)}"

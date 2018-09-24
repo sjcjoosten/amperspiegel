@@ -12,6 +12,35 @@ lemma Gr_Image_is_image[simp]:
 
 definition univalent where "univalent R = (\<forall> x y z. (x,y)\<in> R \<and> (x,z)\<in> R \<longrightarrow> z = y)"
 
+lemma univalent_inter[intro]:
+  assumes "univalent f_a" "univalent f_b"
+  shows "univalent (f_a \<inter> f_b)"
+  using assms unfolding univalent_def by auto
+
+lemma univalent_union[intro]:
+  assumes "univalent f_a" "univalent f_b" "Domain f_a \<inter> Domain f_b = Domain (f_a \<inter> f_b)"
+  shows "univalent (f_a \<union> f_b)"
+  unfolding univalent_def
+proof(clarify,rule ccontr)
+  from assms have uni:"univalent (f_a \<inter> f_b)" by auto
+  fix x y z
+  assume a:"(x, y) \<in> f_a \<union> f_b" "(x, z) \<in> f_a \<union> f_b" "z \<noteq> y"
+  show False 
+  proof(cases "(x,y) \<in> f_a")
+    case True
+    hence fb:"(x,z)\<in>f_b" using a assms[unfolded univalent_def] by auto
+    hence "x \<in> (Domain f_a \<inter> Domain f_b)" using True by auto
+    with assms uni fb True have "z = y" by (metis DomainE IntD1 IntD2 univalent_def)
+    with a show False by auto
+  next
+    case False
+    hence fb:"(x,z)\<in>f_a" "(x,y) \<in> f_b" using a assms[unfolded univalent_def] by auto
+    hence "x \<in> (Domain f_a \<inter> Domain f_b)" by auto
+    with assms uni fb have "z = y" by (metis DomainE IntD1 IntD2 univalent_def)
+    with a show False by auto
+  qed
+qed
+
 lemma Gr_univalent[intro]:
   shows "univalent (BNF_Def.Gr A f)"
   unfolding BNF_Def.Gr_def univalent_def by auto
@@ -20,11 +49,18 @@ lemma Gr_domain[simp]:
   shows "Domain (BNF_Def.Gr A f) = A"
     and "Domain (BNF_Def.Gr A id O R) = A \<inter> Domain R" unfolding BNF_Def.Gr_def by auto
 
+lemma in_Gr[simp]:
+  shows "(x,y) \<in> BNF_Def.Gr A f \<longleftrightarrow> x \<in> A \<and> f x = y"
+  unfolding BNF_Def.Gr_def by auto
+
 lemma Id_on_domain[simp]:
   "Domain (Id_on A O f) = A \<inter> Domain f" by auto
 
 lemma Id_on_int:
   "Id_on A O f = (A \<times> UNIV) \<inter> f" by auto
+
+lemma Domain_int_univ:
+  "Domain (A \<times> UNIV \<inter> f) = A \<inter> Domain f" by auto
 
 lemma Gr_range[simp]:
   shows "Range (BNF_Def.Gr A f) = f ` A" unfolding BNF_Def.Gr_def by auto

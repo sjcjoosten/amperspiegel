@@ -76,7 +76,7 @@ lemma edge_preserving_atomic:
   shows "(k, v1', v2') \<in> e2"
 using assms unfolding edge_preserving_def by auto
 
-lemma edge_preserving[intro]:
+lemma edge_preservingI[intro]:
   assumes "on_triple R `` E \<subseteq> G"
   shows "edge_preserving R E G"
   unfolding edge_preserving_def proof(clarify,goal_cases)
@@ -84,7 +84,7 @@ lemma edge_preserving[intro]:
   thus ?case by (intro assms[THEN subsetD]) (auto simp:on_triple_def)
   qed
 
-lemma edge_preserving_simp:
+lemma edge_preserving:
   shows "edge_preserving R E G \<longleftrightarrow> on_triple R `` E \<subseteq> G"
 proof
   assume "edge_preserving R E G"
@@ -97,6 +97,11 @@ qed auto
 lemma edge_preserving_subset:
   assumes "R\<^sub>1 \<subseteq> R\<^sub>2" "E\<^sub>1 \<subseteq> E\<^sub>2" "edge_preserving R\<^sub>2 E\<^sub>2 G"
   shows "edge_preserving R\<^sub>1 E\<^sub>1 G"
+  using assms unfolding edge_preserving_def by blast
+
+lemma edge_preserving_unionI[intro]:
+  assumes "edge_preserving f A G" "edge_preserving f B G"
+  shows "edge_preserving f (A \<union> B) G"
   using assms unfolding edge_preserving_def by blast
 
 lemma compose_preserves_edge_preserving:
@@ -257,6 +262,21 @@ lemma graph_homo[intro!]:
   shows "is_graph_homomorphism G (map_graph_fn G f) (on_graph G f)"
   using assms unfolding map_graph_is_homo_simp BNF_Def.Gr_def univalent_def by auto
 
+lemma graph_homo_inv[intro!]:
+  assumes "graph G" "inj_on f (vertices G)"
+  shows "is_graph_homomorphism (map_graph_fn G f) G (converse (on_graph G f))"
+proof
+  show "univalent ((on_graph G f)\<inverse>)" using assms(2)
+    unfolding univalent_def BNF_Def.Gr_def inj_on_def by auto
+  show "edge_preserving ((on_graph G f)\<inverse>) (edges (map_graph_fn G f)) (edges G)"
+    using assms unfolding edge_preserving inj_on_def by auto auto
+qed (insert assms(1),auto)
+
+lemma edge_preserving_on_graphI[intro]:
+  assumes "\<And> l x y. (l,x,y)\<in>edges X \<Longrightarrow> x\<in>vertices X \<Longrightarrow> y \<in> vertices X \<Longrightarrow> (l,f x,f y) \<in> Y"
+  shows "edge_preserving (on_graph X f) (edges X) Y"
+  using assms unfolding edge_preserving_def BNF_Def.Gr_def by auto
+
 lemma subgraph_subset:
   assumes "subgraph G\<^sub>1 G\<^sub>2"
   shows "vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2" "edges (restrict G\<^sub>1) \<subseteq> edges G\<^sub>2"
@@ -265,7 +285,7 @@ proof -
     and ep:"edge_preserving (Id_on (vertices G\<^sub>1)) (edges G\<^sub>1) (edges G\<^sub>2)"
     using assms unfolding is_graph_homomorphism_def by auto
   hence "edges (restrict G\<^sub>1) \<subseteq> edges G\<^sub>2"
-    using assms unfolding edge_preserving_simp by auto
+    using assms unfolding edge_preserving by auto
   thus "vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2" "edges (restrict G\<^sub>1) \<subseteq> edges G\<^sub>2"
     using vrt by auto
 qed
@@ -287,7 +307,7 @@ next
     and ep:"edge_preserving (Id_on (vertices G\<^sub>1)) (edges G\<^sub>1) (edges G\<^sub>2)"
     unfolding is_graph_homomorphism_def by auto
   hence "edges G\<^sub>1 \<subseteq> edges G\<^sub>2"
-    using assms unfolding edge_preserving_simp by auto
+    using assms unfolding edge_preserving by auto
   thus "vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2 \<and> edges G\<^sub>1 \<subseteq> edges G\<^sub>2"
     using vrt by auto
 qed
@@ -374,15 +394,15 @@ proof
   hence "edge_preserving (Id_on (vertices ?m)) (edges ?m) (edges G\<^sub>2)"
     unfolding is_graph_homomorphism_def by auto
   hence "on_triple (f O Id_on (f `` vertices G\<^sub>1)) `` edges G\<^sub>1 \<subseteq> edges G\<^sub>2"  (* rewriting peak *)
-    unfolding relcomp_Image edge_preserving_simp map_graph_selectors relcomp_on_triple.
+    unfolding relcomp_Image edge_preserving map_graph_selectors relcomp_on_triple.
   hence "edge_preserving f (edges G\<^sub>1) (edges G\<^sub>2)"
-    unfolding edge_preserving_simp f_id.
+    unfolding edge_preserving f_id.
   thus ?lhs
     using sg assms unfolding is_graph_homomorphism_def
     by auto next
   assume ih:?lhs
   hence "vertices G\<^sub>1 = Domain f \<and> univalent f \<and> G\<^sub>1 = restrict G\<^sub>1 \<and> subgraph (map_graph f G\<^sub>1) G\<^sub>2"
-    unfolding is_graph_homomorphism_def edge_preserving_simp
+    unfolding is_graph_homomorphism_def edge_preserving
     by auto
   thus ?rhs unfolding subgraph_def by auto
 qed
@@ -391,7 +411,42 @@ lemma graph_homo_union_id:
 assumes "is_graph_homomorphism (graph_union A B) G f"
 shows "graph A \<Longrightarrow> is_graph_homomorphism A G (Id_on (vertices A) O f)"
       "graph B \<Longrightarrow> is_graph_homomorphism B G (Id_on (vertices B) O f)"
-  using assms unfolding is_graph_homomorphism_def 
-  by (auto intro!:edge_preserving dest:edge_preserving_atomic)
+  using assms unfolding is_graph_homomorphism_def
+  by (auto intro!:edge_preservingI dest:edge_preserving_atomic)
+
+lemma graph_homo_union[intro]:
+  assumes
+   "is_graph_homomorphism A G f_a"
+   "is_graph_homomorphism B G f_b"
+   "Domain f_a \<inter> Domain f_b = Domain (f_a \<inter> f_b)"
+  shows "is_graph_homomorphism (graph_union A B) G (f_a \<union> f_b)"
+proof
+  have v0:"f_a `` vertices A \<subseteq> vertices G" "f_b `` vertices B \<subseteq> vertices G"
+          "vertices A = Domain f_a" "vertices B = Domain f_b"
+          "graph A" "graph B"
+          "univalent f_a" "univalent f_b"
+          "edge_preserving f_a (edges A) (edges G)"
+          "edge_preserving f_b (edges B) (edges G)"
+    using assms(1,2) unfolding is_graph_homomorphism_def by blast+
+  hence v: "f_a `` vertices (graph_union A B) \<subseteq> vertices G"
+           "f_b `` vertices (graph_union A B) \<subseteq> vertices G" by auto
+  show uni:"univalent (f_a \<union> f_b)" using assms(3) v0 by auto
+  show "(f_a \<union> f_b) `` vertices (graph_union A B) \<subseteq> vertices G" using v by auto
+  have f_a:"Id_on (vertices A) O (f_a \<union> f_b) = f_a"
+        using uni v0(3)
+        by (cases A,auto simp:univalent_def on_triple_def Image_def)
+  have onA:"on_triple (f_a \<union> f_b) `` edges A = on_triple (Id_on (vertices A) O (f_a \<union> f_b)) `` edges A"
+    unfolding relcomp_on_triple relcomp_Image on_triple_ID_is_restrict v0(5)[symmetric] ..
+  have f_b:"Id_on (vertices B) O (f_a \<union> f_b) = f_b"
+        using uni v0(4) unfolding Un_commute[of f_a _]
+        by (cases B,auto simp:univalent_def on_triple_def Image_def)
+  have onB:"on_triple (f_a \<union> f_b) `` edges B = on_triple (Id_on (vertices B) O (f_a \<union> f_b)) `` edges B"
+    unfolding relcomp_on_triple relcomp_Image on_triple_ID_is_restrict v0(6)[symmetric] ..
+  have "edge_preserving (f_a \<union> f_b) (edges A) (edges G)"
+       "edge_preserving (f_a \<union> f_b) (edges B) (edges G)"
+    using v0(9,10) unfolding edge_preserving onA[unfolded f_a] onB[unfolded f_b] by auto
+  thus "edge_preserving (f_a \<union> f_b) (edges (graph_union A B)) (edges G)"
+    by auto
+qed (insert assms[unfolded is_graph_homomorphism_def],auto)
 
 end

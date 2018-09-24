@@ -193,7 +193,7 @@ lemma find_graph_occurence:
 proof -
   have [simp]:"restrict (S i) = S i" for i
     using chain[OF assms(1),unfolded subgraph_def,of i i] by auto
-  from assms[unfolded is_graph_homomorphism_def edge_preserving_simp labeled_graph.sel]
+  from assms[unfolded is_graph_homomorphism_def edge_preserving labeled_graph.sel]
   have u:"univalent f" 
    and e:"on_triple f `` E \<subseteq> edges (chain_sup S)"
    and v:"f `` V \<subseteq> vertices (chain_sup S)"
@@ -209,7 +209,7 @@ proof -
     using i j subgraph_subset(2)[OF sg(1)] subgraph_subset(1)[OF sg(2)] by auto
   have "is_graph_homomorphism (LG E V) (S (max i j)) f"
   proof
-    from assms[unfolded is_graph_homomorphism_def edge_preserving_simp labeled_graph.sel] e v
+    from assms[unfolded is_graph_homomorphism_def edge_preserving labeled_graph.sel] e v
     show "vertices (LG E V) = Domain f"
      and "univalent f"
      and "LG E V = restrict (LG E V)"
