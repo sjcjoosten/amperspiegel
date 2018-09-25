@@ -169,6 +169,73 @@ lemma graph_rule_translation[intro]: (* remark at the end of Def 15 *)
         translation_graph[of X] translation_graph[of "A_Int X Y"]
   by (auto simp:Let_def subgraph_def2)
 
+lemma translation_right_to_left:
+  assumes f:"is_graph_homomorphism (translation e) G f" "(0, x) \<in> f" "(1, y) \<in> f"
+  shows "(x, y) \<in> :G:\<lbrakk>e\<rbrakk>"
+  using f
+proof(induct e arbitrary:f x y)
+case (A_Int e\<^sub>1 e\<^sub>2 f x y)
+  let ?f\<^sub>1 = "id"
+  let ?f\<^sub>2 = "(\<lambda> x. if x < 2 then x else x + card (vertices (translation e\<^sub>1)) - 2)"
+  let ?G\<^sub>1 = "translation e\<^sub>1"
+  let ?G\<^sub>2 = "translation e\<^sub>2"
+  have f1:"(0, x) \<in> on_graph ?G\<^sub>1 ?f\<^sub>1 O f" "(1, y) \<in> on_graph ?G\<^sub>1 ?f\<^sub>1 O f"
+   and f2:"(0, x) \<in> on_graph ?G\<^sub>2 ?f\<^sub>2 O f" "(1, y) \<in> on_graph ?G\<^sub>2 ?f\<^sub>2 O f"
+    using A_Int.prems(2,3) by (auto simp:BNF_Def.Gr_def relcomp_def)
+  from A_Int.prems(1)
+  have uni:"is_graph_homomorphism (graph_union ?G\<^sub>1 (map_graph_fn ?G\<^sub>2 ?f\<^sub>2)) G f"
+    by (auto simp:Let_def)
+  from graph_homo_union_id(1)[OF uni translation_graph]
+  have h1:"is_graph_homomorphism ?G\<^sub>1 (translation (A_Int e\<^sub>1 e\<^sub>2)) (on_graph ?G\<^sub>1 id)"
+    by (auto simp:Let_def is_graph_homomorphism_def)
+  have "graph (map_graph_fn ?G\<^sub>2 ?f\<^sub>2)" by auto
+  from graph_homo_union_id(2)[OF uni this]
+  have h2:"is_graph_homomorphism ?G\<^sub>2 (translation (A_Int e\<^sub>1 e\<^sub>2)) (on_graph ?G\<^sub>2 ?f\<^sub>2)"
+    by (auto simp:Let_def is_graph_homomorphism_def)
+  from A_Int.hyps(1)[OF is_graph_homomorphism_composes[OF h1 A_Int.prems(1)] f1]
+       A_Int.hyps(2)[OF is_graph_homomorphism_composes[OF h2 A_Int.prems(1)] f2]
+  show ?case by auto
+next
+  case (A_Cmp e\<^sub>1 e\<^sub>2 f x y)
+  let ?f\<^sub>1 =  "(\<lambda> x. if x=0 then 0 else x+card(vertices (translation e\<^sub>2))-1)"
+  let ?f\<^sub>2 =  "(\<lambda> x. if x=0 then card (vertices (translation e\<^sub>2)) else x)" 
+  let ?G\<^sub>1 = "translation e\<^sub>1"
+  let ?G\<^sub>2 = "translation e\<^sub>2"
+  let ?v = "card (vertices (translation e\<^sub>2))"
+  from A_Cmp.prems(1) have "?v \<in> Domain f" by (auto simp:Let_def is_graph_homomorphism_def)
+  then obtain v where v:"(?v,v) \<in> f" by auto
+  have f1:"(0, x) \<in> on_graph ?G\<^sub>1 ?f\<^sub>1 O f" "(1, v) \<in> on_graph ?G\<^sub>1 ?f\<^sub>1 O f"
+   and f2:"(0, v) \<in> on_graph ?G\<^sub>2 ?f\<^sub>2 O f" "(1, y) \<in> on_graph ?G\<^sub>2 ?f\<^sub>2 O f"
+    using A_Cmp.prems(2,3) v by auto
+  from A_Cmp.prems(1)
+  have uni:"is_graph_homomorphism (graph_union (map_graph_fn ?G\<^sub>1 ?f\<^sub>1) (map_graph_fn ?G\<^sub>2 ?f\<^sub>2)) G f"
+    by (auto simp:Let_def)
+  have "graph (map_graph_fn ?G\<^sub>1 ?f\<^sub>1)" by auto
+  from graph_homo_union_id(1)[OF uni this]
+  have h1:"is_graph_homomorphism ?G\<^sub>1 (translation (A_Cmp e\<^sub>1 e\<^sub>2)) (on_graph ?G\<^sub>1 ?f\<^sub>1)"
+    by (auto simp:Let_def is_graph_homomorphism_def2)
+  have "graph (map_graph_fn ?G\<^sub>2 ?f\<^sub>2)" by auto
+  from graph_homo_union_id(2)[OF uni this]
+  have h2:"is_graph_homomorphism ?G\<^sub>2 (translation (A_Cmp e\<^sub>1 e\<^sub>2)) (on_graph ?G\<^sub>2 ?f\<^sub>2)"
+    by (auto simp:Let_def is_graph_homomorphism_def2)
+  from A_Cmp.hyps(1)[OF is_graph_homomorphism_composes[OF h1 A_Cmp.prems(1)] f1]
+       A_Cmp.hyps(2)[OF is_graph_homomorphism_composes[OF h2 A_Cmp.prems(1)] f2]
+  show ?case by auto
+next
+  case (A_Cnv e f x y)
+  let ?f = "(\<lambda> x. if x < 2 then 1 - x else x)"
+  let ?G = "translation e"
+  have i:"is_graph_homomorphism ?G (map_graph_fn ?G ?f) (on_graph ?G ?f)" using A_Cnv by auto
+  have "(0, y) \<in> on_graph ?G ?f O f" "(1, x) \<in> on_graph ?G ?f O f"
+    using A_Cnv.prems(3,2) by (auto simp:BNF_Def.Gr_def relcomp_def)
+  from A_Cnv.hyps(1)[OF is_graph_homomorphism_composes[OF i] this] A_Cnv.prems(1)
+  show ?case by auto
+next
+case (A_Lbl l f x y)
+  hence "edge_preserving f {(l,0,1)} (edges G)" unfolding is_graph_homomorphism_def by auto
+  with A_Lbl(2,3) show ?case by (auto simp:getRel_def edge_preserving_def)
+qed
+
 lemma translation: (* Lemma 5 *)
   assumes "graph G"
   shows "(x, y) \<in> :G:\<lbrakk>e\<rbrakk> \<longleftrightarrow> (\<exists> f. is_graph_homomorphism (translation e) G f \<and> (0,x) \<in> f \<and> (1,y) \<in> f)"
@@ -304,74 +371,112 @@ proof
       by (auto simp:univalent_def getRel_def on_triple_def Image_def graph_union_def insert_absorb)
     then show ?case by auto
   qed
-next
-  assume ?rhs
-  then obtain f where
-    f:"is_graph_homomorphism (translation e) G f" "(0, x) \<in> f" "(1, y) \<in> f" by blast
-  thus ?lhs
-  proof(induct e arbitrary:f x y)
-  case (A_Int e\<^sub>1 e\<^sub>2 f x y)
-    let ?f\<^sub>1 = "id"
-    let ?f\<^sub>2 = "(\<lambda> x. if x < 2 then x else x + card (vertices (translation e\<^sub>1)) - 2)"
-    let ?G\<^sub>1 = "translation e\<^sub>1"
-    let ?G\<^sub>2 = "translation e\<^sub>2"
-    have f1:"(0, x) \<in> on_graph ?G\<^sub>1 ?f\<^sub>1 O f" "(1, y) \<in> on_graph ?G\<^sub>1 ?f\<^sub>1 O f"
-     and f2:"(0, x) \<in> on_graph ?G\<^sub>2 ?f\<^sub>2 O f" "(1, y) \<in> on_graph ?G\<^sub>2 ?f\<^sub>2 O f"
-      using A_Int.prems(2,3) by (auto simp:BNF_Def.Gr_def relcomp_def)
-    from A_Int.prems(1)
-    have uni:"is_graph_homomorphism (graph_union ?G\<^sub>1 (map_graph_fn ?G\<^sub>2 ?f\<^sub>2)) G f"
-      by (auto simp:Let_def)
-    from graph_homo_union_id(1)[OF uni translation_graph]
-    have h1:"is_graph_homomorphism ?G\<^sub>1 (translation (A_Int e\<^sub>1 e\<^sub>2)) (on_graph ?G\<^sub>1 id)"
-      by (auto simp:Let_def is_graph_homomorphism_def)
-    have "graph (map_graph_fn ?G\<^sub>2 ?f\<^sub>2)" by auto
-    from graph_homo_union_id(2)[OF uni this]
-    have h2:"is_graph_homomorphism ?G\<^sub>2 (translation (A_Int e\<^sub>1 e\<^sub>2)) (on_graph ?G\<^sub>2 ?f\<^sub>2)"
-      by (auto simp:Let_def is_graph_homomorphism_def)
-    from A_Int.hyps(1)[OF is_graph_homomorphism_composes[OF h1 A_Int.prems(1)] f1]
-         A_Int.hyps(2)[OF is_graph_homomorphism_composes[OF h2 A_Int.prems(1)] f2]
-    show ?case by auto
-  next
-    case (A_Cmp e\<^sub>1 e\<^sub>2 f x y)
-    let ?f\<^sub>1 =  "(\<lambda> x. if x=0 then 0 else x+card(vertices (translation e\<^sub>2))-1)"
-    let ?f\<^sub>2 =  "(\<lambda> x. if x=0 then card (vertices (translation e\<^sub>2)) else x)" 
-    let ?G\<^sub>1 = "translation e\<^sub>1"
-    let ?G\<^sub>2 = "translation e\<^sub>2"
-    let ?v = "card (vertices (translation e\<^sub>2))"
-    from A_Cmp.prems(1) have "?v \<in> Domain f" by (auto simp:Let_def is_graph_homomorphism_def)
-    then obtain v where v:"(?v,v) \<in> f" by auto
-    have f1:"(0, x) \<in> on_graph ?G\<^sub>1 ?f\<^sub>1 O f" "(1, v) \<in> on_graph ?G\<^sub>1 ?f\<^sub>1 O f"
-     and f2:"(0, v) \<in> on_graph ?G\<^sub>2 ?f\<^sub>2 O f" "(1, y) \<in> on_graph ?G\<^sub>2 ?f\<^sub>2 O f"
-      using A_Cmp.prems(2,3) v by auto
-    from A_Cmp.prems(1)
-    have uni:"is_graph_homomorphism (graph_union (map_graph_fn ?G\<^sub>1 ?f\<^sub>1) (map_graph_fn ?G\<^sub>2 ?f\<^sub>2)) G f"
-      by (auto simp:Let_def)
-    have "graph (map_graph_fn ?G\<^sub>1 ?f\<^sub>1)" by auto
-    from graph_homo_union_id(1)[OF uni this]
-    have h1:"is_graph_homomorphism ?G\<^sub>1 (translation (A_Cmp e\<^sub>1 e\<^sub>2)) (on_graph ?G\<^sub>1 ?f\<^sub>1)"
-      by (auto simp:Let_def is_graph_homomorphism_def2)
-    have "graph (map_graph_fn ?G\<^sub>2 ?f\<^sub>2)" by auto
-    from graph_homo_union_id(2)[OF uni this]
-    have h2:"is_graph_homomorphism ?G\<^sub>2 (translation (A_Cmp e\<^sub>1 e\<^sub>2)) (on_graph ?G\<^sub>2 ?f\<^sub>2)"
-      by (auto simp:Let_def is_graph_homomorphism_def2)
-    from A_Cmp.hyps(1)[OF is_graph_homomorphism_composes[OF h1 A_Cmp.prems(1)] f1]
-         A_Cmp.hyps(2)[OF is_graph_homomorphism_composes[OF h2 A_Cmp.prems(1)] f2]
-    show ?case by auto
-  next
-    case (A_Cnv e f x y)
-    let ?f = "(\<lambda> x. if x < 2 then 1 - x else x)"
-    let ?G = "translation e"
-    have i:"is_graph_homomorphism ?G (map_graph_fn ?G ?f) (on_graph ?G ?f)" using A_Cnv by auto
-    have "(0, y) \<in> on_graph ?G ?f O f" "(1, x) \<in> on_graph ?G ?f O f"
-      using A_Cnv.prems(3,2) by (auto simp:BNF_Def.Gr_def relcomp_def)
-    from A_Cnv.hyps(1)[OF is_graph_homomorphism_composes[OF i] this] A_Cnv.prems(1)
-    show ?case by auto
-  next
-  case (A_Lbl l f x y)
-    hence "edge_preserving f {(l,0,1)} (edges G)" unfolding is_graph_homomorphism_def by auto
-    with A_Lbl(2,3) show ?case by (auto simp:getRel_def edge_preserving_def)
-  qed
-qed
+qed (insert translation_right_to_left,auto)
 
+lemma holds_maintained: (* Lemma 6 *)
+  assumes "graph G"
+  shows "G \<tturnstile> e\<^sub>L \<sqsubseteq> e\<^sub>R \<longleftrightarrow> maintained (translation e\<^sub>L,translation (A_Int e\<^sub>L e\<^sub>R)) G" (is "?lhs = ?rhs")
+proof
+  assume lhs:?lhs
+  show ?rhs unfolding maintained_def proof(clarify) fix f
+    assume f:"is_graph_homomorphism (fst (translation e\<^sub>L, translation (A_Int e\<^sub>L e\<^sub>R))) G f"
+    then obtain x y where f2:"(0,x) \<in> f" "(1,y) \<in> f" unfolding is_graph_homomorphism_def
+      by (metis DomainE One_nat_def prod.sel(1) verts_in_translation_finite(3,4))
+    with f have "(x,y) \<in> :G:\<lbrakk>fst (e\<^sub>L \<sqsubseteq> e\<^sub>R)\<rbrakk>" unfolding translation[OF assms] by auto
+    with lhs have "(x,y) \<in> :G:\<lbrakk>snd (e\<^sub>L \<sqsubseteq> e\<^sub>R)\<rbrakk>" by auto
+    then obtain g where g: "is_graph_homomorphism (translation (A_Int e\<^sub>L e\<^sub>R)) G g"
+                   and g2: "(0, x) \<in> g" "(1, y) \<in> g" unfolding translation[OF assms] by auto
+    have v:"vertices (translation (A_Int e\<^sub>L e\<^sub>R)) = Domain g"
+           "vertices (translation e\<^sub>L) = Domain f" using f g
+      unfolding is_graph_homomorphism_def by auto
+    from subgraph_subset[of "translation e\<^sub>L" "translation (A_Int e\<^sub>L e\<^sub>R)"]
+         graph_rule_translation[of e\<^sub>L e\<^sub>R]
+    have dom_sub: "Domain f \<subseteq> Domain g"
+      using v unfolding prod.sel by argo
+    hence dom_le:"card (Domain f) \<le> card (Domain g)"
+      by (metis card.infinite card_mono inv_tr_card_min not_less rel_simps(51) v(1) verts_in_translation)
+    have c_f:"card (Domain f) \<ge> 2" using inv_tr_card_min[OF verts_in_translation] v by metis
+    from f[unfolded is_graph_homomorphism_def]
+    have ep_f:"edge_preserving f (edges (translation e\<^sub>L)) (edges G)"
+     and uni_f:"univalent f" by auto
+    let ?f = "(\<lambda>x. if x < 2 then x else x + card (vertices (translation e\<^sub>L)) - 2)"
+    define GR where "GR = map_graph_fn (translation e\<^sub>R) ?f"
+    from g[unfolded is_graph_homomorphism_def]
+    have "edge_preserving g (edges (translation (A_Int e\<^sub>L e\<^sub>R))) (edges G)"
+     and uni_g:"univalent g" by auto
+    from edge_preserving_subset[OF subset_refl _ this(1)]
+    have ep_g:"edge_preserving g (edges GR) (edges G)" by (auto simp:Let_def GR_def)
+    { fix a assume a:"a \<in> vertices (translation e\<^sub>R)"
+      hence "?f a \<in> vertices (translation (A_Int e\<^sub>L e\<^sub>R))" by (auto simp:Let_def)
+      from this[unfolded v] verts_in_translation[of "A_Int e\<^sub>L e\<^sub>R",unfolded inv_translation_def v] 
+      have "\<not> a < 2 \<Longrightarrow> a + card (Domain f) - 2 < card (Domain g)" by auto
+    } note[intro!] = this
+    have [intro!]: " \<not> aa < 2 \<Longrightarrow> card (Domain f) \<le> aa + card (Domain f) - 2" for aa by simp
+    from v(2) restrictD[OF translation_graph[of e\<^sub>L]]
+    have df[dest]:"xa \<notin> Domain f \<Longrightarrow> (l,xa,xb) \<in> edges (translation e\<^sub>L) \<Longrightarrow> False"
+                  "xa \<notin> Domain f \<Longrightarrow> (l,xb,xa) \<in> edges (translation e\<^sub>L) \<Longrightarrow> False"
+                  for xa l xb unfolding edge_preserving by auto
+    { fix l xa xb ya
+      assume assm: "(l,xa,xb) \<in> edges GR"
+      with c_f dom_le
+      have "xa \<in> {0,1} \<union> {card (Domain f)..<card (Domain g)}"
+           "xb \<in> {0,1} \<union> {card (Domain f)..<card (Domain g)}"
+        unfolding GR_def v by auto
+      hence minb:"xa \<in> {0,1} \<or> xa \<ge> card (Domain f)" "xb \<in> {0,1} \<or> xb \<ge> card (Domain f)"
+        by auto
+      { fix z xa assume minb:"xa \<in> {0,1} \<or> xa \<ge> card (Domain f)" and z:"(xa,z) \<in> f" 
+        from z verts_in_translation[of e\<^sub>L,unfolded inv_translation_def v] 
+        have "xa < card(Domain f)" by auto
+        with minb verts_in_translation[of "A_Int e\<^sub>L e\<^sub>R",unfolded inv_translation_def v]
+        have x:"xa \<in> {0,1} \<and> xa \<in> Domain g" by auto
+        then obtain v where g:"(xa,v) \<in> g" by auto
+        consider "xa = 0 \<and> z = x" | "xa = 1 \<and> z = y"
+          using x f2[THEN univalentD[OF uni_f]] z by auto
+        hence "v = z" using g g2[THEN univalentD[OF uni_g]] by metis
+        hence "(xa,z) \<in> g" using g by auto
+      }
+      note minb[THEN this]
+    }
+    with f2 g2[THEN univalentD[OF uni_g]]
+    have dg:"(l,xa,xb) \<in> edges GR \<Longrightarrow> (xa,ya) \<in> f \<Longrightarrow> (xa,ya) \<in> g"
+            "(l,xb,xa) \<in> edges GR \<Longrightarrow> (xa,ya) \<in> f \<Longrightarrow> (xa,ya) \<in> g"
+            for xa l xb ya
+      unfolding edge_preserving by (auto)
+    have "vertices (translation e\<^sub>L) \<subseteq> vertices (translation (A_Int e\<^sub>L e\<^sub>R))"
+      by(rule subgraph_subset,insert graph_rule_translation,auto)
+    hence subdom:"Domain f \<subseteq> Domain g" unfolding v.
+    let ?g = "f \<union> (Id_on (UNIV - Domain f) O g)"
+    have [simp]:"Domain ?g = Domain g" using subdom unfolding Domain_Un_eq by auto
+    have ih:"is_graph_homomorphism (translation (A_Int e\<^sub>L e\<^sub>R)) G ?g"
+    proof
+      show "?g `` vertices (translation (A_Int e\<^sub>L e\<^sub>R)) \<subseteq> vertices G"
+        using g[unfolded is_graph_homomorphism_def] f[unfolded is_graph_homomorphism_def]
+        by (auto simp: v simp del:translation.simps)
+      show "edge_preserving ?g (edges (translation (A_Int e\<^sub>L e\<^sub>R))) (edges G)"
+        unfolding Let_def translation.simps graph_union_edges proof
+        show "edge_preserving ?g (edges (translation e\<^sub>L)) (edges G)"
+          using edge_preserving_atomic[OF ep_f] unfolding edge_preserving by auto
+        have "edge_preserving ?g (edges GR) (edges G)"
+          using edge_preserving_atomic[OF ep_g] dg unfolding edge_preserving by (auto;blast)
+        thus "edge_preserving ?g (edges (map_graph_fn (translation e\<^sub>R) ?f)) (edges G)"
+          by (auto simp:GR_def)
+        qed
+    qed (insert f[unfolded is_graph_homomorphism_def] g[unfolded is_graph_homomorphism_def],auto simp:Let_def)
+    have ie:"agree_on (translation e\<^sub>L) f ?g" unfolding agree_on_def by (auto simp:v)
+    from ie ih show "extensible (translation e\<^sub>L, translation (A_Int e\<^sub>L e\<^sub>R)) G f"
+      unfolding extensible_def prod.sel by auto
+  qed next
+  assume rhs:?rhs
+  { fix x y assume "(x,y) \<in> :G:\<lbrakk>e\<^sub>L\<rbrakk>"
+    with translation[OF assms] obtain f
+      where f:"is_graph_homomorphism (fst (translation e\<^sub>L, translation (A_Int e\<^sub>L e\<^sub>R))) G f"
+              "(0, x) \<in> f" "(1, y) \<in> f" by auto
+    with rhs[unfolded maintained_def,rule_format,OF f(1),unfolded extensible_def]
+    obtain g where g:"is_graph_homomorphism (translation (A_Int e\<^sub>L e\<^sub>R)) G g"
+                     "agree_on (translation e\<^sub>L) f g" by auto
+    hence "(x,y) \<in> :G:\<lbrakk>A_Int e\<^sub>L e\<^sub>R\<rbrakk>" using f unfolding agree_on_def translation[OF assms] by auto
+  }
+  thus ?lhs by auto
+qed
 (* Work towards Lemma 6 and 7 *)
 end

@@ -8,6 +8,10 @@ datatype ('l,'v) labeled_graph
 fun restrict where
   "restrict (LG e v) = LG {(l,v1,v2) \<in> e. v1 \<in> v \<and> v2 \<in> v } v"
 
+lemma restrict_def :
+  "restrict G = LG {(l,v1,v2) \<in> edges G. v1 \<in> vertices G \<and> v2 \<in> vertices G } (vertices G)"
+  by (cases G,auto)
+
 abbreviation graph where (* is the thing a graph? *)
   "graph X \<equiv> X = restrict X"
 
@@ -83,6 +87,12 @@ lemma edge_preservingI[intro]:
   case (1 a s t v1' v2')
   thus ?case by (intro assms[THEN subsetD]) (auto simp:on_triple_def)
   qed
+
+lemma on_triple_dest[dest]:
+  assumes "on_triple R `` E \<subseteq> G"
+          "(l,x,y) \<in> E" "(x,xx) \<in> R" "(y,yy) \<in> R"
+        shows "(l,xx,yy) \<in> G"
+  using assms unfolding Image_def on_triple_def by blast
 
 lemma edge_preserving:
   shows "edge_preserving R E G \<longleftrightarrow> on_triple R `` E \<subseteq> G"
@@ -179,7 +189,7 @@ lemma Id_on_vertices_is_identity:
   using assms unfolding is_graph_homomorphism_def by auto
 
 abbreviation subgraph :: "('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> bool"
-  where "subgraph G\<^sub>1 G\<^sub>2 \<equiv> is_graph_homomorphism G\<^sub>1 G\<^sub>2 (Id_on (vertices G\<^sub>1))"
+  where "subgraph G\<^sub>1 G\<^sub>2 \<equiv> is_graph_homomorphism G\<^sub>1 G\<^sub>2 (Id_on (vertices G\<^sub>1))" 
 
 lemma subgraph_trans:
   assumes "subgraph G\<^sub>1 G\<^sub>2" "subgraph G\<^sub>2 G\<^sub>3"
