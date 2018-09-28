@@ -357,9 +357,9 @@ proof
   qed
 qed (insert translation_right_to_left,auto)
 
-lemma holds_maintained: (* Lemma 6 *)
+lemma maintained_holds_iff: (* Lemma 6 *)
   assumes "graph G"
-  shows "G \<tturnstile> e\<^sub>L \<sqsubseteq> e\<^sub>R \<longleftrightarrow> maintained (translation e\<^sub>L,translation (A_Int e\<^sub>L e\<^sub>R)) G" (is "?lhs = ?rhs")
+  shows "maintained (translation e\<^sub>L,translation (A_Int e\<^sub>L e\<^sub>R)) G \<longleftrightarrow> G \<tturnstile> e\<^sub>L \<sqsubseteq> e\<^sub>R" (is "?rhs = ?lhs")
 proof
   assume lhs:?lhs
   show ?rhs unfolding maintained_def proof(clarify) fix f
@@ -462,5 +462,26 @@ proof
   }
   thus ?lhs by auto
 qed
+
+
+abbreviation transl_rule ::
+    "'a sentence \<Rightarrow> ('a, nat) labeled_graph \<times> ('a, nat) labeled_graph" where
+"transl_rule R \<equiv> (translation (fst R),translation (snd R))"
+
+lemma maintained_holds[intro]:
+  assumes ":G:\<lbrakk>e\<^sub>L\<rbrakk> \<subseteq> :G:\<lbrakk>e\<^sub>R\<rbrakk>" 
+  shows "maintained (transl_rule (e\<^sub>L \<sqsubseteq> e\<^sub>R)) G"
+proof (cases "graph G")
+  case True
+  thus ?thesis using assms sentence_iff maintained_holds_iff prod.sel by metis
+next
+  case False
+  thus ?thesis by (auto simp:maintained_def is_graph_homomorphism_def)
+qed
+
+lemma maintained_holds_subset_iff[simp]:
+  assumes "graph G"
+  shows "maintained (transl_rule (e\<^sub>L \<sqsubseteq> e\<^sub>R)) G \<longleftrightarrow> (:G:\<lbrakk>e\<^sub>L\<rbrakk> \<subseteq> :G:\<lbrakk>e\<^sub>R\<rbrakk>)"
+  using assms maintained_holds_iff sentence_iff prod.sel by metis
 
 end

@@ -34,11 +34,21 @@ abbreviation subset_sentence where
 
 notation subset_sentence (infix "\<sqsubseteq>" 60)
 
-lemma sentence_iff: (* Lemma 1 *)
-  "G \<tturnstile> e\<^sub>1 \<sqsubseteq> e\<^sub>2 = (:G:\<lbrakk>e\<^sub>1\<rbrakk> \<subseteq> :G:\<lbrakk>e\<^sub>2\<rbrakk>)"
+lemma sentence_iff[simp]: (* Lemma 1 *)
+  "G \<tturnstile> e\<^sub>1 \<sqsubseteq> e\<^sub>2 = (:G:\<lbrakk>e\<^sub>1\<rbrakk> \<subseteq> :G:\<lbrakk>e\<^sub>2\<rbrakk>)" and
+  eq_as_subsets:
   "G \<tturnstile> (e\<^sub>1, e\<^sub>2) = (G \<tturnstile> e\<^sub>1 \<sqsubseteq> e\<^sub>2 \<and> G \<tturnstile> e\<^sub>2 \<sqsubseteq> e\<^sub>1)"
   by auto
 
-
+lemma getRel_map_fn[intro]:
+  assumes "a2 \<in> vertices G" "b2 \<in> vertices G" "(a2,b2) \<in> getRel l G"
+          "f a2 = a" "f b2 = b"
+        shows "(a,b) \<in> getRel l (map_graph_fn G f)"
+proof -
+  from assms(1,2)
+  have "((l, a2, b2), (l, f a2, f b2)) \<in> on_triple {(a, f a) |a. a \<in> vertices G}" by auto
+  thus ?thesis using assms(3-) by (simp add:getRel_def BNF_Def.Gr_def Image_def,blast)
+qed
+  
 
 end
