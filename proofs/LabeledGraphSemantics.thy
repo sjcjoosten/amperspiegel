@@ -5,6 +5,20 @@ begin
 definition getRel where
 "getRel l G = {(x,y). (l,x,y) \<in> edges G}"
 
+lemma getRel_subgraph[simp]:
+  assumes "(y, z) \<in> getRel l G" "subgraph G G'"
+  shows "(y,z) \<in> getRel l G'" using assms by (auto simp:getRel_def subgraph_def graph_union_iff)
+
+lemma getRel_homR[intro]:
+  assumes "(y, z) \<in> getRel l G" "(y,u) \<in> f" "(z,v) \<in> f"
+  shows "(u, v) \<in> getRel l (map_graph f G)"
+  using assms by (auto simp:getRel_def on_triple_def)
+
+lemma getRel_hom[intro]: (* faster proofs in the common case *)
+  assumes "(y, z) \<in> getRel l G" "y \<in> vertices G" "z \<in> vertices G"
+  shows "(f y, f z) \<in> getRel l (map_graph_fn G f)"
+  using assms by auto
+
 (* Deviating from the paper in having a constant constructor.
    We'll use that constructor for top, bottom, etc.. *)
 datatype 'v allegorical_term

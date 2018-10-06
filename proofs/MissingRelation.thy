@@ -56,6 +56,10 @@ lemma in_Gr[simp]:
 lemma Id_on_domain[simp]:
   "Domain (Id_on A O f) = A \<inter> Domain f" by auto
 
+lemma Domain_id_on:
+  shows "Domain (R O S) = Domain R \<inter> R\<inverse> `` Domain S"
+  by auto
+
 lemma Id_on_int:
   "Id_on A O f = (A \<times> UNIV) \<inter> f" by auto
 

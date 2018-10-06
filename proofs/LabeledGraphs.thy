@@ -210,6 +210,16 @@ lemma map_graph_selectors[simp]:
   "edges (map_graph f G) = on_triple f `` (edges G)"
   unfolding map_graph_def by auto
 
+lemma map_graph_comp[simp]:
+  assumes "Range g \<subseteq> Domain f"
+  shows "map_graph (g O f) = map_graph f o map_graph g"
+proof(standard,goal_cases) (* need goal_cases to get the type of x right *)
+  case (1 x)
+  from assms have "map_graph (g O f) x = (map_graph f o map_graph g) x"
+    unfolding map_graph_def by auto
+  thus ?case by auto
+qed
+
 lemma map_graph_returns_restricted:
   assumes "vertices G = Domain f"
   shows "map_graph f G = restrict (map_graph f G)"
@@ -261,6 +271,29 @@ lemma in_on_graph[intro]:
   assumes "x \<in> vertices G" "(a x,y) \<in> b"
   shows "(x, y) \<in> on_graph G a O b"
   using assms unfolding BNF_Def.Gr_def by auto
+
+lemma on_graph_comp:
+  "on_graph G (f o g) = on_graph G g O on_graph (map_graph_fn G g) f"
+  unfolding BNF_Def.Gr_def by auto
+
+lemma map_graph_fn_eqI:
+  assumes "\<And> x. x \<in> vertices G \<Longrightarrow> f x = g x"
+  shows "map_graph_fn G f = map_graph_fn G g" (is "?l = ?r")
+proof -
+  {  fix a ac ba
+    assume "(a, ac, ba) \<in> edges G" "ac \<in> vertices G" "ba \<in> vertices G"
+    hence "\<exists>x\<in>edges G. (x, a, g ac, g ba) \<in> on_triple (on_graph G f)"
+          "\<exists>x\<in>edges G. (x, a, g ac, g ba) \<in> on_triple (on_graph G g)"
+      using assms by (metis in_Gr on_triple)+
+  }
+  hence e:"edges ?l = edges ?r" using assms by (auto simp:Image_def) 
+  have v:"vertices ?l = vertices ?r" using assms by (auto simp:image_def)
+  from e v show ?thesis by(cases ?l,cases ?r,auto)
+qed
+
+lemma map_graph_fn_comp[simp]:
+"map_graph_fn G (f o g) = map_graph_fn (map_graph_fn G g) f"
+  unfolding on_graph_comp by auto
 
 lemma map_graph_fn_id[simp]:
 "map_graph_fn X id = restrict X"
@@ -325,6 +358,16 @@ qed
 (* Since the set of labels is an implicit type, the notion of graph_union does not completely correspond to the one in the paper *)
 definition graph_union where
 "graph_union G\<^sub>1 G\<^sub>2 = LG (edges G\<^sub>1 \<union> edges G\<^sub>2) (vertices G\<^sub>1 \<union> vertices G\<^sub>2)"
+
+lemma graph_unionI[intro]:
+  assumes "edges G\<^sub>1 \<subseteq> edges G\<^sub>2"
+          "vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2"
+  shows "graph_union G\<^sub>1 G\<^sub>2 = G\<^sub>2"
+  using assms unfolding graph_union_def by (cases "G\<^sub>2",auto)
+
+lemma graph_union_iff:
+  shows "graph_union G\<^sub>1 G\<^sub>2 = G\<^sub>2 \<longleftrightarrow> (edges G\<^sub>1 \<subseteq> edges G\<^sub>2 \<and> vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2)"
+  unfolding graph_union_def by (cases "G\<^sub>2",auto)
 
 lemma graph_union_idemp[simp]:
 "graph_union A A = A"
@@ -417,6 +460,12 @@ proof
   thus ?rhs unfolding subgraph_def by auto
 qed
 
+lemma subgraph_preserves_hom:
+  assumes "subgraph A B"
+          "is_graph_homomorphism X A h"
+  shows "is_graph_homomorphism X B h"
+  using assms by (meson is_graph_homomorphism_def2 map_graph_preserves_restricted subgraph_def subgraph_trans)
+
 lemma graph_homo_union_id:
 assumes "is_graph_homomorphism (graph_union A B) G f"
 shows "graph A \<Longrightarrow> is_graph_homomorphism A G (Id_on (vertices A) O f)"
@@ -458,5 +507,22 @@ proof
   thus "edge_preserving (f_a \<union> f_b) (edges (graph_union A B)) (edges G)"
     by auto
 qed (insert assms[unfolded is_graph_homomorphism_def],auto)
+
+lemma is_graph_homomorphism_on_graph:
+  assumes "is_graph_homomorphism A B R"
+  shows "is_graph_homomorphism A (map_graph_fn B f) (R O on_graph B f)"
+proof -
+  from assms have "Range R \<subseteq> vertices B"
+    and ep: "edge_preserving R (edges A) (edges B)" unfolding is_graph_homomorphism_def by auto
+  hence d:"Domain R \<subseteq> Domain (R O on_graph B f)" unfolding Domain_id_on by auto
+  have v:"vertices (map_graph (R O on_graph B f) A) \<subseteq> vertices (map_graph_fn B f)"
+    unfolding BNF_Def.Gr_def map_graph_selectors by auto
+  have e:"edges (map_graph (R O on_graph B f) A) \<subseteq> edges (map_graph_fn B f)" using ep
+    unfolding BNF_Def.Gr_def map_graph_selectors edge_preserving by auto
+  have u:"graph_union (map_graph (R O on_graph B f) A) (map_graph_fn B f) = map_graph_fn B f"
+    using e v graph_unionI by metis
+  from d assms u show "is_graph_homomorphism A (map_graph_fn B f) (R O on_graph B f)"
+    unfolding is_graph_homomorphism_def2 by auto
+qed
 
 end
