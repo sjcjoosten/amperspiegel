@@ -59,6 +59,11 @@ definition set_of_graph_rules :: "('l,'v) Graph_PreRule set \<Rightarrow> bool" 
 definition agree_on where
 "agree_on G f\<^sub>1 f\<^sub>2 \<equiv> (\<forall> v \<in> vertices G. f\<^sub>1 `` {v} = f\<^sub>2 `` {v})"
 
+lemma agree_on_ext:
+  assumes "agree_on G f\<^sub>1 f\<^sub>2"
+  shows "agree_on G (f\<^sub>1 O g) (f\<^sub>2 O g)"
+  using assms unfolding agree_on_def by auto
+
 lemma agree_on_then_eq:
   assumes "agree_on G f\<^sub>1 f\<^sub>2" "Domain f\<^sub>1 = vertices G" "Domain f\<^sub>2 = vertices G"
   shows "f\<^sub>1 = f\<^sub>2"
@@ -95,7 +100,7 @@ abbreviation maintainedA
   :: "('l,'x) Graph_PreRule set \<Rightarrow> ('l, 'v) labeled_graph \<Rightarrow> bool"
   where "maintainedA Rs G \<equiv> \<forall> R\<in>Rs. maintained R G"
 
-lemma maintainedI:
+lemma maintainedI[intro]:
   assumes "\<And> f. is_graph_homomorphism A G f \<Longrightarrow> extensible (A,B) G f"
   shows "maintained (A,B) G"
   using assms unfolding maintained_def by auto

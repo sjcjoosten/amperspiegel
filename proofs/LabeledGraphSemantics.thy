@@ -9,7 +9,7 @@ lemma getRel_subgraph[simp]:
   assumes "(y, z) \<in> getRel l G" "subgraph G G'"
   shows "(y,z) \<in> getRel l G'" using assms by (auto simp:getRel_def subgraph_def graph_union_iff)
 
-lemma getRel_homR[intro]:
+lemma getRel_homR: (* slows down proofs in the common case *)
   assumes "(y, z) \<in> getRel l G" "(y,u) \<in> f" "(z,v) \<in> f"
   shows "(u, v) \<in> getRel l (map_graph f G)"
   using assms by (auto simp:getRel_def on_triple_def)
@@ -17,7 +17,19 @@ lemma getRel_homR[intro]:
 lemma getRel_hom[intro]: (* faster proofs in the common case *)
   assumes "(y, z) \<in> getRel l G" "y \<in> vertices G" "z \<in> vertices G"
   shows "(f y, f z) \<in> getRel l (map_graph_fn G f)"
-  using assms by auto
+  using assms by (auto intro!:getRel_homR)
+
+lemma getRel_hom_map[simp]: (* two-way proofs *)
+  assumes "graph G"
+  shows "getRel l (map_graph_fn G f) = map_prod f f ` (getRel l G)"
+proof
+  { fix x y
+    assume a:"(x, y) \<in> getRel l G"
+    hence "x \<in> vertices G" "y\<in> vertices G" using assms unfolding getRel_def by auto
+    hence "(f x, f y) \<in> getRel l (map_graph_fn G f)" using a by auto
+  }
+  then show "map_prod f f ` getRel l G \<subseteq> getRel l (map_graph_fn G f)" by auto
+qed (cases G,auto simp:getRel_def)
 
 (* Deviating from the paper in having a constant constructor.
    We'll use that constructor for top, bottom, etc.. *)

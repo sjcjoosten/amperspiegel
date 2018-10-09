@@ -263,6 +263,9 @@ abbreviation on_graph where
 abbreviation map_graph_fn where
 "map_graph_fn G f \<equiv> map_graph (on_graph G f) G"
 
+lemma map_graph_fn_graphI[intro]:
+"graph (map_graph_fn G f)" unfolding map_graph_def by auto
+
 lemma on_graph_id[simp]:
   shows "on_graph B id = Id_on (vertices B)"
   unfolding BNF_Def.Gr_def by auto
