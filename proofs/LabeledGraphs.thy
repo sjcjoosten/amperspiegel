@@ -408,6 +408,31 @@ proof -
   thus ?thesis unfolding graph_union_def by auto
 qed
 
+lemma graph_map_union[intro]:
+  assumes "\<And> i::nat. graph_union (map_graph (g i) X) Y = Y" "\<And> i j. i \<le> j \<Longrightarrow> g i \<subseteq> g j"
+  shows "graph_union (map_graph (\<Union>i. g i) X) Y = Y"
+proof
+  from assms have e:"edges (map_graph (g i) X) \<subseteq> edges Y"
+              and v:"vertices (map_graph (g i) X) \<subseteq> vertices Y" for i by (auto simp:graph_union_iff)
+  { fix a ac ba aa b x xa
+    assume a:"(a, ac, ba) \<in> edges X" "(ac, aa) \<in> g x" "(ba, b) \<in> g xa"
+    have "(a, aa, b) \<in> edges Y"
+    proof(cases "x < xa")
+      case True
+      hence "(a, ac, ba) \<in> edges X" "(ac, aa) \<in> g xa" "(ba, b) \<in> g xa"
+        using a assms(2)[of x xa] by auto
+      then show ?thesis using e[of xa] by auto
+    next
+      case False
+      hence "(a, ac, ba) \<in> edges X" "(ac, aa) \<in> g x" "(ba, b) \<in> g x"
+        using a assms(2)[of xa x] by auto
+      then show ?thesis using e[of x] by auto
+    qed
+  }
+  thus "edges (map_graph (\<Union>i. g i) X) \<subseteq> edges Y" by auto
+  show "vertices (map_graph (\<Union>i. g i) X) \<subseteq> vertices Y" using v by auto
+qed
+
 lemma subgraph_def: (* shows that subgraph matches the definition in the paper *)
 "subgraph G\<^sub>1 G\<^sub>2 = (G\<^sub>1 = restrict G\<^sub>1 \<and> G\<^sub>2 = restrict G\<^sub>2 \<and> graph_union G\<^sub>1 G\<^sub>2 = G\<^sub>2)"
 proof
