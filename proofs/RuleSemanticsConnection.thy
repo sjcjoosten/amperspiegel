@@ -357,6 +357,10 @@ proof
   qed
 qed (insert translation_right_to_left,auto)
 
+abbreviation transl_rule ::
+    "'a sentence \<Rightarrow> ('a, nat) labeled_graph \<times> ('a, nat) labeled_graph" where
+"transl_rule R \<equiv> (translation (fst R),translation (snd R))"
+
 lemma maintained_holds_iff: (* Lemma 6 *)
   assumes "graph G"
   shows "maintained (translation e\<^sub>L,translation (A_Int e\<^sub>L e\<^sub>R)) G \<longleftrightarrow> G \<tturnstile> e\<^sub>L \<sqsubseteq> e\<^sub>R" (is "?rhs = ?lhs")
@@ -462,11 +466,6 @@ proof
   }
   thus ?lhs by auto
 qed
-
-
-abbreviation transl_rule ::
-    "'a sentence \<Rightarrow> ('a, nat) labeled_graph \<times> ('a, nat) labeled_graph" where
-"transl_rule R \<equiv> (translation (fst R),translation (snd R))"
 
 lemma maintained_holds[intro]:
   assumes ":G:\<lbrakk>e\<^sub>L\<rbrakk> \<subseteq> :G:\<lbrakk>e\<^sub>R\<rbrakk>" 

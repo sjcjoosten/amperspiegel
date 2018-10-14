@@ -100,7 +100,7 @@ lemma
     and ident_rel_symm :"maintained (symmetry_rule idt) G"
     and ident_rel_cong :"maintained (congruence_rule idt l) G"
   unfolding transitive_rule_def symmetry_rule_def congruence_rule_def
-  using assms by fastforce+
+  by(intro maintained_holds,insert assms,force)+
 
 (* Definition 19 *)
 definition identity_rules ::
@@ -526,7 +526,8 @@ proof -
       from x mnt have "maintained (const_exists_rev x) G'"
                   and "maintained (const_prop x) G'" unfolding constant_rules_def by blast+
       hence cr6:"maintained (const_exists_rev x) (map_graph_fn G' h)"
-        and cr7:"maintained (const_prop x) (map_graph_fn G' h)" using mg by fast+
+        and cr7:"maintained (const_prop x) (map_graph_fn G' h)"
+        by (intro mg, force)+
       hence "(m x,z) \<in> getRel S_Idt (map_graph_fn G' h)"
             "(y,m x) \<in> getRel S_Idt (map_graph_fn G' h)"
         using lhs unfolding maintained_holds_subset_iff[OF mg_h] by auto
