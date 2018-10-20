@@ -399,10 +399,11 @@ qed
 
 (* Slightly stronger version of Lemma 8:
    we reason about maintained rather than holds,
-   and the quantification happens within the existential quantifier, rather than outside.
-   A slight change is due to the type system of Isabelle:
-     The existence of a type 'a large enough is assumed explicitly in the proof of Lemma 8.
-     Here, it follows implicitly (and is explicitly constructed) via the type of standard' *)
+   and the quantification for maintained happens within the existential quantifier, rather than outside.
+
+   Due to the type system of Isabelle, we construct the concrete type 'std_graph' for G.
+     This is slightly stronger than showing the existence of 'a type large enough' as in the paper.
+   *)
 lemma maintained_standard_noconstants:
   assumes mnt:"maintainedA (standard_rules C L) G'"
   and gr:"graph (G'::('V Standard_Constant, 'V') labeled_graph)"

@@ -41,10 +41,6 @@ proof(clarify,rule ccontr)
   qed
 qed
 
-lemma Gr_univalent[intro]:
-  shows "univalent (BNF_Def.Gr A f)"
-  unfolding BNF_Def.Gr_def univalent_def by auto
-
 lemma Gr_domain[simp]:
   shows "Domain (BNF_Def.Gr A f) = A"
     and "Domain (BNF_Def.Gr A id O R) = A \<inter> Domain R" unfolding BNF_Def.Gr_def by auto
@@ -87,6 +83,97 @@ lemma univalent_composes[intro]:assumes "univalent R" "univalent S"
  shows "univalent (R O S)" using assms unfolding univalent_char by auto
 
 lemma id_univalent[intro]:"univalent (Id_on x)" unfolding univalent_char by auto
+
+lemma univalent_insert:
+  assumes "\<And> c. (a,c) \<notin> R"
+  shows "univalent (insert (a,b) R) \<longleftrightarrow> univalent R"
+  using assms unfolding univalent_def by auto
+
+lemma univalent_set_distinctI[intro]: (* not an iff: duplicates of A and B might align *)
+  assumes "distinct A"
+  shows "univalent (set (zip A B))"
+  using assms proof(induct A arbitrary:B)
+  case (Cons a A)
+  hence univ:"univalent (set (zip A (tl B)))" by auto
+  from Cons(2) have "a \<notin> set (take x A)" for x using in_set_takeD by fastforce
+  hence "a \<notin> Domain (set (zip A (tl B)))"
+    unfolding Domain_fst set_map[symmetric] map_fst_zip_take by auto
+  hence "\<And> c. (a,c) \<notin> set (zip A (tl B))" by auto
+  from univ univalent_insert[OF this] show ?case by(cases B,auto)
+qed auto
+
+lemma univalent_set_distinctI2[intro]:
+  assumes "distinct B"
+  shows "univalent ((set (zip A B))\<inverse>)"
+proof -
+  have "(set (zip A B))\<inverse> = set (zip B A)" unfolding set_zip by auto
+  thus ?thesis using assms by auto
+qed
+
+lemma Gr_univalent[intro]:
+  shows "univalent (BNF_Def.Gr A f)"
+  unfolding BNF_Def.Gr_def univalent_def by auto
+
+lemma univalent_fn[simp]:
+  assumes "univalent R"
+  shows "BNF_Def.Gr (Domain R) (\<lambda> x. SOME y. (x,y) \<in> R) = R" (is "?lhs = _")
+  unfolding set_eq_iff
+proof(clarify,standard)
+  fix a b assume a:"(a, b) \<in> R"
+  hence is_in:"(a,SOME y. (a, y) \<in> R) \<in> R" using someI by metis
+  with assms a have [simp]:"(SOME y. (a, y) \<in> R) = b" by auto
+  show "(a, b) \<in> ?lhs" using a by auto
+next
+  fix a b assume a:"(a,b) \<in> ?lhs"
+  hence "a \<in> Domain R" "(SOME y. (a, y) \<in> R) = b" by auto
+  thus "(a,b) \<in> R" using someI by auto
+qed
+
+lemma Gr_not_in[intro]:
+  shows "x \<notin> F \<or> f x \<noteq> y \<Longrightarrow> (x,y) \<notin> BNF_Def.Gr F f" by auto
+
+lemma Gr_insert[simp]:
+  shows "BNF_Def.Gr (insert x F) f = insert (x,f x) (BNF_Def.Gr F f)"
+  unfolding BNF_Def.Gr_def by auto
+
+lemma Gr_empty[simp]:
+  shows "BNF_Def.Gr {} f = {}" by auto
+
+lemma Gr_card[simp]:
+  shows "card (BNF_Def.Gr A f) = card A"
+proof(cases "finite A")
+  case True
+  hence "finite (BNF_Def.Gr A f)" by (induct A,auto)
+  with True show ?thesis by (induct A,auto)
+next
+  have [simp]: "infinite (Domain (A - {x})) = infinite (Domain (A::('a \<times> 'b) set))"
+    for A x
+    using Diff_infinite_finite Domain_Diff_subset finite.emptyI
+              finite.insertI finite_Domain finite_subset Diff_subset Domain_mono
+    by metis
+  have "infinite (Domain A) \<Longrightarrow> \<exists> a. a \<in> fst ` A" for A::"('a \<times> 'b) set"
+    using finite.simps unfolding Domain_fst by fastforce
+  hence [intro]:"infinite (Domain A) \<Longrightarrow> \<exists> a b. (a,b) \<in> A" for A::"('a \<times> 'b) set"
+    by fast
+  let ?Gr = "BNF_Def.Gr A f"
+  case False
+  hence "infinite ?Gr"
+    by(intro infinite_coinduct[of "infinite o Domain"],auto)
+  with False show ?thesis by (auto simp:BNF_Def.Gr_def)
+qed
+
+lemma univalent_finite[simp]:
+  assumes "univalent R"
+  shows "card (Domain R) = card R"
+        "finite (Domain R) \<longleftrightarrow> finite R"
+proof -
+  let ?R = "BNF_Def.Gr (Domain R) (\<lambda> x. SOME y. (x,y) \<in> R)"
+  have "card (Domain ?R) = card ?R" by auto
+  thus "card (Domain  R) = card  R"
+    unfolding univalent_fn[OF assms].
+  thus "finite (Domain R) \<longleftrightarrow> finite R"
+    by (metis Domain_empty_iff card_0_eq card_infinite finite.emptyI)
+qed
 
 lemma trancl_power_least:
   "p \<in> R\<^sup>+ \<longleftrightarrow> (\<exists>n. p \<in> R ^^ Suc n \<and> (p \<in> R ^^ n \<longrightarrow> n = 0))"
@@ -136,6 +223,6 @@ lemma refl_trans_impl_idempotent[intro]: "refl_on A r \<Longrightarrow> trans r 
 lemma idempotent_subset:
   assumes "idempotent R" "S \<subseteq> R"
   shows "S O R \<subseteq> R" "R O S \<subseteq> R" "S O R O S \<subseteq> R"
-  using assms by(auto simp:idempotent_def)
+  using assms by (auto simp:idempotent_def)
 
 end
