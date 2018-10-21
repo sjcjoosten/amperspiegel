@@ -102,13 +102,33 @@ lemma univalent_set_distinctI[intro]: (* not an iff: duplicates of A and B might
   from univ univalent_insert[OF this] show ?case by(cases B,auto)
 qed auto
 
-lemma univalent_set_distinctI2[intro]:
-  assumes "distinct B"
-  shows "univalent ((set (zip A B))\<inverse>)"
-proof -
-  have "(set (zip A B))\<inverse> = set (zip B A)" unfolding set_zip by auto
-  thus ?thesis using assms by auto
-qed
+lemma set_zip_conv[simp]:
+"(set (zip A B))\<inverse> = set (zip B A)" unfolding set_zip by auto
+
+lemma univalent_O_converse[simp]:
+  assumes "univalent (converse R)"
+  shows "R O converse R = Id_on (Domain R)"
+  using assms[unfolded univalent_char] by auto
+
+lemma Image_outside_Domain[simp]:
+  assumes "Domain R \<inter> A = {}"
+  shows "R `` A = {}"
+  using assms by auto
+
+lemma Image_is_Domain[simp]:
+  assumes "Domain R = A"
+  shows "R `` A = Range R"
+  using assms by auto
+
+lemma Domain_set_zip[simp]:
+  assumes "length A = length B"
+  shows "Domain (set (zip A B)) = set A"
+  unfolding Domain_fst set_map[symmetric] map_fst_zip[OF assms]..
+
+lemma Range_set_zip[simp]:
+  assumes "length A = length B"
+  shows "Range (set (zip A B)) = set B"
+  unfolding Range_snd set_map[symmetric] map_snd_zip[OF assms]..
 
 lemma Gr_univalent[intro]:
   shows "univalent (BNF_Def.Gr A f)"

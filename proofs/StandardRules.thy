@@ -84,7 +84,8 @@ proof(rule maintainedI) fix f
   assume "is_graph_homomorphism (LG {} {0::nat}) G f"
   hence f:"Domain f = {0}" "graph G" "f `` {0} \<subseteq> vertices G" "univalent f"
     unfolding is_graph_homomorphism_def by force+
-  with assms(2) have "edge_preserving f {(idt, 0, 0)} (edges G)" unfolding edge_preserving
+  from assms(2) univalentD[OF f(4)] f(3)
+  have "edge_preserving f {(idt, 0, 0)} (edges G)" unfolding edge_preserving
     by (auto simp:getRel_def set_eq_iff image_def)
   with f have "is_graph_homomorphism (LG {(idt, 0, 0)} {0}) G f"
               "agree_on (LG {} {0}) f f" using assms

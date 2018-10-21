@@ -1,5 +1,5 @@
 theory GraphRewriting
-  imports StandardRules VariableUnification
+  imports StandardRules
 begin
 
 (* Algorithm 1 on page 16 *)
@@ -89,6 +89,34 @@ definition nextMax :: "nat set \<Rightarrow> nat"
   where
   "nextMax x \<equiv> if x = {} then 0 else Suc (Max x)"
 
+lemma list_sorted_max[simp]: (* TODO: move *)
+  shows "sorted list \<Longrightarrow> list = (x#xs) \<Longrightarrow> fold max xs x = (last list)"
+proof (induct list arbitrary:x xs)
+  case (Cons a list)
+  hence "xs = y # ys \<Longrightarrow> fold max ys y = last xs" "sorted (x # xs)" "sorted xs" for y ys 
+    using Cons.prems(1,2) by auto
+  hence "xs \<noteq> [] \<Longrightarrow> fold max xs x = last xs"
+    by (metis (full_types) fold_simps(2) max.orderE sorted.elims(2) sorted2)
+  thus ?case unfolding Cons by auto
+qed auto
+
+lemma nextMax_set[simp]:
+  assumes "sorted xs"
+  shows "nextMax (set xs) = (if xs = Nil then 0 else Suc (last xs))"
+  using assms
+proof(induct xs)
+  case Nil show ?case unfolding nextMax_def by auto
+next
+  case (Cons a list)
+  hence "list \<noteq> [] \<Longrightarrow> fold max list a = last list"
+    using list_sorted_max by (metis last.simps)
+  thus ?case unfolding nextMax_def Max.set_eq_fold by auto
+qed
+
+lemma nextMax_Un_eq[simp]:
+"finite x \<Longrightarrow> finite y \<Longrightarrow> nextMax (x \<union> y) = max (nextMax x) (nextMax y)"
+  unfolding nextMax_def using Max_Un by auto
+
 lemma extend: (* extensible into the new graph *)
   assumes "is_graph_homomorphism L (LG E {0..<n}) f" "graph_rule (L,R)"
   defines "g \<equiv> extend n L R f"
@@ -97,7 +125,7 @@ lemma extend: (* extensible into the new graph *)
         "weak_universal (L, R) (LG E {0..<n}) G' f g"
 proof -
   have [intro!]:"finite (Range (set x))" for x by(induct x,auto)
-  from assms have fin_R_L:"finite (vertices R - vertices L)"
+  from assms have fin_R_L[simp]:"finite (vertices R - vertices L)"
     and gr_R:"graph R" by auto
   from assms have f_dom:"Domain f = vertices L"
     and f_uni:"univalent f" unfolding is_graph_homomorphism_def by auto
@@ -106,6 +134,7 @@ proof -
   hence f_ran:"Range f \<subseteq> {0..<n}" using f_dom by auto
   let ?g = "(let V_new = sorted_list_of_set (vertices R - vertices L)
               in set (zip V_new [n..<n + length V_new]))" (* new part of g *)
+  have fin_g':"finite ?g" "finite (Range ?g)" unfolding Let_def by auto
   have x_in_g:"x \<in> fst ` ?g \<Longrightarrow> x \<in> vertices R \<and> x \<notin> vertices L" for x
     unfolding Let_def set_map[symmetric] map_fst_zip_take
     by (auto simp:fin_R_L)
@@ -117,8 +146,11 @@ proof -
   hence "finite (Domain f)" "univalent f"
     using assms(1) unfolding is_graph_homomorphism_def by auto
   hence "card (Domain f) = card f" "finite f" by auto
-  hence [intro]:"finite (Range f)" unfolding Range_snd by auto
+  hence fin_f[intro]:"finite (Range f)" unfolding Range_snd by auto
   hence fin:"finite (Range g)" unfolding extend_def g_def Let_def Range_Un_eq by auto
+  have nextMax_f:"nextMax (Range f) \<le> n"
+    unfolding nextMax_def using f_ran Max_in[OF fin_f]
+    by (simp add: Suc_leI subset_eq)
   have "distinct [n..<n + length (sorted_list_of_set (vertices R - vertices L))]" by auto
   have uni_g':"univalent ?g" unfolding Let_def by auto
   with f_uni have uni_g[intro]:"univalent g" by (auto simp:g_def extend_def)
@@ -144,35 +176,94 @@ proof -
   have sl:"finite x \<Longrightarrow> n < length (sorted_list_of_set x) \<Longrightarrow> sorted_list_of_set x ! n \<in> x"
     for x n using set_sorted_list_of_set nth_mem by metis
   show "f \<subseteq> g" by (auto simp:g_def extend_def)
-  have n_eq:"n + length (sorted_list_of_set (vertices R - vertices L)) = max n (nextMax (snd ` g))"
-    unfolding Range_snd[symmetric] g_def Let_def extend_def Range_Un_eq nextMax_def
-    sorry
+  have "n + length (sorted_list_of_set (vertices R - vertices L)) =
+        max n (nextMax (Range ?g))"
+    unfolding Let_def Range_snd set_map[symmetric] map_snd_zip[OF ln] nextMax_set[OF sorted_upt]
+    by fastforce
+  hence n_eq:"n + length (sorted_list_of_set (vertices R - vertices L)) = max n (nextMax (snd ` g))"
+    unfolding Range_snd[symmetric] g_def extend_def Range_Un_eq
+              nextMax_Un_eq[OF fin_f fin_g'(2)] max.assoc[symmetric] max_absorb1[OF nextMax_f].
   show "weak_universal (L, R) ?G G' f g" proof fix a:: "('b \<times> nat) set" fix b G
     assume a:"is_graph_homomorphism (snd (L, R)) G a"
              "is_graph_homomorphism ?G G b" "f O b \<subseteq> a"
     hence [intro]:"univalent b" "univalent a"
       and rng:"Range b \<subseteq> vertices G" "Range a \<subseteq> vertices G"
+      and ep_b:"edge_preserving b (edges (LG E {0..<n})) (edges G)"
+      and ep_a:"edge_preserving a (edges R) (edges G)"
       unfolding is_graph_homomorphism_def prod.sel labeled_graph.sel by blast+
     from a have dom:"{0..<n} = Domain b" "vertices R = Domain a"
       unfolding is_graph_homomorphism_def prod.sel labeled_graph.sel by auto
-    have [intro]:"univalent (?g\<inverse>)" unfolding Let_def by auto
-    have [simp]:"Domain b \<inter> Domain (?g\<inverse> O a) = {}" sorry (* for v3 *)
+    have univ_g'[intro]:"univalent (?g\<inverse>)" "univalent ?g" unfolding Let_def by auto
+    have "Domain b \<inter> Domain (?g\<inverse> O a) = {0..<n} \<inter> Domain (?g\<inverse> O a)" using dom(1)[symmetric] by auto
+    also have "Domain (?g\<inverse> O a) \<subseteq> Domain (converse ?g)" unfolding Domain_id_on by auto
+    also have "\<dots> = Range ?g" unfolding set_zip by auto
+    also have "\<dots> \<subseteq> {n..<n + length (sorted_list_of_set (vertices R - vertices L))}"
+      unfolding Let_def Range_snd set_map[symmetric] by auto
+    also have "{0..<n} \<inter> {n..<n + length (sorted_list_of_set (vertices R - vertices L))} = {}"
+      by auto
+    finally have disj_doms[simp]:"Domain b \<inter> Domain (?g\<inverse> O a) = {}" by auto
     hence [simp]:"b \<inter> (?g\<inverse> O a) = {}" by blast
+    have h:"(y, z) \<in> b \<Longrightarrow> n \<le> y \<Longrightarrow> False" for y z using dom
+      by (metis Domain.DomainI atLeastLessThan_iff not_less)
     let ?h = "b \<union> ?g\<inverse> O a"
+    from ln[of "sorted_list_of_set (vertices R - vertices L)"]
     have dg:"Domain (?g\<inverse>) = {n..<max n (nextMax (Range g))}"
       unfolding Let_def Domain_converse Range_snd set_map[symmetric] map_snd_zip[OF ln]
       atLeastLessThan_upt unfolding n_eq by auto
-    have dg2:"?g `` Domain a = {n..<max n (nextMax (Range g))}"
-      unfolding dom[symmetric] Let_def sorry
+    have dg2:"?g `` Domain a = ?g `` vertices R" unfolding dom[symmetric]..
+    also have "?g `` vertices R = ?g `` ((vertices R - vertices L) \<union> vertices L)"
+      using subsLR by auto
+    also have "\<dots> = ?g `` (vertices R - vertices L) \<union> ?g `` vertices L" by auto
+    also have "?g `` vertices L = {}" apply(rule Image_outside_Domain)
+      unfolding Let_def Domain_fst set_map[symmetric] map_fst_zip[OF ln]
+                set_sorted_list_of_set[OF fin_R_L] by auto
+    also have "?g `` (vertices R - vertices L) = Range ?g"
+      apply(rule Image_is_Domain)
+      unfolding Let_def Domain_set_zip[OF ln] set_sorted_list_of_set[OF fin_R_L] ..
+    also have "Range ?g = {n..<max n (nextMax (Range g))}"
+      unfolding Let_def Range_set_zip[OF ln] set_sorted_list_of_set[OF fin_R_L] 
+      unfolding Range_snd n_eq set_upt..
+    finally have dg2:"?g `` Domain a = {n..<max n (nextMax (Range g))}" by auto
     have "Domain (?g\<inverse> O a) = {n..<max n (nextMax (Range g))}"
       unfolding Domain_id_on converse_converse dg dg2 by auto
     hence v1: "vertices G' = Domain ?h"
       unfolding G'_def labeled_graph.sel Domain_Un_eq dom[symmetric] by auto
+    have "g O ?h = f O b \<union> ?g O b \<union> ((f O ?g\<inverse>) O a \<union> (?g O ?g\<inverse>) O a)"
+      unfolding g_def extend_def by blast
+    also have "f O b \<subseteq> a" by (fact a(3))
+    also have "(?g O ?g\<inverse>) = Id_on (vertices R - vertices L)"
+      apply(subst univalent_O_converse[OF univ_g'(1)])
+      unfolding Let_def Domain_set_zip[OF ln] by auto
+    also have "(f O ?g\<inverse>) = {}"
+      using f_ran unfolding Let_def by (auto dest!:set_zip_leftD)
+    also have "?g O b = {}" using h unfolding Let_def by (auto dest!:set_zip_rightD)
+    finally have gOh:"g O ?h \<subseteq> a" by blast
     have "b `` vertices G' \<subseteq> vertices G" "(?g\<inverse> O a) `` vertices G' \<subseteq> vertices G" using rng by auto
     hence v2: "?h `` vertices G' \<subseteq> vertices G" by blast
     have v3: "univalent ?h" by(rule univalent_union) auto
-    have v4: "edge_preserving ?h (edges G') (edges G)"
-      unfolding G'_def sorry
+    { fix l x y x' y' assume a2:"(l,x,y) \<in> edges G'" "(x,x') \<in> ?h" "(y,y') \<in> ?h"
+      have "(l,x',y') \<in> edges G" proof(cases "(l,x,y) \<in> edges ?G")
+        case True
+        with gr_G[THEN restrictD]
+        have "x \<in> Domain b" "y \<in> Domain b" unfolding dom[symmetric] by auto
+        hence "x \<notin> Domain (converse ?g O a)" "y \<notin> Domain (converse ?g O a)"
+          using disj_doms by blast+
+        hence "(x,x') \<in> b" "(y,y') \<in> b" using a2 by auto
+        with ep_b True show ?thesis unfolding edge_preserving by auto
+      next
+        case False
+        hence "(l,x,y) \<in> on_triple g `` edges R" using a2(1) unfolding G'_def by auto
+        then obtain r_x r_y
+          where r:"(l,r_x,r_y) \<in> edges R" "(r_x,x) \<in> g" "(r_y,y) \<in> g" by auto
+        hence "(r_x,x') \<in> a" "(r_y,y') \<in> a"
+          using gOh a2(2,3) by auto
+        hence "(l,x',y') \<in> on_triple a `` edges R" using r(1) unfolding on_triple_def by auto
+        thus ?thesis using ep_a unfolding edge_preserving by auto
+      qed
+      find_theorems G
+    }
+    hence v4: "edge_preserving ?h (edges G') (edges G)"
+      unfolding edge_preserving by auto
     have v6: "graph G" using a unfolding is_graph_homomorphism_def2 by auto
     have "is_graph_homomorphism G' G ?h"
       by(rule is_graph_homomorphismI[OF v1 v2 v3 v4 gr_G' v6])
