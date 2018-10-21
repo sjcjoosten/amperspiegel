@@ -13,7 +13,7 @@ lemma Gr_Image_is_image[simp]:
 definition univalent where "univalent R = (\<forall> x y z. (x,y)\<in> R \<and> (x,z)\<in> R \<longrightarrow> z = y)"
 
 lemma univalent_inter[intro]:
-  assumes "univalent f_a" "univalent f_b"
+  assumes "univalent f_a \<or> univalent f_b"
   shows "univalent (f_a \<inter> f_b)"
   using assms unfolding univalent_def by auto
 
