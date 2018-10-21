@@ -124,7 +124,7 @@ lemma extend: (* extensible into the new graph *)
   shows "is_graph_homomorphism R G' g" "f \<subseteq> g" "subgraph (LG E {0..<n}) G'"
         "weak_universal (L, R) (LG E {0..<n}) G' f g"
 proof -
-  have [intro!]:"finite (Range (set x))" for x by(induct x,auto)
+  have ln:"length x = length [n..<n + length x]" for x by auto
   from assms have fin_R_L[simp]:"finite (vertices R - vertices L)"
     and gr_R:"graph R" by auto
   from assms have f_dom:"Domain f = vertices L"
@@ -165,15 +165,8 @@ proof -
   show "is_graph_homomorphism R G' g"
     by (intro is_graph_homomorphismI[OF g_dom _ uni_g _ gr_R gr_G'])
        (auto simp:G'_def intro:in_g)
-  have ln:"length x = length [n..<n + length x]" for x by auto
   show "f \<subseteq> g" by (auto simp:g_def extend_def)
-  have "max n (nextMax (Range ?g)) = n + length (sorted_list_of_set (vertices R - vertices L))"
-    unfolding Let_def Range_snd set_map[symmetric] map_snd_zip[OF ln] nextMax_set[OF sorted_upt]
-    by fastforce
-  hence n_eq:"n + length (sorted_list_of_set (vertices R - vertices L)) = max n (nextMax (Range g))"
-    unfolding Range_snd[symmetric] g_def extend_def Range_Un_eq
-              nextMax_Un_eq[OF fin_f fin_g'(2)] max.assoc[symmetric] max_absorb1[OF nextMax_f]
-    by auto
+
   show "weak_universal (L, R) ?G G' f g" proof fix a:: "('b \<times> nat) set" fix b G
     assume a:"is_graph_homomorphism (snd (L, R)) G a"
              "is_graph_homomorphism ?G G b" "f O b \<subseteq> a"
@@ -191,15 +184,15 @@ proof -
     have disj_doms:"Domain b \<inter> Domain (?g\<inverse> O a) = {}" using help_dom_b
       unfolding Let_def by (auto dest!:set_zip_leftD)
 
+    have "max n (nextMax (Range ?g)) = n + length (sorted_list_of_set (vertices R - vertices L))"
+      unfolding Let_def Range_snd set_map[symmetric] map_snd_zip[OF ln] nextMax_set[OF sorted_upt]
+      by fastforce
+    hence n_eq:"n + length (sorted_list_of_set (vertices R - vertices L)) = max n (nextMax (Range g))"
+      unfolding Range_snd[symmetric] g_def extend_def Range_Un_eq
+                nextMax_Un_eq[OF fin_f fin_g'(2)] max.assoc[symmetric] max_absorb1[OF nextMax_f]
+      by auto
+
     let ?h = "b \<union> ?g\<inverse> O a"
-    have "g O ?h = f O b \<union> ?g O b \<union> ((f O ?g\<inverse>) O a \<union> (?g O ?g\<inverse>) O a)"
-      unfolding g_def extend_def by blast
-    also have "f O b \<subseteq> a" by (fact a(3))
-    also have "(?g O ?g\<inverse>) = Id_on (vertices R - vertices L)"
-      unfolding univalent_O_converse[OF uni_g'(2)] unfolding Let_def by auto
-    also have "(f O ?g\<inverse>) = {}" using f_ran unfolding Let_def by (auto dest!:set_zip_leftD)
-    also have "?g O b = {}" using help_dom_b unfolding Let_def by (auto dest!:set_zip_rightD)
-    finally have gOh:"g O ?h \<subseteq> a" by blast
 
     have dg:"Domain (?g\<inverse>) = {n..<max n (nextMax (Range g))}"
       unfolding Let_def Domain_converse Range_set_zip[OF ln] atLeastLessThan_upt
@@ -209,13 +202,11 @@ proof -
     also have "\<dots> = ?g `` (vertices R - vertices L) \<union> ?g `` vertices L" by auto
     also have "?g `` vertices L = {}" apply(rule Image_outside_Domain)
       unfolding Let_def Domain_set_zip[OF ln] by auto
-    also have "?g `` (vertices R - vertices L) = Range ?g"
-      apply(rule Image_is_Domain)
+    also have "?g `` (vertices R - vertices L) = Range ?g" apply(rule Image_is_Domain)
       unfolding Let_def Domain_set_zip[OF ln] by auto
-    also have "Range ?g = {n..<max n (nextMax (Range g))}"
+    finally have dg2:"?g `` Domain a = {n..<max n (nextMax (Range g))}"
       unfolding Let_def Range_set_zip[OF ln] set_sorted_list_of_set[OF fin_R_L] 
-      unfolding n_eq set_upt..
-    finally have dg2:"?g `` Domain a = {n..<max n (nextMax (Range g))}" by auto
+      unfolding n_eq set_upt by auto
     have "Domain (?g\<inverse> O a) = {n..<max n (nextMax (Range g))}"
       unfolding Domain_id_on converse_converse dg dg2 by auto
     hence v1: "vertices G' = Domain ?h" unfolding G'_def Domain_Un_eq dom_b by auto
@@ -235,12 +226,18 @@ proof -
         hence "(x,x') \<in> b" "(y,y') \<in> b" using a2 by auto
         with ep_b True show ?thesis unfolding edge_preserving by auto
       next
+        have "g O ?h = f O b \<union> ?g O b \<union> ((f O ?g\<inverse>) O a \<union> (?g O ?g\<inverse>) O a)"
+          unfolding g_def extend_def by blast
+        also have "(?g O ?g\<inverse>) = Id_on (vertices R - vertices L)"
+          unfolding univalent_O_converse[OF uni_g'(2)] unfolding Let_def by auto
+        also have "(f O ?g\<inverse>) = {}" using f_ran unfolding Let_def by (auto dest!:set_zip_leftD)
+        also have "?g O b = {}" using help_dom_b unfolding Let_def by (auto dest!:set_zip_rightD)
+        finally have gOh:"g O ?h \<subseteq> a" using a(3) by blast
         case False
         hence "(l,x,y) \<in> on_triple g `` edges R" using a2(1) unfolding G'_def by auto
         then obtain r_x r_y
           where r:"(l,r_x,r_y) \<in> edges R" "(r_x,x) \<in> g" "(r_y,y) \<in> g" by auto
-        hence "(r_x,x') \<in> a" "(r_y,y') \<in> a"
-          using gOh a2(2,3) by auto
+        hence "(r_x,x') \<in> a" "(r_y,y') \<in> a" using gOh a2(2,3) by auto
         hence "(l,x',y') \<in> on_triple a `` edges R" using r(1) unfolding on_triple_def by auto
         thus ?thesis using ep_a unfolding edge_preserving by auto
       qed

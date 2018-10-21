@@ -179,7 +179,8 @@ begin
       and ephk:"edge_preserving h' (edges R) (edges D')" "edge_preserving k' (edges G) (edges D')"
       and vuni:"univalent h'" "univalent k'"
       using va unfolding is_graph_homomorphism_def by blast+
-    have vga[intro]: "vertices G' = Domain ?a" unfolding G'_def using vrg by auto
+    have vga[intro]: "vertices G' = Domain ?a" unfolding G'_def using vrg
+      by fastforce
     have vgd_1:"(R_to_G'\<inverse> O h') `` vertices G' \<subseteq> vertices D'" using vimg(1) by auto
     have vgd_2:"(G_to_G'\<inverse> O k') `` vertices G' \<subseteq> vertices D'" using vimg(2) by auto
     have vgd[intro]: "?a `` vertices G' \<subseteq> vertices D'" using vgd_1 vgd_2 unfolding Un_Image by auto
