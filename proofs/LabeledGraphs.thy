@@ -498,8 +498,8 @@ lemma graph_homo_union_id:
 assumes "is_graph_homomorphism (graph_union A B) G f"
 shows "graph A \<Longrightarrow> is_graph_homomorphism A G (Id_on (vertices A) O f)"
       "graph B \<Longrightarrow> is_graph_homomorphism B G (Id_on (vertices B) O f)"
-  using assms unfolding is_graph_homomorphism_def
-  by (auto intro!:edge_preservingI dest:edge_preserving_atomic)
+  using assms unfolding is_graph_homomorphism_def edge_preserving
+  by (auto dest:edge_preserving_atomic)
 
 lemma graph_homo_union[intro]:
   assumes

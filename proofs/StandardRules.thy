@@ -109,6 +109,19 @@ definition identity_rules ::
   "identity_rules L \<equiv> {reflexivity_rule S_Idt,transitive_rule S_Idt,symmetry_rule S_Idt}
                        \<union> congruence_rules S_Idt L"
 
+lemma identity_rules_graph_rule:
+  assumes "x \<in> identity_rules L"
+  shows "graph_rule x"
+proof -
+  from graph_rule_translation
+  have gr:"\<And> u v . graph_rule (transl_rule (u \<sqsubseteq> v))" by auto
+  consider "x = reflexivity_rule S_Idt" | "x = transitive_rule S_Idt" | "x = symmetry_rule S_Idt"
+    |  "\<exists> v w. x = congruence_rule v w" using assms unfolding identity_rules_def Un_iff by blast
+  thus ?thesis using gr are_rules(3)
+    unfolding congruence_rule_def transitive_rule_def symmetry_rule_def
+    by cases fast+
+qed
+
 (* Implicit properties of Definition 19 *)
 lemma
   assumes g[intro]:"graph (G :: ('a, 'b) labeled_graph)"
@@ -145,6 +158,11 @@ proof -
     show "sym (getRel l G)" unfolding sym_def by auto
   }
 qed
+
+lemma finite_identity_rules[intro]:
+  assumes "finite L"
+  shows "finite (identity_rules L)"
+  using assms unfolding identity_rules_def by auto
 
 lemma equivalence:
   assumes gr:"graph G" and m:"maintainedA {reflexivity_rule I,transitive_rule I,symmetry_rule I} G"
@@ -338,6 +356,30 @@ abbreviation const_disj where
 definition constant_rules where
 "constant_rules C \<equiv> const_exists ` C \<union> const_exists_rev ` C \<union> const_prop ` C
                   \<union> {const_disj c\<^sub>1 c\<^sub>2 | c\<^sub>1 c\<^sub>2. c\<^sub>1 \<in> C \<and> c\<^sub>2 \<in> C \<and> c\<^sub>1 \<noteq> c\<^sub>2}"
+
+lemma constant_rules_graph_rule:
+  assumes "x \<in> constant_rules C"
+  shows "graph_rule x"
+proof -
+  from graph_rule_translation
+  have gr:"\<And> u v . graph_rule (transl_rule (u \<sqsubseteq> v))" by auto
+  consider "\<exists> v. x = const_exists v" | "\<exists> v. x = const_exists_rev v" |  "\<exists> v. x = const_prop v"
+    |  "\<exists> v w. x = const_disj v w" using assms unfolding constant_rules_def Un_iff by blast
+  thus ?thesis using gr by cases fast+
+qed
+
+
+lemma finite_constant[intro]:
+  assumes "finite C"
+  shows "finite (constant_rules C)"
+proof -
+  have "{const_disj c\<^sub>1 c\<^sub>2 | c\<^sub>1 c\<^sub>2. c\<^sub>1 \<in> C \<and> c\<^sub>2 \<in> C \<and> c\<^sub>1 \<noteq> c\<^sub>2} \<subseteq> case_prod const_disj ` (C \<times> C)"
+    by auto
+  moreover have "finite \<dots>" using assms by auto
+  ultimately have "finite {const_disj c\<^sub>1 c\<^sub>2 | c\<^sub>1 c\<^sub>2. c\<^sub>1 \<in> C \<and> c\<^sub>2 \<in> C \<and> c\<^sub>1 \<noteq> c\<^sub>2}"
+    by(rule finite_subset)
+  thus ?thesis unfolding constant_rules_def using assms by blast
+qed
 
 lemma constant_rules_empty[simp]:
   "constant_rules {} = {}" by (auto simp:constant_rules_def)
