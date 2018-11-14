@@ -130,7 +130,7 @@ lemma extend: (* extensible into the new graph *)
   defines "G' \<equiv> LG ((on_triple g `` (edges (snd R))) \<union> E) {0..<max n (nextMax (Range g))}"
   shows "is_graph_homomorphism (snd R) G' g" "agree_on (fst R) f g" "f \<subseteq> g"
         "subgraph (LG E {0..<n}) G'"
-        "weak_universal R (LG E {0..<n}) G' f g"
+        "weak_universal (t:: 'x itself) R (LG E {0..<n}) G' f g"
 proof -
   have ln:"length x = length [n..<n + length x]" for x::"'b list" by auto
   let ?R_L = "vertices (snd R) - vertices (fst R)"
@@ -180,7 +180,7 @@ proof -
        (auto simp:G'_def intro:in_g)
   show "f \<subseteq> g" by (auto simp:g_def extend_def)
   thus "agree_on (fst R) f g" using f_dom uni_g agree_on_subset equalityE by metis
-  show "weak_universal R ?G G' f g" proof fix a:: "('b \<times> ('a + nat)) set" fix b G
+  show "weak_universal t R ?G G' f g" proof fix a:: "('b \<times> 'x) set" fix b G
     assume a:"is_graph_homomorphism (snd R) G a"
              "is_graph_homomorphism ?G G b" "f O b \<subseteq> a"
     hence univ_b:"univalent b" and univ_a:"univalent a"
@@ -267,7 +267,7 @@ lemma selector_pushout:
   assumes "graph G"
   defines "g \<equiv> extend (fst G'') R f"
   defines "G' \<equiv> LG (on_triple g `` edges (snd R) \<union> (snd G'')) {0..<max (fst G'') (nextMax (Range g))}"
-  shows "pushout_step R G G'"
+  shows "pushout_step (t:: 'x itself) R G G'"
 proof -
   have "valid_selection Rs G'' R f" using assms by(cases "selector G''",auto)
   hence igh:"is_graph_homomorphism (fst R) G f" "graph_rule R"
@@ -276,7 +276,7 @@ proof -
        "is_graph_homomorphism (fst R) G f"
        "is_graph_homomorphism (snd R) G' g"
        "f \<subseteq> g"
-       "weak_universal R G G' f g"
+       "weak_universal t R G G' f g"
     using extend[OF igh[unfolded G_def],folded g_def,folded G'_def,folded G_def] igh(1)
     by auto
   thus ?thesis unfolding pushout_step_def by auto
@@ -295,7 +295,7 @@ lemma WPC_through_make_step:
   assumes "set_of_graph_rules Rs" "graph (graph_of (X 0))"
      and makestep: "\<forall> i. X (Suc i) = make_step selector (X i)"
      and selector: "valid_selector Rs selector"
-  shows "Simple_WPC Rs (\<lambda> i. graph_of (X i))" "chain (\<lambda> i. graph_of (X i))"
+  shows "Simple_WPC t Rs (\<lambda> i. graph_of (X i))" "chain (\<lambda> i. graph_of (X i))"
 proof
   note ms = makestep[unfolded make_step_def,rule_format]
   have gr:"graph (graph_of (X i))" for i proof(induct i)
@@ -307,7 +307,8 @@ proof
       case (Some a)
       then obtain R f where Some:"selector (X i) = Some (R,f)" by fastforce
       then show ?thesis using ms[of i,unfolded Some Let_def]
-        selector_pushout[OF selector Some Suc,unfolded pushout_step_def subgraph_def]
+        selector_pushout[OF selector Some Suc,of t
+                        ,unfolded pushout_step_def subgraph_def]
         by auto
     qed
   qed (fact assms)
@@ -320,12 +321,12 @@ proof
     next
       case Some
       then obtain R f where Some:"selector (X i) = Some (R,f)" by fastforce
-      then show ?thesis using ms selector_pushout[OF selector Some gr]
+      then show ?thesis using ms selector_pushout[OF selector Some gr,of t]
       unfolding pushout_step_def Let_def by simp
     qed
   qed
   show "graph_of (X i) = graph_of (X (Suc i)) \<or>
-         (\<exists>R\<in>Rs. pushout_step R (graph_of (X i)) (graph_of (X (Suc i))))" for i
+         (\<exists>R\<in>Rs. pushout_step t R (graph_of (X i)) (graph_of (X (Suc i))))" for i
   proof(cases "selector (X i)")
     case None thus ?thesis using ms by auto
   next
@@ -496,7 +497,7 @@ abbreviation the_lcg where
 lemma lcg_through_make_step:
 assumes "finite Rs" "set_of_graph_rules Rs" "graph (graph_of init)"
         "valid_selector Rs sel"
-  shows "least_consequence_graph Rs (graph_of init) (the_lcg sel Rs init)"
+  shows "least_consequence_graph t Rs (graph_of init) (the_lcg sel Rs init)"
 proof -
   from assms have gr:"graph (graph_of (mk_chain sel Rs init 0))" by auto
   note assms = assms(1,2) this mk_chain assms(4)

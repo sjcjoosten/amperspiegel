@@ -25,7 +25,8 @@ lemma gr_transl_rules:
 
 lemma check_consistency:
   assumes "finite T" "finite C"
-  shows "check_consistency C (transl_rules T) \<longleftrightarrow> consistent TYPE(nat) C T" (is "?lhs = ?rhs")
+  shows "check_consistency C (transl_rules T) \<longleftrightarrow> consistent TYPE(nat) C T"
+   (is "?lhs = ?rhs")
 proof -
   from assms(1) have fin_t:"finite (transl_rules T)" unfolding transl_rules_def by fast
   define L where "L = fst ` UNION (transl_rules T) (edges \<circ> snd)"
@@ -44,11 +45,12 @@ proof -
   define cfg where "cfg = the_lcg sel Rules (0, {})"
   have cfg:"cfg = the_model C (transl_rules T)"
     unfolding cfg_def sel_def Rules_def L_def the_model_def Let_def..
-  have cfg_c:"least_consequence_graph Rules (graph_of (0,{})) cfg" unfolding cfg_def
+  have cfg_c:"least_consequence_graph TYPE('a + nat) Rules (graph_of (0,{})) cfg"
+    unfolding cfg_def
     by (rule lcg_through_make_step[OF fin_r gr _ sel],auto)
   hence cfg_sdt:"maintainedA (standard_rules C L) cfg"
     and cfg_g: "graph cfg"
-    and cfg_l:"least Rules (graph_of (0, {})) cfg"
+    and cfg_l:"least TYPE('a + nat) Rules (graph_of (0, {})) cfg"
     and cfg_m:"r \<in> transl_rules T \<Longrightarrow> maintained r cfg" for r
     unfolding Rules_def least_consequence_graph_def by auto
   have cfg_lbl:"fst ` edges cfg \<subseteq> L" sorry
@@ -63,12 +65,14 @@ proof -
     hence g:"graph G" unfolding standard_def by auto
     have "(a,b)\<in>T \<Longrightarrow> G \<tturnstile> (a,b)" for a b apply(subst eq_as_subsets)
       using cfg_m[unfolded transl_rules_def,THEN m] maintained_holds_iff[OF g] by blast
-    hence "(\<forall>S\<in>T. G \<tturnstile> S)" by auto
-    thus ?rhs using G_std unfolding model_def by blast
+    hence h:"(\<forall>S\<in>T. G \<tturnstile> S)" by auto
+    with G_std show ?rhs unfolding model_def by blast
   qed
   have d2: "\<not> ?lhs \<Longrightarrow> ?rhs \<Longrightarrow> False" proof -
     assume "\<not> ?lhs"
-    then obtain a b where ab:"(S_Bot,a,b) \<in> edges cfg" unfolding cfg getRel_def by auto
+    then obtain a b where ab:"(S_Bot,a,b) \<in> edges cfg"
+      "a \<in> vertices cfg" "b \<in> vertices cfg"
+      using cfg_g unfolding cfg getRel_def by auto
     assume ?rhs then obtain G :: "('a Standard_Constant, 'a + nat) labeled_graph"
       where G:"model C G T" by auto
     with model_def have std:"standard' C G" and holds:"\<forall>S\<in>T. G \<tturnstile> S" by fast+
@@ -79,20 +83,19 @@ proof -
     hence mnt:"maintainedA Rules G" unfolding Rules_def using std_maintained by auto
     from consequence_graphI[OF _ _ g] gr[unfolded set_of_graph_rules_def] mnt
     have cg:"consequence_graph Rules G" by fast
-    with cfg_l[unfolded least_def] have "maintained (graph_of (0, {}), cfg) G" sorry
-    show False sorry
+    with cfg_l[unfolded least_def]
+    have mtd:"maintained (graph_of (0, {}), cfg) G" by blast
+    have "is_graph_homomorphism (fst (graph_of (0::nat, {}), cfg)) G {}"
+      unfolding is_graph_homomorphism_def using g by auto
+    with mtd maintained_def have "extensible (graph_of (0, {}), cfg) G {}" by auto
+    then obtain g where "edges (map_graph g cfg) \<subseteq> edges G" "vertices cfg = Domain g"
+      unfolding extensible_def is_graph_homomorphism_def2 graph_union_iff by auto
+    hence "\<exists> a b. (S_Bot,a,b) \<in> edges G" using ab unfolding edge_preserving by auto
+    thus False using std unfolding standard_def getRel_def by auto
   qed
   from d1 d2 show ?thesis by auto
 qed
 
-
-
-term consistent 
-
-term model
-
-
-find_theorems "UNION _ (\<lambda> x. x)"
 (* prove the model for the consistency-problem algorithm
    is a model iff one exists *)
 

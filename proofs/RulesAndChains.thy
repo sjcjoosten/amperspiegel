@@ -305,31 +305,31 @@ lemma consequence_graphD[dest]:
     then G is a least consequence graph of S maintaining Rs.'
    Note that the type of 'each consequence graph' isn't given here.
    Taken literally, this should mean 'for every possible type'.
-   However, we use a type that suffices for proving the final theorem.
+   However, we use a single type here.
    Thus, the property least_consequence_graph is weakened here.
    
 *)
 definition least 
-  :: "(('l, 'v) Graph_PreRule) set \<Rightarrow> ('l, 'c) labeled_graph \<Rightarrow> ('l, 'c) labeled_graph \<Rightarrow> bool"
-  where "least Rs S G \<equiv> subgraph S G \<and> 
-            (\<forall> C :: ('l, 'l + 'c) labeled_graph. consequence_graph Rs C \<longrightarrow> maintained (S,G) C)"
+  :: "'x itself \<Rightarrow> (('l, 'v) Graph_PreRule) set \<Rightarrow> ('l, 'c) labeled_graph \<Rightarrow> ('l, 'c) labeled_graph \<Rightarrow> bool"
+  where "least _ Rs S G \<equiv> subgraph S G \<and> 
+            (\<forall> C :: ('l, 'x) labeled_graph. consequence_graph Rs C \<longrightarrow> maintained (S,G) C)"
 
 lemma leastI[intro]:
 assumes "subgraph S (G:: ('l, 'c) labeled_graph)"
-        "\<And> C :: ('l, 'l+'c) labeled_graph. consequence_graph Rs C \<Longrightarrow> maintained (S,G) C"
-      shows "least Rs S G"
+        "\<And> C :: ('l, 'x) labeled_graph. consequence_graph Rs C \<Longrightarrow> maintained (S,G) C"
+      shows "least (t:: 'x itself) Rs S G"
   using assms unfolding least_def by auto
 
 definition least_consequence_graph
-  :: "(('l, 'v) Graph_PreRule) set
+  :: "'x itself \<Rightarrow> (('l, 'v) Graph_PreRule) set
      \<Rightarrow> ('l, 'c) labeled_graph \<Rightarrow> ('l, 'c) labeled_graph \<Rightarrow> bool"
-  where "least_consequence_graph Rs S G \<equiv> consequence_graph Rs G \<and> least Rs S G"
+  where "least_consequence_graph t Rs S G \<equiv> consequence_graph Rs G \<and> least t Rs S G"
 
 lemma least_consequence_graphI[intro]:
 assumes "consequence_graph Rs (G:: ('l, 'c) labeled_graph)"
         "subgraph S G"
-        "\<And> C :: ('l, 'l+'c) labeled_graph. consequence_graph Rs C \<Longrightarrow> maintained (S,G) C"
-      shows "least_consequence_graph Rs S G"
+        "\<And> C :: ('l, 'x) labeled_graph. consequence_graph Rs C \<Longrightarrow> maintained (S,G) C"
+      shows "least_consequence_graph (t:: 'x itself) Rs S G"
   using assms unfolding least_consequence_graph_def least_def by auto
 
 definition fair_chain where
@@ -470,44 +470,44 @@ qed
           but we fix the type here in the definition that will be used in pushout_step.
           The type used here should suffice (and we cannot quantify over types anyways) *)
 definition weak_universal ::
-    "('a, 'c) Graph_PreRule \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow>
+    "'x itself \<Rightarrow> ('a, 'c) Graph_PreRule \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow>
      ('c \<times> 'b) set \<Rightarrow> ('c \<times> 'b) set \<Rightarrow> bool" where
-"weak_universal R G\<^sub>1 G\<^sub>2 f\<^sub>1 f\<^sub>2 \<equiv> (\<forall> h\<^sub>1 h\<^sub>2 G::('a, 'a+'b) labeled_graph.
+"weak_universal _ R G\<^sub>1 G\<^sub>2 f\<^sub>1 f\<^sub>2 \<equiv> (\<forall> h\<^sub>1 h\<^sub>2 G::('a, 'x) labeled_graph.
              (is_graph_homomorphism (snd R) G h\<^sub>1 \<and> is_graph_homomorphism G\<^sub>1 G h\<^sub>2 \<and> f\<^sub>1 O h\<^sub>2 \<subseteq> h\<^sub>1)
          \<longrightarrow> (\<exists> h. is_graph_homomorphism G\<^sub>2 G h \<and> h\<^sub>2 \<subseteq> h))"
 
 lemma weak_universalD[dest]:
-  assumes "weak_universal R (G\<^sub>1::('a, 'b) labeled_graph) G\<^sub>2 f\<^sub>1 f\<^sub>2"
-  shows "\<And>  h\<^sub>1 h\<^sub>2 G::('a, 'a+'b) labeled_graph.
+  assumes "weak_universal (t:: 'x itself) R (G\<^sub>1::('a, 'b) labeled_graph) G\<^sub>2 f\<^sub>1 f\<^sub>2"
+  shows "\<And>  h\<^sub>1 h\<^sub>2 G::('a, 'x) labeled_graph.
          is_graph_homomorphism (snd R) G h\<^sub>1 \<Longrightarrow> is_graph_homomorphism G\<^sub>1 G h\<^sub>2 \<Longrightarrow> f\<^sub>1 O h\<^sub>2 \<subseteq> h\<^sub>1
          \<Longrightarrow> (\<exists> h. is_graph_homomorphism G\<^sub>2 G h \<and> h\<^sub>2 \<subseteq> h)"
   using assms unfolding weak_universal_def by metis
 
 lemma weak_universalI[intro]:
-  assumes "\<And> h\<^sub>1 h\<^sub>2 G::('a, 'a+'b) labeled_graph.
+  assumes "\<And> h\<^sub>1 h\<^sub>2 G::('a, 'x) labeled_graph.
          is_graph_homomorphism (snd R) G h\<^sub>1 \<Longrightarrow> is_graph_homomorphism G\<^sub>1 G h\<^sub>2 \<Longrightarrow> f\<^sub>1 O h\<^sub>2 \<subseteq> h\<^sub>1
          \<Longrightarrow> (\<exists> h. is_graph_homomorphism G\<^sub>2 G h \<and> h\<^sub>2 \<subseteq> h)"
-  shows "weak_universal R (G\<^sub>1::('a, 'b) labeled_graph) G\<^sub>2 f\<^sub>1 f\<^sub>2"
+  shows "weak_universal (t:: 'x itself) R (G\<^sub>1::('a, 'b) labeled_graph) G\<^sub>2 f\<^sub>1 f\<^sub>2"
   using assms unfolding weak_universal_def by force
 
 definition pushout_step ::
-    "('a, 'c) Graph_PreRule \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> bool" where
-"pushout_step R G\<^sub>1 G\<^sub>2 \<equiv> subgraph G\<^sub>1 G\<^sub>2 \<and> 
+    "'x itself \<Rightarrow> ('a, 'c) Graph_PreRule \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> bool" where
+"pushout_step t R G\<^sub>1 G\<^sub>2 \<equiv> subgraph G\<^sub>1 G\<^sub>2 \<and> 
   (\<exists> f\<^sub>1 f\<^sub>2. is_graph_homomorphism (fst R) G\<^sub>1 f\<^sub>1 \<and>
            is_graph_homomorphism (snd R) G\<^sub>2 f\<^sub>2 \<and>
            f\<^sub>1 \<subseteq> f\<^sub>2 \<and>
-           weak_universal R G\<^sub>1 G\<^sub>2 f\<^sub>1 f\<^sub>2
+           weak_universal t R G\<^sub>1 G\<^sub>2 f\<^sub>1 f\<^sub>2
   )"
 
 definition Simple_WPC ::
-    "(('a, 'b) Graph_PreRule) set \<Rightarrow> (('a, 'd) graph_seq) \<Rightarrow> bool" where
-"Simple_WPC Rs S \<equiv> set_of_graph_rules Rs
-   \<and> (\<forall> i. (graph (S i) \<and> S i = S (Suc i)) \<or> (\<exists> R \<in> Rs. pushout_step R (S i) (S (Suc i))))"
+    "'x itself \<Rightarrow> (('a, 'b) Graph_PreRule) set \<Rightarrow> (('a, 'd) graph_seq) \<Rightarrow> bool" where
+"Simple_WPC t Rs S \<equiv> set_of_graph_rules Rs
+   \<and> (\<forall> i. (graph (S i) \<and> S i = S (Suc i)) \<or> (\<exists> R \<in> Rs. pushout_step t R (S i) (S (Suc i))))"
 
 lemma Simple_WPCI [intro]:
   assumes "set_of_graph_rules Rs" "graph (S 0)"
-          "\<And> i. (S i = S (Suc i)) \<or> (\<exists> R \<in> Rs. pushout_step R (S i) (S (Suc i)))"
-        shows "Simple_WPC Rs S"
+          "\<And> i. (S i = S (Suc i)) \<or> (\<exists> R \<in> Rs. pushout_step t R (S i) (S (Suc i)))"
+        shows "Simple_WPC t Rs S"
 proof -
   have "graph (S i)" for i proof(induct i)
     case (Suc i)
@@ -517,7 +517,7 @@ proof -
 qed
 
 lemma Simple_WPC_Chain[simp]:
-  assumes "Simple_WPC Rs S"
+  assumes "Simple_WPC t Rs S"
   shows "chain S"
 proof -
   have "subgraph (S i) (S (Suc i))" for i using assms
@@ -529,11 +529,11 @@ qed
    This makes the easy part of the hard case a bit harder,
    but hopefully the overall becomes easier to deal with. *)
 inductive WPC ::
-    "(('a, 'b) Graph_PreRule) set \<Rightarrow> (('a, 'd) graph_seq) \<Rightarrow> bool"
+    "'x itself \<Rightarrow> (('a, 'b) Graph_PreRule) set \<Rightarrow> (('a, 'd) graph_seq) \<Rightarrow> bool"
   where
-    wpc_simpl [simp, intro]: "Simple_WPC Rs S \<Longrightarrow> WPC Rs S"
-  | wpc_empty [simp, intro]: "chain S \<Longrightarrow> (\<And> i. S i = chain_sup S) \<Longrightarrow> WPC Rs S"
-  | wpc_combo [simp, intro]: "chain S \<Longrightarrow> (\<And> i. \<exists> S'. S' 0 = S i \<and> chain_sup S' = S (Suc i) \<and> WPC Rs S') \<Longrightarrow> WPC Rs S"
+    wpc_simpl [simp, intro]: "Simple_WPC t Rs S \<Longrightarrow> WPC t Rs S"
+  | wpc_empty [simp, intro]: "chain S \<Longrightarrow> (\<And> i. S i = chain_sup S) \<Longrightarrow> WPC t Rs S"
+  | wpc_combo [simp, intro]: "chain S \<Longrightarrow> (\<And> i. \<exists> S'. S' 0 = S i \<and> chain_sup S' = S (Suc i) \<and> WPC t Rs S') \<Longrightarrow> WPC t Rs S"
 
 lemma extensible_from_chainI:
   assumes ch:"chain S"
@@ -564,17 +564,17 @@ qed
 
 (* Towards Lemma 4: key inductive property *)
 lemma wpc_least:
-  assumes "WPC Rs S"
-  shows "least Rs (S 0) (chain_sup S)"
+  assumes "WPC (t:: 'x itself) Rs S"
+  shows "least t Rs (S 0) (chain_sup S)"
   using assms
 proof(induction S)
-  case (wpc_simpl Rs S)
+  case (wpc_simpl t Rs S)
   hence gr:"set_of_graph_rules Rs"
-    and ps:"\<And> i. S i = S (Suc i) \<or> (\<exists>R\<in>Rs. pushout_step R (S i) (S (i + 1)))"
+    and ps:"\<And> i. S i = S (Suc i) \<or> (\<exists>R\<in>Rs. pushout_step t R (S i) (S (i + 1)))"
     unfolding Simple_WPC_def by auto
   have ch[intro]:"chain S" using wpc_simpl by auto
   show ?case
-  proof fix C::"('a,'a+'c) labeled_graph"
+  proof fix C::"('a,'x) labeled_graph"
     assume cgC:"consequence_graph Rs C"
     show "maintained (S 0, chain_sup S) C"
     proof(standard,rule extensible_from_chainI,goal_cases)
@@ -586,7 +586,7 @@ proof(induction S)
         case False
         with ps[of i,unfolded pushout_step_def] obtain R f\<^sub>1 f\<^sub>2 where
         R:"(fst R,snd R) \<in> Rs" and f\<^sub>1:"is_graph_homomorphism (fst R) (S i) f\<^sub>1"
-        and wu:"weak_universal R (S i) (S (i + 1)) f\<^sub>1 f\<^sub>2" by auto
+        and wu:"weak_universal t R (S i) (S (i + 1)) f\<^sub>1 f\<^sub>2" by auto
         from is_graph_homomorphism_composes[OF f\<^sub>1 3(2)]
         have ih_comp:"is_graph_homomorphism (fst R) C (f\<^sub>1 O x)".
         with maintainedD[OF consequence_graphD(1)[OF cgC R]]
@@ -603,18 +603,18 @@ proof(induction S)
     qed auto
   qed auto
 next
-  case (wpc_combo S Rs)
+  case (wpc_combo S t Rs)
   hence ps:"\<And> i. \<exists>S'. S' 0 = S i \<and>
          chain_sup S' = S (Suc i) \<and>
-         WPC Rs S' \<and>
-         least Rs (S' 0) (chain_sup S')"
+         WPC t Rs S' \<and>
+         least t Rs (S' 0) (chain_sup S')"
     and ch[intro]:"chain S" unfolding Simple_WPC_def by auto
-  show ?case proof fix C :: "('a, 'a+'c) labeled_graph"
+  show ?case proof fix C :: "('a, 'x) labeled_graph"
     assume cgC:"consequence_graph Rs C"
     show "maintained (S 0, chain_sup S) C"
     proof(standard,rule extensible_from_chainI,goal_cases)
       case (3 f g i)
-      from ps[of i] have "least Rs (S i) (S (Suc i))" by auto
+      from ps[of i] have "least t Rs (S i) (S (Suc i))" by auto
       with cgC have ss:"subgraph (S i) (S (Suc i))" "maintained (S i, S (Suc i)) C"
         unfolding least_def by auto
       from ss(2) 3(2) have "extensible (S i, S (Suc i)) C g" by auto
@@ -625,8 +625,8 @@ qed auto
 
 (* Lemma 4 *)
 lemma wpc_least_consequence_graph:
-  assumes "WPC Rs S" "consequence_graph Rs (chain_sup S)"
-  shows "least_consequence_graph Rs (S 0) (chain_sup S)"
+  assumes "WPC t Rs S" "consequence_graph Rs (chain_sup S)"
+  shows "least_consequence_graph t Rs (S 0) (chain_sup S)"
   using wpc_least assms unfolding least_consequence_graph_def by auto
 
 end
