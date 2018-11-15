@@ -16,6 +16,45 @@ definition top_rule :: "'l \<Rightarrow> ('l,nat) Graph_PreRule" where
 definition nonempty_rule :: "('l,nat) Graph_PreRule" where
 "nonempty_rule = (LG {} {},LG {} {0})"	
 
+lemma nonempty_rule[simp]:
+  assumes "graph G"
+  shows "maintained nonempty_rule G \<longleftrightarrow> vertices G \<noteq> {}"
+proof -
+  have "vertices G = {} \<Longrightarrow> is_graph_homomorphism (LG {} {0}) G x \<Longrightarrow> False"
+       "v \<in> vertices G \<Longrightarrow> is_graph_homomorphism (LG {} {0}) G {(0,v)}"
+       for v::"'b" and x::"(nat \<times> 'b) set"
+    unfolding is_graph_homomorphism_concr_graph[OF assms graph_empty_e] univalent_def by blast+
+  thus ?thesis unfolding nonempty_rule_def maintained_def extensible_def by (auto intro:assms)
+qed
+
+lemma top_rule[simp]:
+  assumes "graph G"
+  shows "maintained (top_rule r) G \<longleftrightarrow> vertices G \<times> vertices G = getRel r G"
+proof
+  assume a:"maintained (top_rule r) G"
+  { fix a b assume "a \<in> vertices G" "b \<in> vertices G"
+    hence "is_graph_homomorphism (LG {} {0, 1}) G {(0::nat,a),(1,b)}"
+      using assms unfolding is_graph_homomorphism_def univalent_def by auto
+    with a[unfolded maintained_def top_rule_def] extensible_refl_concr
+    have "is_graph_homomorphism (LG {(r, 0, 1)} {0::nat, 1}) G {(0::nat, a), (1, b)}" by simp
+    hence "(a, b) \<in> getRel r G"
+      unfolding is_graph_homomorphism_def2 graph_union_iff getRel_def by auto
+  }
+  thus "vertices G \<times> vertices G = getRel r G" using getRel_dom[OF assms] by auto next
+  assume a:"vertices G \<times> vertices G = getRel r G"
+  { fix f assume a2:"is_graph_homomorphism (fst (top_rule r)) G f"
+    hence f:"f `` {0, 1} \<subseteq> vertices G" "on_triple f `` {} \<subseteq> edges G"
+          "univalent f" "Domain f = {0, 1}"
+      unfolding top_rule_def prod.sel is_graph_homomorphism_concr_graph[OF assms graph_empty_e]
+      by argo+
+    from a2 have ih:"is_graph_homomorphism (LG {} {0, 1}) G f" unfolding top_rule_def by auto
+    have "extensible (top_rule r) G f" unfolding top_rule_def extensible_refl_concr[OF ih]
+      is_graph_homomorphism_concr_graph[OF assms graph_single]
+      using f a[unfolded getRel_def] by fastforce
+  }
+  thus "maintained (top_rule r) G" unfolding maintained_def by auto
+qed
+
 (* Since the equivalence rules might be useful for other equivalence relations,
    we give the relation symbol as an argument *)
 definition reflexivity_rule :: "'l \<Rightarrow> ('l,nat) Graph_PreRule" where
@@ -344,14 +383,38 @@ proof -
   thus ?thesis unfolding maintained_def by blast
 qed
 
-abbreviation const_exists where
+definition const_exists where
 "const_exists c \<equiv> transl_rule (\<top> \<sqsubseteq> A_Cmp (A_Cmp \<top> (A_Lbl (S_Const c))) \<top>)"
-abbreviation const_exists_rev where
+definition const_exists_rev where
 "const_exists_rev c \<equiv> transl_rule (A_Cmp (A_Cmp (A_Lbl (S_Const c)) \<top>) (A_Lbl (S_Const c)) \<sqsubseteq> A_Lbl (S_Const c))"
-abbreviation const_prop where
+definition const_prop where
 "const_prop c \<equiv> transl_rule (A_Lbl (S_Const c) \<sqsubseteq> \<one>)"
-abbreviation const_disj where
+definition const_disj where
 "const_disj c\<^sub>1 c\<^sub>2 \<equiv> transl_rule (A_Cmp (A_Lbl (S_Const c\<^sub>1)) (A_Lbl (S_Const c\<^sub>2)) \<sqsubseteq> \<bottom>)"
+
+lemma constant_rules:
+  assumes "standard' C G" "c \<in> C"
+  shows "maintained (const_exists c) G"
+        "maintained (const_exists_rev c) G"
+        "maintained (const_prop c) G"
+        "c' \<in> C \<Longrightarrow> c \<noteq> c' \<Longrightarrow> maintained (const_disj c c') G"
+proof -
+  note a = assms[unfolded standard_def]
+  from a have g:"graph G" by auto
+  from a
+  have gr_c:"getRel (S_Const c) G = {(Inl c, Inl c)}"
+       "getRel S_Idt G = Id_on (vertices G)" "getRel S_Bot G = {}"
+       "getRel S_Top G = vertices G \<times> vertices G" by auto
+  with g have inlc:"Inl c \<in> vertices G" by (metis getRel_dom(1) singletonI)
+  thus "maintained (const_exists c) G" "maintained (const_exists_rev c) G"
+       "maintained (const_prop c) G"
+    unfolding const_prop_def const_exists_rev_def const_exists_def maintained_holds_subset_iff[OF g]
+    by (auto simp:gr_c relcomp_unfold)
+  assume "c' \<in> C"
+  with a have gr_c':"getRel (S_Const c') G = {(Inl c', Inl c')}" by auto
+  thus "c \<noteq> c' \<Longrightarrow>  maintained (const_disj c c') G"
+    unfolding const_disj_def maintained_holds_subset_iff[OF g] using gr_c by auto
+qed
 
 definition constant_rules where
 "constant_rules C \<equiv> const_exists ` C \<union> const_exists_rev ` C \<union> const_prop ` C
@@ -365,9 +428,10 @@ proof -
   have gr:"\<And> u v . graph_rule (transl_rule (u \<sqsubseteq> v))" by auto
   consider "\<exists> v. x = const_exists v" | "\<exists> v. x = const_exists_rev v" |  "\<exists> v. x = const_prop v"
     |  "\<exists> v w. x = const_disj v w" using assms unfolding constant_rules_def Un_iff by blast
-  thus ?thesis using gr by cases fast+
+  thus ?thesis using gr
+    unfolding const_exists_def const_exists_rev_def const_prop_def const_disj_def
+    by cases fast+
 qed
-
 
 lemma finite_constant[intro]:
   assumes "finite C"
@@ -381,10 +445,23 @@ proof -
   thus ?thesis unfolding constant_rules_def using assms by blast
 qed
 
-lemma constant_rules_empty[simp]:
-  "constant_rules {} = {}" by (auto simp:constant_rules_def)
+lemma standard_maintains_constant_rules:
+  assumes "standard' C G" "R\<in>constant_rules C"
+  shows "maintained R G"
+proof -
+  from assms(2)[unfolded constant_rules_def]
+  consider "\<exists> c \<in> C. R = const_exists c"
+         | "\<exists> c \<in> C. R = const_exists_rev c"
+         | "\<exists> c \<in> C. R = const_prop c"
+         | "\<exists> c\<^sub>1 c\<^sub>2. c\<^sub>1 \<in> C \<and> c\<^sub>2 \<in> C \<and> c\<^sub>1 \<noteq> c\<^sub>2 \<and> R = const_disj c\<^sub>1 c\<^sub>2" by blast
+  from this assms(1) show ?thesis by(cases,auto simp:constant_rules)
+qed
 
-abbreviation standard_rules :: "'a set \<Rightarrow> 'a Standard_Constant set \<Rightarrow> (('a Standard_Constant, nat) labeled_graph \<times> ('a Standard_Constant, nat) labeled_graph) set"
+lemma constant_rules_empty[simp]:
+  "constant_rules {} = {}"
+  by (auto simp:constant_rules_def)
+
+definition standard_rules :: "'a set \<Rightarrow> 'a Standard_Constant set \<Rightarrow> (('a Standard_Constant, nat) labeled_graph \<times> ('a Standard_Constant, nat) labeled_graph) set"
   where
 "standard_rules C L \<equiv> constant_rules C \<union> identity_rules L \<union> {top_rule S_Top,nonempty_rule}"
 
@@ -402,7 +479,8 @@ lemma identity_rules_mono:
 lemma standard_rules_mono:
   assumes "C\<^sub>1 \<subseteq> C\<^sub>2" "L\<^sub>1 \<subseteq> L\<^sub>2"
   shows "standard_rules C\<^sub>1 L\<^sub>1 \<subseteq> standard_rules C\<^sub>2 L\<^sub>2"
-  using constant_rules_mono[OF assms(1)] identity_rules_mono[OF assms(2)] by auto
+  using constant_rules_mono[OF assms(1)] identity_rules_mono[OF assms(2)]
+  unfolding standard_rules_def by auto
 
 lemma maintainedA_invmono:
   assumes "C\<^sub>1 \<subseteq> C\<^sub>2" "L\<^sub>1 \<subseteq> L\<^sub>2"
@@ -440,6 +518,78 @@ proof(cases r)
   qed
 qed
 
+lemma standard_identity_rules:
+  assumes "standard' C G"
+  shows "maintained (reflexivity_rule S_Idt) G"
+        "maintained (transitive_rule S_Idt) G"
+        "maintained (symmetry_rule S_Idt) G"
+        "maintained (congruence_rule S_Idt l) G"
+proof -
+  note a = assms[unfolded standard_def]
+  from a have g:"graph G" by auto
+  from a
+  have gr:"getRel S_Idt G = Id_on (vertices G)" "getRel S_Bot G = {}"
+       "getRel S_Top G = vertices G \<times> vertices G"
+    and v_gr:"\<forall>a b. ((S_Idt, a, b) \<in> edges G) = (a \<in> vertices G \<and> b = a)"
+    unfolding getRel_def by auto
+  thus "maintained (transitive_rule S_Idt) G" "maintained (symmetry_rule S_Idt) G"
+       "maintained (congruence_rule S_Idt l) G"
+    unfolding transitive_rule_def symmetry_rule_def congruence_rule_def
+              maintained_holds_subset_iff[OF g]
+    by (auto simp:gr relcomp_unfold)
+  { fix f :: "(nat \<times> ('a + 'b)) set"
+    assume "is_graph_homomorphism (LG {} {0}) G f"
+    hence u:"univalent f" and d:"Domain f = {0}"
+       and r:"f `` {0} \<subseteq> vertices G" unfolding is_graph_homomorphism_def by simp+
+    from d obtain v where v:"(0,v) \<in> f" by auto
+    hence f:"f = {(0,v)}"
+      using d insert_iff mk_disjoint_insert all_not_in_conv old.prod.exhaust
+            u[unfolded univalent_def] Domain.intros[of _ _ f,unfolded d,THEN singletonD]
+      by (metis (no_types))
+    from v r have v:"v \<in> vertices G" by auto
+    with v_gr have "(S_Idt, v, v) \<in> edges G" by auto
+    hence "edge_preserving {(0, v)} {(S_Idt, 0, 0)} (edges G)" unfolding edge_preserving by auto
+    hence "is_graph_homomorphism (LG {(S_Idt, 0, 0)} {0}) G f" unfolding f
+      is_graph_homomorphism_def using g v by (auto simp:univalent_def)
+  }
+  thus "maintained (reflexivity_rule S_Idt) G"
+    unfolding reflexivity_rule_def maintained_def by auto
+qed
+
+lemma standard_maintains_identity_rules:
+  assumes "standard' C G" "x\<in>identity_rules L"
+  shows "maintained x G"
+proof -
+  consider "x = reflexivity_rule S_Idt" | "x = transitive_rule S_Idt" | "x = symmetry_rule S_Idt"
+    |  "\<exists> l. x = congruence_rule S_Idt l" using assms unfolding identity_rules_def Un_iff by blast
+  thus ?thesis using standard_identity_rules[OF assms(1)] by(cases,auto)
+qed
+
+lemma standard_maintains_rules:
+  assumes "standard' C G"
+  shows "maintainedA (standard_rules C L) G"
+proof fix R
+  assume "R \<in> standard_rules C L"
+  then consider "R \<in> constant_rules C" | "R \<in> identity_rules L"
+    | "R = top_rule S_Top" | "R = nonempty_rule" by (auto simp:standard_rules_def)
+  thus "maintained R G"
+    using assms standard_maintains_constant_rules[OF assms]
+          standard_maintains_identity_rules[OF assms] by (cases,auto simp:standard_def)
+qed
+
+lemma standard_rules_edges:
+  assumes "(lhs, rhs) \<in> standard_rules C L" "(l, x, y) \<in> edges rhs"
+  shows "(l = S_Bot \<Longrightarrow> thesis) \<Longrightarrow>
+         (l = S_Top \<Longrightarrow> thesis) \<Longrightarrow>
+         (l = S_Idt \<Longrightarrow> thesis) \<Longrightarrow>
+         (l \<in> S_Const ` C \<Longrightarrow> thesis) \<Longrightarrow>
+         (l \<in> L \<Longrightarrow> thesis) \<Longrightarrow> thesis"
+  using assms
+  by (auto simp:Let_def standard_rules_def constant_rules_def identity_rules_def
+   const_exists_def const_exists_rev_def const_prop_def const_disj_def
+   reflexivity_rule_def transitive_rule_def symmetry_rule_def congruence_rule_def
+   top_rule_def nonempty_rule_def)
+
 (* Slightly stronger version of Lemma 8:
    we reason about maintained rather than holds,
    and the quantification for maintained happens within the existential quantifier, rather than outside.
@@ -457,6 +607,7 @@ shows "\<exists> f g (G::('V, 'V') std_graph). G = map_graph_fn G (f o g) \<and>
               \<and> standard' C G
               \<and> (\<forall> r. maintained r G' \<longrightarrow> maintained r G)"
 proof -
+  note mnt = mnt[unfolded standard_rules_def]
   from mnt have "maintainedA (identity_rules L) G'" by auto
   from identity_rules[OF gr(1) this gr(2)] obtain h where
     h:"h \<circ> h = h" "ident_rel S_Idt (map_graph_fn G' h)" "subgraph (map_graph_fn G' h) G'" by blast
@@ -470,12 +621,13 @@ proof -
     case (1 c)
     with mnt have cr5: "maintained (const_exists c) G'"
               and cr7: "maintained (const_prop c) G'" unfolding constant_rules_def by blast+
-    from top_nonempty cr5[unfolded maintained_holds_subset_iff[OF gr(1)]]
+    from top_nonempty cr5[unfolded maintained_holds_subset_iff[OF gr(1)] const_exists_def]
     obtain y z where yz:"(y,z) \<in> getRel (S_Const c) G'" by auto
     from this gr(1) have yzv:"y \<in> vertices G'" "z \<in> vertices G'" by (auto simp:getRel_def)
     from getRel_hom[OF yz yzv]
     have hi:"(h y,h z) \<in> getRel (S_Const c) (map_graph_fn G' h)".
-    with h(2) cr7[THEN mg,unfolded maintained_holds_subset_iff[OF mg_h]] have "h y = h z" by force
+    with h(2) cr7[THEN mg,unfolded maintained_holds_subset_iff[OF mg_h] const_prop_def]
+    have "h y = h z" by force
     thus "\<exists> v. (v,v) \<in> getRel (S_Const c) (map_graph_fn G' h)" using hi by auto
   qed
   hence "\<forall> c. \<exists> v. c \<in> C \<longrightarrow> (v, v) \<in> getRel (S_Const c) (map_graph_fn G' h)" by blast
@@ -491,7 +643,7 @@ proof -
               "(m x,m x) \<in> getRel (S_Const x) G'" using h(3) by force+
     from 1(1,2) mnt have cr8:"x \<noteq> y \<Longrightarrow> maintained (const_disj x y) G'"
       unfolding constant_rules_def by blast
-    from cr8[unfolded maintained_holds_subset_iff[OF gr(1)],simplified] mx
+    from cr8[unfolded maintained_holds_subset_iff[OF gr(1)] const_disj_def] mx
     have "x\<noteq>y\<Longrightarrow>(m x,m x) \<in> :G':\<lbrakk>\<bottom>\<rbrakk>" by auto
     thus "x = y" using cf by auto
   qed
@@ -573,8 +725,8 @@ proof -
         and cr7:"maintained (const_prop x) (map_graph_fn G' h)"
         by (intro mg, force)+
       hence "(m x,z) \<in> getRel S_Idt (map_graph_fn G' h)"
-            "(y,m x) \<in> getRel S_Idt (map_graph_fn G' h)"
-        using lhs unfolding maintained_holds_subset_iff[OF mg_h] by auto
+            "(y,m x) \<in> getRel S_Idt (map_graph_fn G' h)" using lhs
+        unfolding maintained_holds_subset_iff[OF mg_h] const_exists_rev_def const_prop_def by auto
       hence "y = m x" "z = m x" using h(2) by auto
     }
     thus "getRel (S_Const x) (map_graph_fn G' h) \<subseteq> {(m x, m x)}" by auto

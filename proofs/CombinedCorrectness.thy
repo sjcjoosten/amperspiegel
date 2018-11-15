@@ -1,14 +1,11 @@
 theory CombinedCorrectness
   imports GraphRewriting StandardRules
 begin
-(* TODO: Create 'master theorem' relating 'holds' and 'entails' to the outcome. *)
-thm lcg_through_make_step maintained_standard_noconstants
-    consequence_graphD maintained_holds_iff least_consequence_graph_def least_def
 
 (* a somewhat concrete function to get the model if one exists *)
 definition the_model where
 "the_model C Rs
-  \<equiv> let L = fst ` UNION Rs (edges o snd);
+  \<equiv> let L = fst ` UNION Rs (edges o snd) \<union> {S_Bot,S_Top,S_Idt} \<union> S_Const ` C;
         Rules = Rs \<union> (standard_rules C L);
         sel = non_constructive_selector Rules 
      in the_lcg sel Rules (0,{})"
@@ -29,16 +26,20 @@ lemma check_consistency:
    (is "?lhs = ?rhs")
 proof -
   from assms(1) have fin_t:"finite (transl_rules T)" unfolding transl_rules_def by fast
-  define L where "L = fst ` UNION (transl_rules T) (edges \<circ> snd)"
+  define L where
+    "L = fst ` UNION (transl_rules T) (edges \<circ> snd) \<union> {S_Bot,S_Top,S_Idt} \<union> S_Const ` C"
   have "finite (UNION (transl_rules T) (edges \<circ> snd))" using fin_t gr_transl_rules by auto
-  hence fin_l:"finite L" unfolding L_def by auto
+  hence fin_l:"finite L" unfolding L_def using assms(2) by auto
   define Rules where "Rules = transl_rules T \<union> standard_rules C L"
-  hence fin_r:"finite Rules" using assms(2) fin_t fin_l by auto
+  hence fin_r:"finite Rules" using assms(2) fin_t fin_l unfolding standard_rules_def by auto
+  have incl_L:"fst ` UNION Rules (edges o snd) \<subseteq> L"
+    unfolding L_def Rules_def by (auto elim:standard_rules_edges)
   have "\<forall>R\<in>transl_rules T. graph_rule R" using gr_transl_rules by blast
   moreover have "\<forall>R\<in> constant_rules C. graph_rule R" using constant_rules_graph_rule by auto
   moreover have "\<forall>R\<in> identity_rules L. graph_rule R" using identity_rules_graph_rule by auto
   moreover have "\<forall>R\<in> {top_rule S_Top,nonempty_rule}. graph_rule R" using are_rules(1,2) by fastforce
-  ultimately have gr:"set_of_graph_rules Rules" unfolding set_of_graph_rules_def Rules_def ball_Un
+  ultimately have gr:"set_of_graph_rules Rules"
+    unfolding set_of_graph_rules_def Rules_def ball_Un standard_rules_def
     by blast
   define sel where "sel = non_constructive_selector Rules"
   hence sel:"valid_selector Rules sel" using gr non_constructive_selector by auto
@@ -53,7 +54,8 @@ proof -
     and cfg_l:"least TYPE('a + nat) Rules (graph_of (0, {})) cfg"
     and cfg_m:"r \<in> transl_rules T \<Longrightarrow> maintained r cfg" for r
     unfolding Rules_def least_consequence_graph_def by auto
-  have cfg_lbl:"fst ` edges cfg \<subseteq> L" sorry
+  have cfg_lbl:"fst ` edges cfg \<subseteq> L" 
+    unfolding cfg_def by (auto intro!: the_lcg_edges[OF sel incl_L])
   have d1: "?lhs \<Longrightarrow> ?rhs" proof -
     assume ?lhs
     from maintained_standard_noconstants[OF cfg_sdt cfg_g cfg_lbl this[folded cfg]]
@@ -77,10 +79,10 @@ proof -
       where G:"model C G T" by auto
     with model_def have std:"standard' C G" and holds:"\<forall>S\<in>T. G \<tturnstile> S" by fast+
     hence g:"graph G" unfolding standard_def by auto
-    from std have std_maintained:"maintainedA (standard_rules C L) G" sorry
     from maintained_holds_iff[OF g] holds
     have "maintainedA (transl_rules T) G" unfolding transl_rules_def by auto
-    hence mnt:"maintainedA Rules G" unfolding Rules_def using std_maintained by auto
+    hence mnt:"maintainedA Rules G" unfolding Rules_def
+      using standard_maintains_rules[OF std] by auto
     from consequence_graphI[OF _ _ g] gr[unfolded set_of_graph_rules_def] mnt
     have cg:"consequence_graph Rules G" by fast
     with cfg_l[unfolded least_def]
@@ -95,6 +97,9 @@ proof -
   qed
   from d1 d2 show ?thesis by auto
 qed
+
+thm lcg_through_make_step maintained_standard_noconstants
+    consequence_graphD maintained_holds_iff least_consequence_graph_def least_def
 
 (* prove the model for the consistency-problem algorithm
    is a model iff one exists *)

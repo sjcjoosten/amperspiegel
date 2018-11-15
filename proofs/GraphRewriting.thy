@@ -493,6 +493,46 @@ qed
 abbreviation the_lcg where
 "the_lcg sel Rs init \<equiv> chain_sup (\<lambda>i. graph_of (mk_chain sel Rs init i))"
 
+lemma mk_chain_edges:
+  assumes "valid_selector Rules sel"
+          "UNION Rules (edges \<circ> snd) \<subseteq> L \<times> UNIV"
+          "edges (graph_of G) \<subseteq> L \<times> UNIV"
+  shows "edges (graph_of (mk_chain sel Rules G i)) \<subseteq> L \<times> UNIV"
+using assms(3) proof(induct i arbitrary:G)
+  case 0
+  then show ?case using assms(2) by auto
+next
+  case (Suc i G)
+  hence "edges (graph_of (make_step sel G)) \<subseteq> L \<times> UNIV"
+  proof(cases "sel G")
+    case None show ?thesis unfolding None make_step_def using Suc by auto
+  next
+    case (Some a)
+    then obtain R f where Some:"sel G = Some (R, f)" by fastforce
+    hence "(a, x, y) \<in> edges (snd R) \<Longrightarrow> a \<in> L" for a x y
+      using assms(2) valid_selectorD(2)[OF assms(1) Some]
+      unfolding valid_selection_def Let_def worklist_def by auto
+    then show ?thesis unfolding Some make_step_def Let_def using Suc by auto
+  qed
+  thus ?case unfolding mk_chain.simps by(rule Suc)
+qed
+
+lemma the_lcg_edges:
+  assumes "valid_selector Rules sel"
+          "fst ` UNION Rules (edges \<circ> snd) \<subseteq> L" (is "fst `?fR \<subseteq> _")
+          "fst ` edges (graph_of G) \<subseteq> L" (is "fst `?fG \<subseteq> _")
+  shows "fst ` edges (the_lcg sel Rules G) \<subseteq> L"
+proof -
+  from assms have "fst `?fR \<times> UNIV \<subseteq> L \<times> UNIV" "fst `?fG \<times> UNIV \<subseteq> L \<times> UNIV" by auto
+  hence "UNION Rules (edges \<circ> snd) \<subseteq> L \<times> UNIV" "edges (graph_of G) \<subseteq> L \<times> UNIV"
+    using fst_UNIV[of ?fR] fst_UNIV[of ?fG] by blast+
+  note assms = assms(1) this
+  have "edges (graph_of (mk_chain sel Rules G i)) \<subseteq> L \<times> UNIV" for i
+    using mk_chain_edges[OF assms,unfolded Times_subset_cancel2[OF UNIV_I]].
+  hence "edges (the_lcg sel Rules G) \<subseteq> L \<times> UNIV" unfolding chain_sup_def by auto
+  thus ?thesis by auto
+qed
+
 (* Lemma 9 *)
 lemma lcg_through_make_step:
 assumes "finite Rs" "set_of_graph_rules Rs" "graph (graph_of init)"

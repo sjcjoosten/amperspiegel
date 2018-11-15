@@ -62,6 +62,9 @@ lemma Id_on_int:
 lemma Domain_int_univ:
   "Domain (A \<times> UNIV \<inter> f) = A \<inter> Domain f" by auto
 
+lemma fst_UNIV[intro]:
+  "A \<subseteq> fst ` A \<times> UNIV" by force
+
 lemma Gr_range[simp]:
   shows "Range (BNF_Def.Gr A f) = f ` A" unfolding BNF_Def.Gr_def by auto
 

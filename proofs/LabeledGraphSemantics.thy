@@ -5,6 +5,12 @@ begin
 definition getRel where
 "getRel l G = {(x,y). (l,x,y) \<in> edges G}"
 
+lemma getRel_dom:
+  assumes "graph G"
+  shows "(a,b) \<in> getRel l G \<Longrightarrow> a \<in> vertices G"
+        "(a,b) \<in> getRel l G \<Longrightarrow> b \<in> vertices G"
+  using assms unfolding getRel_def by auto
+
 lemma getRel_subgraph[simp]:
   assumes "(y, z) \<in> getRel l G" "subgraph G G'"
   shows "(y,z) \<in> getRel l G'" using assms by (auto simp:getRel_def subgraph_def graph_union_iff)

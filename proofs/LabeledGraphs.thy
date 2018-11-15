@@ -15,6 +15,10 @@ lemma restrict_def :
 abbreviation graph where (* is the thing a graph? *)
   "graph X \<equiv> X = restrict X"
 
+lemma graph_empty_e[intro]: "graph (LG {} v)" unfolding restrict_def by auto
+
+lemma graph_single[intro]: "graph (LG {(a,b,c)} {b,c})" unfolding restrict_def by auto
+
 abbreviation finite_graph where
   "finite_graph X \<equiv> graph X \<and> finite (vertices X) \<and> finite (edges X)"
 
@@ -71,6 +75,21 @@ lemma relcomp_on_triple[simp]:
 lemma on_triple_preserves_finite[intro]:
 "finite E  \<Longrightarrow> finite (on_triple (BNF_Def.Gr A f) `` E)"
   by (auto simp:on_triple_def BNF_Def.Gr_def)
+
+lemma on_triple_fst[simp]:
+  assumes "vertices G = Domain g" "graph G"
+  shows "x \<in> fst ` on_triple g `` (edges G) \<longleftrightarrow> x \<in> fst ` edges G"
+proof
+  assume "x \<in> fst ` on_triple g `` edges G"
+  then obtain a b where "(x,a,b) \<in> on_triple g `` edges G" by force
+  then obtain c d where "(x,c,d) \<in> edges G" unfolding on_triple_def by auto
+  thus "x \<in> fst ` edges G" by force next
+  assume "x \<in> fst ` edges G"
+  then obtain a b where ab:"(x,a,b) \<in> edges G" by force
+  then obtain c d where "(a,c) \<in> g" "(b,d) \<in> g" using assms by force
+  hence "(x,c,d) \<in> on_triple g `` edges G" using ab unfolding on_triple_def by auto
+  thus "x \<in> fst ` on_triple g `` edges G" by (metis fst_conv image_iff)
+qed
 
 definition edge_preserving where
   "edge_preserving h e1 e2 \<equiv> (\<forall> (k,v1,v2) \<in> e1. \<forall> v1' v2'. ((v1, v1') \<in> h \<and> (v2,v2') \<in> h) \<longrightarrow> (k,v1',v2') \<in> e2)"
@@ -176,6 +195,10 @@ lemma is_graph_homomorphism_composes[intro]:
   next
   case 2 from assms show ?case unfolding is_graph_homomorphism_def by auto blast 
   qed (insert assms,auto simp:is_graph_homomorphism_def intro:compose_preserves_edge_preserving)
+
+lemma is_graph_homomorphism_empty[simp]:
+  "is_graph_homomorphism (LG {} {}) G f \<longleftrightarrow> f = {} \<and> graph G"
+unfolding is_graph_homomorphism_def by auto
 
 lemma is_graph_homomorphism_Id[intro]:
   shows "is_graph_homomorphism (restrict a) (restrict a) (Id_on (vertices a))"
@@ -487,6 +510,12 @@ proof
     by auto
   thus ?rhs unfolding subgraph_def by auto
 qed
+
+lemma is_graph_homomorphism_concr_graph:
+  assumes "graph G" "graph (LG e v)"
+  shows "is_graph_homomorphism (LG e v) G x \<longleftrightarrow>
+         x `` v \<subseteq> vertices G \<and> on_triple x `` e \<subseteq> edges G \<and> univalent x \<and> Domain x = v"
+  using assms unfolding is_graph_homomorphism_def2 graph_union_iff by auto
 
 lemma subgraph_preserves_hom:
   assumes "subgraph A B"

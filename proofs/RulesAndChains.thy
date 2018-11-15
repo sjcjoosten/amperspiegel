@@ -92,6 +92,8 @@ lemma set_of_graph_rulesD[dest]:
 definition agree_on where
 "agree_on G f\<^sub>1 f\<^sub>2 \<equiv> (\<forall> v \<in> vertices G. f\<^sub>1 `` {v} = f\<^sub>2 `` {v})"
 
+lemma agree_on_empty[intro,simp]: "agree_on (LG {} {}) f g" unfolding agree_on_def by auto
+
 lemma agree_on_refl[intro]:
   "agree_on R f f" unfolding agree_on_def by auto
 
@@ -134,6 +136,21 @@ lemma extensibleI[intro]: (* not nice as a standard rule, since obtained variabl
   assumes "is_graph_homomorphism R2 G g" "agree_on R1 f g"
   shows "extensible (R1,R2) G f"
   using assms unfolding extensible_def by auto
+
+lemma extensible_refl_concr[simp]:
+  assumes "is_graph_homomorphism (LG e\<^sub>1 v) G f"
+  shows "extensible (LG e\<^sub>1 v, LG e\<^sub>2 v) G f \<longleftrightarrow> is_graph_homomorphism (LG e\<^sub>2 v) G f"
+proof
+  assume "extensible (LG e\<^sub>1 v, LG e\<^sub>2 v) G f"
+  then obtain g where g: "is_graph_homomorphism (LG e\<^sub>2 v) G g" "agree_on (LG e\<^sub>1 v) f g"
+    unfolding extensible_def by auto
+  hence d:"Domain f = Domain g" "univalent f" "univalent g" using assms
+    unfolding is_graph_homomorphism_def by auto
+  from g have subs:"f \<subseteq> g"
+    by(subst agree_iff_subset[symmetric,OF assms],auto simp:is_graph_homomorphism_def)
+  with d have "f = g" by auto
+  thus "is_graph_homomorphism (LG e\<^sub>2 v) G f" using g by auto
+qed (auto simp: assms extensible_def)
 
 lemma   extensible_chain_sup[intro]:
 assumes "chain S" "extensible R (S j) f"
