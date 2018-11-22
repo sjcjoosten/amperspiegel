@@ -59,7 +59,7 @@ datatype 'v Standard_Constant = S_Top | S_Bot | S_Idt | S_Const 'v
 
 abbreviation holds where
 "holds G S \<equiv> :G:\<lbrakk>fst S\<rbrakk> = :G:\<lbrakk>snd S\<rbrakk>"
-notation holds (infix "\<tturnstile>" 55)
+notation holds (infix "\<Turnstile>" 55)
 
 abbreviation subset_sentence where
 "subset_sentence A B \<equiv> (A,A_Int A B)"
@@ -67,10 +67,75 @@ abbreviation subset_sentence where
 notation subset_sentence (infix "\<sqsubseteq>" 60)
 
 lemma sentence_iff[simp]: (* Lemma 1 *)
-  "G \<tturnstile> e\<^sub>1 \<sqsubseteq> e\<^sub>2 = (:G:\<lbrakk>e\<^sub>1\<rbrakk> \<subseteq> :G:\<lbrakk>e\<^sub>2\<rbrakk>)" and
+  "G \<Turnstile> e\<^sub>1 \<sqsubseteq> e\<^sub>2 = (:G:\<lbrakk>e\<^sub>1\<rbrakk> \<subseteq> :G:\<lbrakk>e\<^sub>2\<rbrakk>)" and
   eq_as_subsets:
-  "G \<tturnstile> (e\<^sub>1, e\<^sub>2) = (G \<tturnstile> e\<^sub>1 \<sqsubseteq> e\<^sub>2 \<and> G \<tturnstile> e\<^sub>2 \<sqsubseteq> e\<^sub>1)"
+  "G \<Turnstile> (e\<^sub>1, e\<^sub>2) = (G \<Turnstile> e\<^sub>1 \<sqsubseteq> e\<^sub>2 \<and> G \<Turnstile> e\<^sub>2 \<sqsubseteq> e\<^sub>1)"
   by auto
+
+lemma map_graph_in[intro]:
+  assumes "graph G" "(a,b) \<in> :G:\<lbrakk>e\<rbrakk>"
+  shows "(f a,f b) \<in> :map_graph_fn G f:\<lbrakk>e\<rbrakk>"
+  using assms by(induct e arbitrary: a b,auto intro!:relcompI)
+
+lemma semantics_subset_vertices:
+  assumes "graph A" shows ":A:\<lbrakk>e\<rbrakk> \<subseteq> vertices A \<times> vertices A"
+  using assms by(induct e,auto simp:getRel_def)
+lemma semantics_in_vertices:
+  assumes "graph A" "(a,b) \<in> :A:\<lbrakk>e\<rbrakk>"
+  shows "a \<in> vertices A" "b \<in> vertices A"
+  using assms by(induct e arbitrary:a b,auto simp:getRel_def)
+
+lemma map_graph_semantics[simp]:
+  assumes "graph A" and i:"inj_on f (vertices A)"
+  shows ":map_graph_fn A f:\<lbrakk>e\<rbrakk> = map_prod f f ` (:A:\<lbrakk>e\<rbrakk>)"
+proof(induct e)
+  have io:"inj_on (map_prod f f) (vertices A \<times> vertices A)"
+    using i unfolding inj_on_def by simp
+  note s = semantics_subset_vertices[OF assms(1)]
+  case (A_Int e1 e2) thus ?case by (auto simp:inj_on_image_Int[OF io s s]) next
+  case (A_Cmp e1 e2)
+  {  fix xa ya xb yb assume "(xa, ya) \<in> :A:\<lbrakk>e1\<rbrakk>" "(xb, yb) \<in> :A:\<lbrakk>e2\<rbrakk>" "f ya = f xb"
+    moreover hence "ya = xb"
+      using i[unfolded inj_on_def] semantics_in_vertices[OF assms(1)] by auto
+    ultimately have "(f xa, f yb) \<in> map_prod f f ` ((:A:\<lbrakk>e1\<rbrakk>) O (:A:\<lbrakk>e2\<rbrakk>))" by auto
+  }
+  with A_Cmp show ?case by auto
+qed (insert assms,auto)
+
+lemma graph_union_semantics:
+  shows "(:A:\<lbrakk>e\<rbrakk>) \<union> (:B:\<lbrakk>e\<rbrakk>) \<subseteq> :graph_union A B:\<lbrakk>e\<rbrakk>"
+  by(induct e,auto simp:getRel_def)
+
+lemma subgraph_semantics:
+  assumes "subgraph A B" "(a,b) \<in> :A:\<lbrakk>e\<rbrakk>"
+  shows "(a,b) \<in> :B:\<lbrakk>e\<rbrakk>"
+  using assms by(induct e arbitrary: a b,auto intro!:relcompI)
+
+lemma graph_homomorphism_semantics:
+  assumes "graph_homomorphism A B f" "(a,b) \<in> :A:\<lbrakk>e\<rbrakk>" "(a,a') \<in> f" "(b,b') \<in> f"
+  shows "(a',b') \<in> :B:\<lbrakk>e\<rbrakk>"
+  using assms proof(induct e arbitrary: a b a' b')
+  have g:"graph A" using assms unfolding graph_homomorphism_def2 by auto
+  case (A_Cmp e1 e2)
+  then obtain y where y:"(a, y) \<in> :A:\<lbrakk>e1\<rbrakk>" "(y, b) \<in> :A:\<lbrakk>e2\<rbrakk>" by auto
+  hence "y\<in>vertices A" using semantics_in_vertices[OF g] by auto
+  with A_Cmp obtain y' where "(y,y') \<in> f" unfolding graph_homomorphism_def by auto
+  from A_Cmp(1)[OF assms(1) y(1) A_Cmp(5) this] A_Cmp(2)[OF assms(1) y(2) this A_Cmp(6)]
+  show ?case by auto
+next
+  case (A_Lbl x) thus ?case by (auto simp:getRel_def graph_homomorphism_def2 graph_union_iff)
+qed auto
+
+lemma graph_homomorphism_nonempty:
+  assumes "graph_homomorphism A B f" ":A:\<lbrakk>e\<rbrakk> \<noteq> {}"
+  shows ":B:\<lbrakk>e\<rbrakk> \<noteq> {}"
+proof-
+  from assms have g:"graph A" unfolding graph_homomorphism_def by auto
+  from assms obtain a b where ab:"(a,b) \<in> :A:\<lbrakk>e\<rbrakk>" by auto
+  from semantics_in_vertices[OF g ab] obtain a' b' where
+    "(a,a') \<in> f" "(b,b') \<in> f" using assms(1) unfolding graph_homomorphism_def by auto
+  from graph_homomorphism_semantics[OF assms(1) ab this] show ?thesis by auto
+qed
 
 lemma getRel_map_fn[intro]:
   assumes "a2 \<in> vertices G" "b2 \<in> vertices G" "(a2,b2) \<in> getRel l G"

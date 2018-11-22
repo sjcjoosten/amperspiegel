@@ -6,11 +6,18 @@ lemma range_dom[simp]:
   "f `` Domain f = Range f"
   "converse f `` Range f = Domain f" by auto
 
-lemma Gr_Image_is_image[simp]:
+lemma Gr_Image_image[simp]:
   shows "BNF_Def.Gr A f `` B = f ` (A \<inter> B)"
   unfolding BNF_Def.Gr_def by auto
 
 definition univalent where "univalent R = (\<forall> x y z. (x,y)\<in> R \<and> (x,z)\<in> R \<longrightarrow> z = y)"
+
+lemma univalent_right_unique[simp]:
+  shows "right_unique (\<lambda> x y. (x,y) \<in> R) = univalent R"
+        "univalent {(x,y).r x y} = right_unique r"
+  unfolding univalent_def right_unique_def by auto
+
+declare univalent_right_unique(1)[pred_set_conv]
 
 lemma univalent_inter[intro]:
   assumes "univalent f_a \<or> univalent f_b"
@@ -118,7 +125,7 @@ lemma Image_outside_Domain[simp]:
   shows "R `` A = {}"
   using assms by auto
 
-lemma Image_is_Domain[simp]:
+lemma Image_Domain[simp]:
   assumes "Domain R = A"
   shows "R `` A = Range R"
   using assms by auto
@@ -143,7 +150,7 @@ lemma univalent_fn[simp]:
   unfolding set_eq_iff
 proof(clarify,standard)
   fix a b assume a:"(a, b) \<in> R"
-  hence is_in:"(a,SOME y. (a, y) \<in> R) \<in> R" using someI by metis
+  hence "(a,SOME y. (a, y) \<in> R) \<in> R" using someI by metis
   with assms a have [simp]:"(SOME y. (a, y) \<in> R) = b" by auto
   show "(a, b) \<in> ?lhs" using a by auto
 next

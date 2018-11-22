@@ -27,7 +27,7 @@ definition worklist :: "nat \<times> ('a \<times> nat \<times> nat) set
            \<Rightarrow> (('a, 'b) labeled_graph \<times> ('a, 'b) labeled_graph) set
               \<Rightarrow> (nat \<times> ('a, 'b) Graph_PreRule \<times> ('b \<times> nat) set) set" where
 "worklist G Rs \<equiv> let G = graph_of G
-  in {(N,R,f). R\<in> Rs \<and> is_graph_homomorphism (fst R) G f \<and> N = nextMax (Range f)
+  in {(N,R,f). R\<in> Rs \<and> graph_homomorphism (fst R) G f \<and> N = nextMax (Range f)
                  \<and> \<not> extensible R G f }"
 
 definition valid_selection where
@@ -50,10 +50,10 @@ proof -
   hence N_def:"?N = nextMax (Range f)"
     and in_Rs: "(L,R) \<in> Rs" unfolding wl_def worklist_def Let_def by auto
   from Least_le wl_ne Domain.intros case_prodI2 
-  have is_min:"(\<forall> (N',_) \<in> wl. N' \<ge> ?N)" by (metis (no_types, lifting))
+  have min:"(\<forall> (N',_) \<in> wl. N' \<ge> ?N)" by (metis (no_types, lifting))
   from in_Rs have "finite_graph R" "subgraph L R"
     using assms(2)[unfolded set_of_graph_rules_def] by auto
-  with is_min NLRf N_def show ?thesis unfolding wl_def[symmetric] valid_selection_def by auto
+  with min NLRf N_def show ?thesis unfolding wl_def[symmetric] valid_selection_def by auto
 qed
 
 definition valid_selector where
@@ -96,6 +96,7 @@ definition extend ::
    (let V_new = sorted_list_of_set (vertices (snd R) - vertices (fst R))
     in set (zip V_new [n..<(n+length V_new)]))"
 
+
 lemma list_sorted_max[simp]: (* TODO: move *)
   shows "sorted list \<Longrightarrow> list = (x#xs) \<Longrightarrow> fold max xs x = (last list)"
 proof (induct list arbitrary:x xs)
@@ -125,10 +126,10 @@ lemma nextMax_Un_eq[simp]:
   unfolding nextMax_def using Max_Un by auto
 
 lemma extend: (* extensible into the new graph *)
-  assumes "is_graph_homomorphism (fst R) (LG E {0..<n}) f" "graph_rule R"
+  assumes "graph_homomorphism (fst R) (LG E {0..<n}) f" "graph_rule R"
   defines "g \<equiv> extend n R f"
   defines "G' \<equiv> LG ((on_triple g `` (edges (snd R))) \<union> E) {0..<max n (nextMax (Range g))}"
-  shows "is_graph_homomorphism (snd R) G' g" "agree_on (fst R) f g" "f \<subseteq> g"
+  shows "graph_homomorphism (snd R) G' g" "agree_on (fst R) f g" "f \<subseteq> g"
         "subgraph (LG E {0..<n}) G'"
         "weak_universal (t:: 'x itself) R (LG E {0..<n}) G' f g"
 proof -
@@ -143,15 +144,15 @@ proof -
      and fin_L:"finite (vertices (fst R))"
      using finite_subset by auto
   from assms have f_dom:"Domain f = vertices (fst R)"
-    and f_uni:"univalent f" unfolding is_graph_homomorphism_def by auto
-  from assms[unfolded is_graph_homomorphism_def]
+    and f_uni:"univalent f" unfolding graph_homomorphism_def by auto
+  from assms[unfolded graph_homomorphism_def]
   have "f `` vertices (fst R) \<subseteq> vertices (LG E {0..<n})" by blast
   hence f_ran:"Range f \<subseteq> {0..<n}" using f_dom by auto
   let ?g = "(let V_new = sorted_list_of_set ?R_L
               in set (zip V_new [n..<n + length V_new]))" (* new part of g *)
   have fin_g':"finite ?g" "finite (Range ?g)" unfolding Let_def by auto
   have "finite (Domain f)" "univalent f" using assms(1) fin_L
-    unfolding is_graph_homomorphism_def by auto
+    unfolding graph_homomorphism_def by auto
   hence fin_f:"finite (Range f)" unfolding Range_snd by auto
   hence fin_g:"finite (Range g)" unfolding extend_def g_def Let_def Range_Un_eq by auto
   have nextMax_f:"nextMax (Range f) \<le> n"
@@ -167,30 +168,30 @@ proof -
     unfolding nextMax_def by (cases "Range g = {}",auto)
   hence in_g:"(a,b) \<in> g \<Longrightarrow> b < max n (nextMax (Range g))" for a b by fastforce
   let ?G = "LG E {0..<n}"
-  have gr_G:"graph ?G" using assms(1) unfolding is_graph_homomorphism_def by blast
+  have gr_G:"graph ?G" using assms(1) unfolding graph_homomorphism_def by blast
   hence "(a, aa, b) \<in> E \<Longrightarrow> b < max n c" "(a, aa, b) \<in> E \<Longrightarrow> aa < max n c"
     for a aa b c by fastforce+
-  hence gr_G':"graph G'" unfolding G'_def using in_g by auto
+  hence gr_G':"graph G'" unfolding G'_def restrict_def using in_g by auto
   show "subgraph (LG E {0..<n}) G'"
     unfolding subgraph_def2[OF gr_G gr_G'] unfolding G'_def by auto
   have g_dom:"vertices (snd R) = Domain g" using subsLR
     unfolding g_def extend_def Domain_Un_eq f_dom by (auto simp:Let_def)
-  show "is_graph_homomorphism (snd R) G' g"
-    by (intro is_graph_homomorphismI[OF g_dom _ uni_g _ gr_R gr_G'])
+  show "graph_homomorphism (snd R) G' g"
+    by (intro graph_homomorphismI[OF g_dom _ uni_g _ gr_R gr_G'])
        (auto simp:G'_def intro:in_g)
   show "f \<subseteq> g" by (auto simp:g_def extend_def)
   thus "agree_on (fst R) f g" using f_dom uni_g agree_on_subset equalityE by metis
   show "weak_universal t R ?G G' f g" proof fix a:: "('b \<times> 'x) set" fix b G
-    assume a:"is_graph_homomorphism (snd R) G a"
-             "is_graph_homomorphism ?G G b" "f O b \<subseteq> a"
+    assume a:"graph_homomorphism (snd R) G a"
+             "graph_homomorphism ?G G b" "f O b \<subseteq> a"
     hence univ_b:"univalent b" and univ_a:"univalent a"
       and rng_b:"Range b \<subseteq> vertices G" and rng_a:"Range a \<subseteq> vertices G"
       and ep_b:"edge_preserving b (edges (LG E {0..<n})) (edges G)"
       and ep_a:"edge_preserving a (edges (snd R)) (edges G)"
-      unfolding is_graph_homomorphism_def prod.sel labeled_graph.sel by blast+
+      unfolding graph_homomorphism_def prod.sel labeled_graph.sel by blast+
     from a have dom_b:"Domain b = {0..<n}"
       and dom_a:"Domain a = vertices (snd R)" and v6: "graph G"
-      unfolding is_graph_homomorphism_def prod.sel labeled_graph.sel by auto
+      unfolding graph_homomorphism_def prod.sel labeled_graph.sel by auto
 
     have help_dom_b:"(y, z) \<in> b \<Longrightarrow> n \<le> y \<Longrightarrow> False" for y z using dom_b
       by (metis Domain.DomainI atLeastLessThan_iff not_less)
@@ -215,7 +216,7 @@ proof -
     also have "\<dots> = ?g `` ?R_L \<union> ?g `` vertices (fst R)" by auto
     also have "?g `` vertices (fst R) = {}" apply(rule Image_outside_Domain)
       unfolding Let_def Domain_set_zip[OF ln] by auto
-    also have "?g `` ?R_L = Range ?g" apply(rule Image_is_Domain)
+    also have "?g `` ?R_L = Range ?g" apply(rule Image_Domain)
       unfolding Let_def Domain_set_zip[OF ln] by auto
     finally have dg2:"?g `` Domain a = {n..<max n (nextMax (Range g))}"
       unfolding Let_def Range_set_zip[OF ln] set_sorted_list_of_set[OF fin_R_L] 
@@ -256,8 +257,8 @@ proof -
       qed
     }
     hence v4: "edge_preserving ?h (edges G') (edges G)" by auto
-    have "is_graph_homomorphism G' G ?h" by(fact is_graph_homomorphismI[OF v1 v2 v3 v4 gr_G' v6])
-    thus "\<exists>h. is_graph_homomorphism G' G h \<and> b \<subseteq> h" by auto
+    have "graph_homomorphism G' G ?h" by(fact graph_homomorphismI[OF v1 v2 v3 v4 gr_G' v6])
+    thus "\<exists>h. graph_homomorphism G' G h \<and> b \<subseteq> h" by auto
   qed
 qed
 
@@ -270,11 +271,11 @@ lemma selector_pushout:
   shows "pushout_step (t:: 'x itself) R G G'"
 proof -
   have "valid_selection Rs G'' R f" using assms by(cases "selector G''",auto)
-  hence igh:"is_graph_homomorphism (fst R) G f" "graph_rule R"
+  hence igh:"graph_homomorphism (fst R) G f" "graph_rule R"
     unfolding valid_selection_def worklist_def G_def Let_def by auto
   have "subgraph G G'"
-       "is_graph_homomorphism (fst R) G f"
-       "is_graph_homomorphism (snd R) G' g"
+       "graph_homomorphism (fst R) G f"
+       "graph_homomorphism (snd R) G' g"
        "f \<subseteq> g"
        "weak_universal t R G G' f g"
     using extend[OF igh[unfolded G_def],folded g_def,folded G'_def,folded G_def] igh(1)
@@ -317,7 +318,7 @@ proof
     show "subgraph (graph_of (X i)) (graph_of (X (i + 1)))"
     proof(cases "selector (X i)")
       case None
-      then show ?thesis using ms gr by auto
+      then show ?thesis using ms gr by (auto intro!:graph_homomorphismI)
     next
       case Some
       then obtain R f where Some:"selector (X i) = Some (R,f)" by fastforce
@@ -344,7 +345,7 @@ lemma N_occurs_finitely_often:
   assumes "finite Rs" "set_of_graph_rules Rs" "graph (graph_of (X 0))"
       and makestep: "\<And> i. X (Suc i) = make_step selector (X i)"
       and selector: "valid_selector Rs selector"
-    shows "finite {(R,f). \<exists> i. R\<in> Rs \<and> is_graph_homomorphism (fst R) (graph_of (X i)) f
+    shows "finite {(R,f). \<exists> i. R\<in> Rs \<and> graph_homomorphism (fst R) (graph_of (X i)) f
                         \<and> nextMax (Range f) \<le> N}" (is "finite {(R,f).?P R f}")
 proof -
   have prod_eq : "(\<forall> x \<in> {(x, y). A x y}. B x) \<longleftrightarrow> (\<forall> x. A (fst x) (snd x) \<longrightarrow> B x)"
@@ -369,7 +370,7 @@ proof -
   from this[folded finite_UN[OF assms(1)],unfolded seteq]
   have fin:"finite {(R,f). R \<in> Rs \<and> ?Q R f}".
   have "?P R f \<Longrightarrow> R \<in> Rs \<and> ?Q R f" for R f
-    unfolding is_graph_homomorphism_def by auto
+    unfolding graph_homomorphism_def by auto
   hence "?S \<subseteq> {(R,f). R \<in> Rs \<and> ?Q R f}" unfolding subset_eq prod_eq by blast
   from finite_subset[OF this fin] show ?thesis by auto
 qed
@@ -400,18 +401,18 @@ proof(rule ccontr)
   with valid_selectorD assms
   have "valid_selection Rs (X x') R f" "valid_selection Rs (X y') R f" by auto
   hence not_ex:"\<not> extensible R (graph_of (X y')) f"
-    and hom:"is_graph_homomorphism (fst R) (graph_of (X x')) f" "graph_rule R"
+    and hom:"graph_homomorphism (fst R) (graph_of (X x')) f" "graph_rule R"
     unfolding valid_selection_def Let_def worklist_def by auto
   have X:"X (Suc x') = (max (fst (X x')) (nextMax (Range (extend (fst (X x')) R f))),
           on_triple (extend (fst (X x')) R f) `` edges (snd R) \<union> snd (X x'))"
     unfolding step[unfolded make_step_def Let_def,rule_format] xy by auto
   let ?ex = "extend (fst (X x')) R f"
-  have hom:"is_graph_homomorphism (snd R) (graph_of (X (Suc x'))) ?ex"
+  have hom:"graph_homomorphism (snd R) (graph_of (X (Suc x'))) ?ex"
        and agr:"agree_on (fst R) f ?ex" using extend(1,2)[OF hom] unfolding X by auto
   from xy have "Suc x' \<le> y'" by auto
   with chain[unfolded chain_def2] have "subgraph (graph_of (X (Suc x'))) (graph_of (X y'))" by auto
   from subgraph_preserves_hom[OF this hom]
-  have hom:"is_graph_homomorphism (snd R) (graph_of (X y')) ?ex".
+  have hom:"graph_homomorphism (snd R) (graph_of (X y')) ?ex".
   with agr have "extensible R (graph_of (X y')) f" unfolding extensible_def by auto
   thus False using not_ex by auto
 qed
@@ -427,15 +428,15 @@ lemma fair_through_make_step:
 proof
   show chn:"chain (\<lambda>i. graph_of (X i))" using WPC_through_make_step assms by blast
   fix R f i
-  assume Rs:"R \<in> Rs" and h:"is_graph_homomorphism (fst R) (graph_of (X i)) f"
+  assume Rs:"R \<in> Rs" and h:"graph_homomorphism (fst R) (graph_of (X i)) f"
   hence R:"finite (vertices (snd R))" "subgraph (fst R) (snd R)"  "finite (vertices (fst R))"
     using assms by auto
   hence f:"finite f" "finite (Range f)" "finite (Domain f)" "univalent f" 
-    using h unfolding is_graph_homomorphism_def Range_snd by auto
+    using h unfolding graph_homomorphism_def Range_snd by auto
   define N where "N \<equiv> nextMax (Range f)"
   fix S
   let "?Q X' j" = " fst X' \<in> Rs
-                  \<and> is_graph_homomorphism (fst (fst X')) (graph_of (X (j+i))) (snd X')
+                  \<and> graph_homomorphism (fst (fst X')) (graph_of (X (j+i))) (snd X')
                   \<and> nextMax (Range (snd X')) \<le> N"
   let ?S = "{(R,f). \<exists>j. ?Q (R,f) j}"
   from assms(4) have "\<And>ia. X (Suc ia + i) = make_step selector (X (ia + i))" by auto
@@ -446,7 +447,7 @@ proof
     let "?P X' j" = "?Q X' j \<and> Some X' = selector (X (j+i))"
     { fix j let ?j = "j+i" have "?j \<ge> i" by auto
       from subgraph_preserves_hom[OF chain[OF chn this] h]
-      have h:"is_graph_homomorphism (fst R) (graph_of (X ?j)) f".
+      have h:"graph_homomorphism (fst R) (graph_of (X ?j)) f".
       have "\<not> extensible R (graph_of (X ?j)) f" using a by blast 
       with h Rs have wl:"(nextMax (Range f),R,f) \<in> worklist (X ?j) Rs" 
         unfolding worklist_def Let_def set_eq_iff by auto
@@ -520,12 +521,13 @@ qed
 lemma the_lcg_edges:
   assumes "valid_selector Rules sel"
           "fst ` UNION Rules (edges \<circ> snd) \<subseteq> L" (is "fst `?fR \<subseteq> _")
-          "fst ` edges (graph_of G) \<subseteq> L" (is "fst `?fG \<subseteq> _")
+          "fst ` snd G \<subseteq> L"
   shows "fst ` edges (the_lcg sel Rules G) \<subseteq> L"
 proof -
-  from assms have "fst `?fR \<times> UNIV \<subseteq> L \<times> UNIV" "fst `?fG \<times> UNIV \<subseteq> L \<times> UNIV" by auto
+  from assms have "fst `?fR \<times> UNIV \<subseteq> L \<times> UNIV" "fst `(edges (graph_of G)) \<times> UNIV \<subseteq> L \<times> UNIV"
+    by auto
   hence "UNION Rules (edges \<circ> snd) \<subseteq> L \<times> UNIV" "edges (graph_of G) \<subseteq> L \<times> UNIV"
-    using fst_UNIV[of ?fR] fst_UNIV[of ?fG] by blast+
+    using fst_UNIV[of ?fR] fst_UNIV[of "(edges (graph_of G))"] by blast+
   note assms = assms(1) this
   have "edges (graph_of (mk_chain sel Rules G i)) \<subseteq> L \<times> UNIV" for i
     using mk_chain_edges[OF assms,unfolded Times_subset_cancel2[OF UNIV_I]].

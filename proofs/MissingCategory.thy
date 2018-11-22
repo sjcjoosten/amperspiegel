@@ -462,7 +462,7 @@ end
   \<down>       \<down>
   X —f\<longrightarrow>Z
 
-  is_cone requires that the diagram above commutes.
+  cone requires that the diagram above commutes.
   It is a pullback because it is also universal:
     any D' h' k' forming a diagram like the above will have a unique arrow u from D' to D.
 *)
@@ -471,8 +471,8 @@ locale arrow_pullback =
   for Cat :: "('o, 'm) Category" and X Y Z D f g h k +
   assumes valid_obj[intro]:"C.vo X" "C.vo Y" "C.vo Z" "C.vo D"
   and valid_arr[intro]: "C.va X Z f" "C.va Y Z g" "C.va D X h" "C.va D Y k"
-  and is_cone:"C.cmp D X Z h f = C.cmp D Y Z k g"
-  and is_universal: "C.cmp D' X Z h' f = C.cmp D' Y Z k' g \<and> C.vo D' \<and> C.va D' X h' \<and> C.va D' Y k'
+  and cone:"C.cmp D X Z h f = C.cmp D Y Z k g"
+  and universal: "C.cmp D' X Z h' f = C.cmp D' Y Z k' g \<and> C.vo D' \<and> C.va D' X h' \<and> C.va D' Y k'
                  \<Longrightarrow> \<exists>!u. C.va D' D u \<and> C.cmp D' D X u h = h' \<and> C.cmp D' D Y u k = k'"
 begin
   abbreviation "diagonal \<equiv> C.cmp D Y Z k g"
@@ -486,7 +486,7 @@ begin
     "C.c.cod (Some (Arrow D Z diagonal)) = Some (C.ID Z)"
     "C.c.cod (Some (Arrow D X h)) = Some (C.ID X)"
     "C.c.cod (Some (Arrow D Y k)) = Some (C.ID Y)"
-  using C.dom_cod_simps[OF valid_obj(4,3) C.cmp_valid[OF valid_arr(3,1),unfolded is_cone]]
+  using C.dom_cod_simps[OF valid_obj(4,3) C.cmp_valid[OF valid_arr(3,1),unfolded cone]]
         C.dom_cod_simps[OF valid_obj(4,2) valid_arr(4)]
         C.dom_cod_simps[OF valid_obj(4,1) valid_arr(3)]
         by auto
@@ -498,12 +498,12 @@ locale arrow_pushout =
   for Cat :: "('o, 'm) Category" and X Y Z D f g h k +
   assumes valid_obj[intro]:"C.vo X" "C.vo Y" "C.vo Z" "C.vo D"
   and valid_arr[intro]: "C.va Z X f" "C.va Z Y g" "C.va X D h" "C.va Y D k"
-  and is_cone:"C.cmp Z X D f h = C.cmp Z Y D g k"
-  and is_universal: "C.cmp Z X D' f h' = C.cmp Z Y D' g k' \<and> C.vo D' \<and> C.va X D' h' \<and> C.va Y D' k'
+  and cone:"C.cmp Z X D f h = C.cmp Z Y D g k"
+  and universal: "C.cmp Z X D' f h' = C.cmp Z Y D' g k' \<and> C.vo D' \<and> C.va X D' h' \<and> C.va Y D' k'
                  \<Longrightarrow> \<exists>!u. C.va D D' u \<and> C.cmp X D D' h u = h' \<and> C.cmp Y D D' k u = k'"
 begin
   interpretation arrow_category_with_dual Cat by standard
-  interpretation pb : arrow_pullback dual apply standard using is_cone is_universal by auto
+  interpretation pb : arrow_pullback dual apply standard using cone universal by auto
   (* Todo: get some more properties using 'Limit'.
      I.E.: yoneda functor preserves the universal property *)
 

@@ -20,10 +20,10 @@ lemma nonempty_rule[simp]:
   assumes "graph G"
   shows "maintained nonempty_rule G \<longleftrightarrow> vertices G \<noteq> {}"
 proof -
-  have "vertices G = {} \<Longrightarrow> is_graph_homomorphism (LG {} {0}) G x \<Longrightarrow> False"
-       "v \<in> vertices G \<Longrightarrow> is_graph_homomorphism (LG {} {0}) G {(0,v)}"
+  have "vertices G = {} \<Longrightarrow> graph_homomorphism (LG {} {0}) G x \<Longrightarrow> False"
+       "v \<in> vertices G \<Longrightarrow> graph_homomorphism (LG {} {0}) G {(0,v)}"
        for v::"'b" and x::"(nat \<times> 'b) set"
-    unfolding is_graph_homomorphism_concr_graph[OF assms graph_empty_e] univalent_def by blast+
+    unfolding graph_homomorphism_concr_graph[OF assms graph_empty_e] univalent_def by blast+
   thus ?thesis unfolding nonempty_rule_def maintained_def extensible_def by (auto intro:assms)
 qed
 
@@ -33,23 +33,23 @@ lemma top_rule[simp]:
 proof
   assume a:"maintained (top_rule r) G"
   { fix a b assume "a \<in> vertices G" "b \<in> vertices G"
-    hence "is_graph_homomorphism (LG {} {0, 1}) G {(0::nat,a),(1,b)}"
-      using assms unfolding is_graph_homomorphism_def univalent_def by auto
+    hence "graph_homomorphism (LG {} {0, 1}) G {(0::nat,a),(1,b)}"
+      using assms unfolding graph_homomorphism_def univalent_def by auto
     with a[unfolded maintained_def top_rule_def] extensible_refl_concr
-    have "is_graph_homomorphism (LG {(r, 0, 1)} {0::nat, 1}) G {(0::nat, a), (1, b)}" by simp
+    have "graph_homomorphism (LG {(r, 0, 1)} {0::nat, 1}) G {(0::nat, a), (1, b)}" by simp
     hence "(a, b) \<in> getRel r G"
-      unfolding is_graph_homomorphism_def2 graph_union_iff getRel_def by auto
+      unfolding graph_homomorphism_def2 graph_union_iff getRel_def by auto
   }
   thus "vertices G \<times> vertices G = getRel r G" using getRel_dom[OF assms] by auto next
   assume a:"vertices G \<times> vertices G = getRel r G"
-  { fix f assume a2:"is_graph_homomorphism (fst (top_rule r)) G f"
+  { fix f assume a2:"graph_homomorphism (fst (top_rule r)) G f"
     hence f:"f `` {0, 1} \<subseteq> vertices G" "on_triple f `` {} \<subseteq> edges G"
           "univalent f" "Domain f = {0, 1}"
-      unfolding top_rule_def prod.sel is_graph_homomorphism_concr_graph[OF assms graph_empty_e]
+      unfolding top_rule_def prod.sel graph_homomorphism_concr_graph[OF assms graph_empty_e]
       by argo+
-    from a2 have ih:"is_graph_homomorphism (LG {} {0, 1}) G f" unfolding top_rule_def by auto
+    from a2 have ih:"graph_homomorphism (LG {} {0, 1}) G f" unfolding top_rule_def by auto
     have "extensible (top_rule r) G f" unfolding top_rule_def extensible_refl_concr[OF ih]
-      is_graph_homomorphism_concr_graph[OF assms graph_single]
+      graph_homomorphism_concr_graph[OF assms graph_single]
       using f a[unfolded getRel_def] by fastforce
   }
   thus "maintained (top_rule r) G" unfolding maintained_def by auto
@@ -74,21 +74,21 @@ lemma are_rules[intro]:
 "graph_rule nonempty_rule"	
 "graph_rule (top_rule t)"	
 "graph_rule (reflexivity_rule i)"	
-  unfolding reflexivity_rule_def top_rule_def nonempty_rule_def is_graph_homomorphism_def	
+  unfolding reflexivity_rule_def top_rule_def nonempty_rule_def graph_homomorphism_def	
   by auto
 
 lemma non_empty_rule_non_empty[dest]:
   assumes "maintained nonempty_rule G" "graph G" 
   shows "\<exists> x. x \<in> vertices G"
 proof -
-  have "is_graph_homomorphism (fst nonempty_rule) G {}"
-    using assms(1,2) unfolding is_graph_homomorphism_def2 nonempty_rule_def by auto
+  have "graph_homomorphism (fst nonempty_rule) G {}"
+    using assms(1,2) unfolding graph_homomorphism_def2 nonempty_rule_def by auto
   with assms[unfolded maintained_def] have "extensible nonempty_rule G {}" by auto
-  then obtain g where hom:"is_graph_homomorphism (snd nonempty_rule) G g"
+  then obtain g where hom:"graph_homomorphism (snd nonempty_rule) G g"
     unfolding extensible_def by blast
-  hence "0 \<in> Domain g" unfolding is_graph_homomorphism_def nonempty_rule_def prod.sel by auto
+  hence "0 \<in> Domain g" unfolding graph_homomorphism_def nonempty_rule_def prod.sel by auto
   then obtain y where "(0,y) \<in> g" by auto
-  with hom have "y\<in> vertices G" unfolding is_graph_homomorphism_def by auto
+  with hom have "y\<in> vertices G" unfolding graph_homomorphism_def by auto
   thus ?thesis by auto
 qed
 
@@ -98,17 +98,17 @@ lemma top_rule_full[dest]:
 proof
   assume a:"x \<in> vertices G \<and> y \<in> vertices G"
   let ?f = "{(0,x),(1,y)}" let ?R = "top_rule t"
-  have "is_graph_homomorphism (fst ?R) G ?f"
-    using assms a unfolding is_graph_homomorphism_def top_rule_def
+  have "graph_homomorphism (fst ?R) G ?f"
+    using assms a unfolding graph_homomorphism_def top_rule_def
     by (cases G,auto simp:univalent_def)
   with assms[unfolded maintained_def] have "extensible ?R G ?f" by auto
-  then obtain g where hom:"is_graph_homomorphism (snd ?R) G g"
+  then obtain g where hom:"graph_homomorphism (snd ?R) G g"
     and agr:"agree_on (fst ?R) ?f g"
     unfolding extensible_def by blast
   with a have g:"(0,x) \<in> g" "(1,y) \<in> g" unfolding agree_on_def top_rule_def by auto
   have "(t,0,1)\<in>edges (snd ?R)" unfolding top_rule_def by auto
   with g have "(t,x,y)\<in>edges (map_graph g (snd ?R))" unfolding map_graph_def on_triple_def by auto
-  with hom[unfolded is_graph_homomorphism_def2 graph_union_iff] have "(t,x,y)\<in>edges G" by auto
+  with hom[unfolded graph_homomorphism_def2 graph_union_iff] have "(t,x,y)\<in>edges G" by auto
   thus "(x,y) \<in> getRel t G" by (auto simp: getRel_def) next
   assume "(x, y) \<in> getRel t G"
   with assms(2) show "x \<in> vertices G \<and> y \<in> vertices G" unfolding getRel_def by auto 
@@ -120,15 +120,15 @@ lemma ident_rel_refl:
   shows "maintained (reflexivity_rule idt) G"
   unfolding reflexivity_rule_def
 proof(rule maintainedI) fix f
-  assume "is_graph_homomorphism (LG {} {0::nat}) G f"
+  assume "graph_homomorphism (LG {} {0::nat}) G f"
   hence f:"Domain f = {0}" "graph G" "f `` {0} \<subseteq> vertices G" "univalent f"
-    unfolding is_graph_homomorphism_def by force+
+    unfolding graph_homomorphism_def by force+
   from assms(2) univalentD[OF f(4)] f(3)
   have "edge_preserving f {(idt, 0, 0)} (edges G)" unfolding edge_preserving
     by (auto simp:getRel_def set_eq_iff image_def)
-  with f have "is_graph_homomorphism (LG {(idt, 0, 0)} {0}) G f"
+  with f have "graph_homomorphism (LG {(idt, 0, 0)} {0}) G f"
               "agree_on (LG {} {0}) f f" using assms
-    unfolding is_graph_homomorphism_def labeled_graph.sel agree_on_def univalent_def
+    unfolding graph_homomorphism_def labeled_graph.sel agree_on_def univalent_def
     by auto
   then show "extensible (LG {} {0}, LG {(idt, 0, 0)} {0}) G f"
     unfolding extensible_def prod.sel by auto
@@ -174,18 +174,18 @@ proof -
     show r:"refl_on (vertices G) (getRel l G)"
     proof(rule refl_onI[OF gr]) fix x
       assume assm:"x \<in> vertices G"  define f where "f = {(0::nat,x)}"
-      have "is_graph_homomorphism (fst ?r) G f" using assm
-        by (auto simp:is_graph_homomorphism_def univalent_def f_def)
+      have "graph_homomorphism (fst ?r) G f" using assm
+        by (auto simp:graph_homomorphism_def univalent_def f_def)
       from m[unfolded maintained_def] this 
       obtain g::"(nat\<times>'b) set"
-        where g:"is_graph_homomorphism (snd ?r) G g"
+        where g:"graph_homomorphism (snd ?r) G g"
                 "agree_on (fst ?r) f g"
         unfolding extensible_def by blast
       have "\<And> n v. (n,v) \<in> g \<Longrightarrow> (n = 0) \<and> (v = x)" using g unfolding
-        agree_on_def is_graph_homomorphism_def f_def by auto
+        agree_on_def graph_homomorphism_def f_def by auto
       with g(2) have "g = {(0,x)}" unfolding agree_on_def f_def by auto
       with g(1) show "(x,x)\<in> getRel l G"
-        unfolding is_graph_homomorphism_def edge_preserving getRel_def by auto
+        unfolding graph_homomorphism_def edge_preserving getRel_def by auto
     qed
   }
   { assume m:"maintained (transitive_rule l) G"
@@ -262,13 +262,14 @@ proof -
   thus ?g1 ?g2 unfolding congruent_def by force+
 qed
 
-lemma identity_rules: (* Lemma 7 *)
+lemma identity_rules: (* Lemma 7, strengthened *)
   assumes "graph G"
           "maintainedA (identity_rules L) G"
           "fst ` edges G \<subseteq> L"
   shows "\<exists> f. f o f = f
          \<and> ident_rel S_Idt (map_graph_fn G f)
-         \<and> subgraph (map_graph_fn G f) G"
+         \<and> subgraph (map_graph_fn G f) G
+         \<and> (\<forall> l x y. (l,x,y) \<in> edges G \<longleftrightarrow> (l,f x,f y) \<in> edges G)"
 proof -
   (* While this proof defines a concrete f, we only expose it using an existential quantifier.
      The reason is that the f of our choice is non-constructive,
@@ -351,7 +352,29 @@ proof -
     using gu1 gu2 assms(1) unfolding graph_union_def by(cases G,auto)
   hence subg: "subgraph (map_graph_fn G f) G"
     unfolding subgraph_def using assms(1) by auto
-  from idemp ident subg show ?thesis by auto
+  
+  have congr:"((l, x, y) \<in> edges G) = ((l, f x, f y) \<in> edges G)" for l x y proof
+    assume a:"((l, f x, f y) \<in> edges G)"
+    hence gr:"(f x, f y) \<in> getRel l G" unfolding getRel_def by auto
+    from a have fv:"f x \<in> vertices G" "f y \<in> vertices G" using assms(1) by auto
+    { fix x assume a:"f x \<in> vertices G" "x \<notin> vertices G"
+      with assms(1) have "getRel S_Idt G `` {x} = {}" by auto
+      with a f have False by auto
+    }
+    with fv have v:"x \<in> vertices G" "y \<in> vertices G" by auto
+    have gx:"(x, f x) \<in> getRel S_Idt G" and gy:"(y, f y) \<in> getRel S_Idt G" by (auto simp: f v vert_P)
+    from congruentD[OF congr(1)[OF gr] gx] gr
+    have "(x, f y) \<in> getRel l G" by auto
+    with congruentD[OF congr(2)[OF gr] gy]
+    have "(x, y) \<in> getRel l G" by auto
+    thus "((l, x, y) \<in> edges G)" unfolding getRel_def by auto next
+    assume e:"((l, x, y) \<in> edges G)"
+    hence "x \<in> vertices G" "y \<in> vertices G" using assms(1) by auto
+    from gu1[OF e this]
+    show "((l, f x, f y) \<in> edges G)".
+  qed
+  
+  from idemp ident subg congr show ?thesis by auto
 qed
 
 lemma idemp_embedding_maintained_preserved:
@@ -359,13 +382,13 @@ lemma idemp_embedding_maintained_preserved:
       and maint:"maintained r G"
     shows "maintained r (map_graph_fn G f)"
 proof -
-  { fix h assume hom_h:"is_graph_homomorphism (fst r) (map_graph_fn G f) h"
+  { fix h assume hom_h:"graph_homomorphism (fst r) (map_graph_fn G f) h"
     from subgraph_preserves_hom[OF subg this] maint[unfolded maintained_def extensible_def]
-    obtain g where g:"is_graph_homomorphism (snd r) G g"
+    obtain g where g:"graph_homomorphism (snd r) G g"
                      "agree_on (fst r) h g" by blast
     { fix v x
       have subs:"h `` {v} \<subseteq> vertices (map_graph_fn G f)" 
-        using hom_h[unfolded is_graph_homomorphism_def] by auto
+        using hom_h[unfolded graph_homomorphism_def] by auto
       assume "v\<in>vertices (fst r)" and x:"(v, x) \<in> g"
       hence "g `` {v} = h `` {v}" using g(2)[unfolded agree_on_def,rule_format,of v] by auto
       hence "g `` {v} \<subseteq> vertices (map_graph_fn G f)" using subs by auto
@@ -378,7 +401,7 @@ proof -
     hence agr:"agree_on (fst r) h (g O on_graph G f)"
       using g(2) unfolding agree_on_def by auto
     have "extensible r (map_graph_fn G f) h"
-      unfolding extensible_def using is_graph_homomorphism_on_graph[OF g(1)] agr by blast
+      unfolding extensible_def using graph_homomorphism_on_graph[OF g(1)] agr by blast
   }
   thus ?thesis unfolding maintained_def by blast
 qed
@@ -495,17 +518,17 @@ proof(cases r)
   case (Pair L R)
   show ?thesis unfolding Pair proof(standard,goal_cases)
     case (1 h)
-    from assms(3)[unfolded maintained_def Pair] is_graph_homomorphism_on_graph[OF this, of g]
+    from assms(3)[unfolded maintained_def Pair] graph_homomorphism_on_graph[OF this, of g]
     have "extensible (L, R) (map_graph_fn G g) (h O on_graph G g)" by auto
     then obtain h2
-      where h2:"is_graph_homomorphism R (map_graph_fn G g) h2" "agree_on L (h O on_graph G g) h2"
+      where h2:"graph_homomorphism R (map_graph_fn G g) h2" "agree_on L (h O on_graph G g) h2"
       unfolding extensible_def by auto
-    from 1 have h_id:"h O Id_on (vertices G) = h" unfolding is_graph_homomorphism_def by auto
+    from 1 have h_id:"h O Id_on (vertices G) = h" unfolding graph_homomorphism_def by auto
     let ?h = "h2 O on_graph (map_graph_fn G g) f"
     from assms(1) have "on_graph G (f \<circ> g) = Id_on (vertices G)" by auto
     hence "map_graph_fn G (f \<circ> g) = G" using assms(2) map_graph_fn_id by auto
-    with is_graph_homomorphism_on_graph[OF h2(1),of f]
-    have igh:"is_graph_homomorphism R G ?h" by auto
+    with graph_homomorphism_on_graph[OF h2(1),of f]
+    have igh:"graph_homomorphism R G ?h" by auto
     have "g x = g xa \<Longrightarrow> x \<in> (vertices G) \<Longrightarrow> xa \<in> (vertices G) \<Longrightarrow> x = xa" 
       for x xa using assms(1) o_def by metis
     hence "g x = g xa \<Longrightarrow> x \<in> (vertices G) \<Longrightarrow> xa \<in> (vertices G) \<Longrightarrow> (x, xa) \<in> Id_on (vertices G)"
@@ -538,9 +561,9 @@ proof -
               maintained_holds_subset_iff[OF g]
     by (auto simp:gr relcomp_unfold)
   { fix f :: "(nat \<times> ('a + 'b)) set"
-    assume "is_graph_homomorphism (LG {} {0}) G f"
+    assume "graph_homomorphism (LG {} {0}) G f"
     hence u:"univalent f" and d:"Domain f = {0}"
-       and r:"f `` {0} \<subseteq> vertices G" unfolding is_graph_homomorphism_def by simp+
+       and r:"f `` {0} \<subseteq> vertices G" unfolding graph_homomorphism_def by simp+
     from d obtain v where v:"(0,v) \<in> f" by auto
     hence f:"f = {(0,v)}"
       using d insert_iff mk_disjoint_insert all_not_in_conv old.prod.exhaust
@@ -549,8 +572,8 @@ proof -
     from v r have v:"v \<in> vertices G" by auto
     with v_gr have "(S_Idt, v, v) \<in> edges G" by auto
     hence "edge_preserving {(0, v)} {(S_Idt, 0, 0)} (edges G)" unfolding edge_preserving by auto
-    hence "is_graph_homomorphism (LG {(S_Idt, 0, 0)} {0}) G f" unfolding f
-      is_graph_homomorphism_def using g v by (auto simp:univalent_def)
+    hence "graph_homomorphism (LG {(S_Idt, 0, 0)} {0}) G f" unfolding f
+      graph_homomorphism_def using g v by (auto simp:univalent_def)
   }
   thus "maintained (reflexivity_rule S_Idt) G"
     unfolding reflexivity_rule_def maintained_def by auto
@@ -605,15 +628,17 @@ lemma maintained_standard_noconstants:
 shows "\<exists> f g (G::('V, 'V') std_graph). G = map_graph_fn G (f o g) \<and> G = map_graph_fn G' f
               \<and> subgraph (map_graph_fn G g) G'
               \<and> standard' C G
-              \<and> (\<forall> r. maintained r G' \<longrightarrow> maintained r G)"
+              \<and> (\<forall> r. maintained r G' \<longrightarrow> maintained r G)
+              \<and> (\<forall> x y e. x \<in> vertices G' \<longrightarrow> y \<in> vertices G' \<longrightarrow> 
+                          (g (f x), g (f y)) \<in> :map_graph_fn G g:\<lbrakk>e\<rbrakk> \<longrightarrow> (x,y) \<in> :G':\<lbrakk>e\<rbrakk>)"
 proof -
   note mnt = mnt[unfolded standard_rules_def]
   from mnt have "maintainedA (identity_rules L) G'" by auto
   from identity_rules[OF gr(1) this gr(2)] obtain h where
-    h:"h \<circ> h = h" "ident_rel S_Idt (map_graph_fn G' h)" "subgraph (map_graph_fn G' h) G'" by blast
+    h:"h \<circ> h = h" "ident_rel S_Idt (map_graph_fn G' h)" "subgraph (map_graph_fn G' h) G'"
+      "((l, x, y) \<in> edges G') = ((l, h x, h y) \<in> edges G')" for l x y by blast
   have mg:"\<And> r. maintained r G' \<Longrightarrow> maintained r (map_graph_fn G' h)"
    using idemp_embedding_maintained_preserved[OF h(3)] h(1) by auto
-  have mg_h : "graph (map_graph_fn G' h)" by auto
   from mnt have tr:"maintained (top_rule S_Top) G'" and ne:"maintained nonempty_rule G'" by auto
   from non_empty_rule_non_empty[OF ne gr(1)] obtain x where x:"x \<in> vertices G'" by blast
   from top_rule_full[OF tr gr(1)] x have top_nonempty:"(x, x) \<in> getRel S_Top G'" by metis
@@ -626,7 +651,7 @@ proof -
     from this gr(1) have yzv:"y \<in> vertices G'" "z \<in> vertices G'" by (auto simp:getRel_def)
     from getRel_hom[OF yz yzv]
     have hi:"(h y,h z) \<in> getRel (S_Const c) (map_graph_fn G' h)".
-    with h(2) cr7[THEN mg,unfolded maintained_holds_subset_iff[OF mg_h] const_prop_def]
+    with h(2) cr7[THEN mg,unfolded maintained_holds_subset_iff[OF map_graph_fn_graphI] const_prop_def]
     have "h y = h z" by force
     thus "\<exists> v. (v,v) \<in> getRel (S_Const c) (map_graph_fn G' h)" using hi by auto
   qed
@@ -726,7 +751,8 @@ proof -
         by (intro mg, force)+
       hence "(m x,z) \<in> getRel S_Idt (map_graph_fn G' h)"
             "(y,m x) \<in> getRel S_Idt (map_graph_fn G' h)" using lhs
-        unfolding maintained_holds_subset_iff[OF mg_h] const_exists_rev_def const_prop_def by auto
+        unfolding maintained_holds_subset_iff[OF map_graph_fn_graphI]
+                  const_exists_rev_def const_prop_def by auto
       hence "y = m x" "z = m x" using h(2) by auto
     }
     thus "getRel (S_Const x) (map_graph_fn G' h) \<subseteq> {(m x, m x)}" by auto
@@ -760,8 +786,35 @@ proof -
     case (1 r) from mg[OF 1,folded mg_eq] maintained_preserved_by_isomorphism[OF fg_id G(1)]
     show ?case by metis
   qed
-  
-  show ?thesis using G_def fg_inv[symmetric] sg std mtd by blast
+
+  { fix x y e
+    assume "x \<in> vertices G'" "y \<in> vertices G'"
+           "(g (f x), g (f y)) \<in> :map_graph_fn (map_graph_fn G' f) g:\<lbrakk>e\<rbrakk>"
+    hence "(x,y) \<in> :G':\<lbrakk>e\<rbrakk>"
+    proof(induct e arbitrary: x y)
+      case (A_Cmp e1 e2)
+        have "(x, y) \<in> (:G':\<lbrakk>e1\<rbrakk>) O (:G':\<lbrakk>e2\<rbrakk>)" sorry
+        then show ?case by auto
+      next
+        case (A_Lbl l)
+        hence "(l, g (f x), g (f y)) \<in> edges (map_graph_fn G g)"
+          by (auto simp:getRel_def G_def)
+        then obtain x' y'
+          where "(l, x', y') \<in> edges G" "g (f x) = g x'" "g (f y) = g y'" by auto
+        then obtain x' y'
+          where xy:"(l, x', y') \<in> edges G'" "g (f x) = g (f x')" "g (f y) = g (f y')"
+          unfolding G_def by auto
+        hence "x' \<in> vertices G'" "y' \<in> vertices G'" using gr(1) by auto
+        from this[THEN gf_h,unfolded o_def] A_Lbl(1,2)[THEN gf_h,unfolded o_def]
+        have "h x = h x'" "h y = h y'" using xy(2,3) by auto
+        hence "(l, x, y) \<in> edges G'" using h(4)[of l x y] h(4)[of l x' y'] xy(1) by auto
+        then show ?case by (simp add:getRel_def)
+    qed auto
+  }
+  hence cons:"(\<forall> x y e. x \<in> vertices G' \<longrightarrow> y \<in> vertices G' \<longrightarrow> (g (f x), g (f y)) \<in> :map_graph_fn G g:\<lbrakk>e\<rbrakk> \<longrightarrow> (x,y) \<in> :G':\<lbrakk>e\<rbrakk>)"
+    unfolding G_def by auto
+
+  show ?thesis using cons G_def fg_inv[symmetric] sg std mtd by blast
 qed
 
 end

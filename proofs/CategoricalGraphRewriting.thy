@@ -11,9 +11,9 @@ locale labeled_graph_category =
   assumes graphtype[dest!]:"graphtype G \<Longrightarrow> graph G"
 begin
 
-  abbreviation "Graph_Cat \<equiv> Category is_graph_homomorphism graphtype (\<lambda> _ _ _ x y. x O y) (Id_on o vertices)"
+  abbreviation "Graph_Cat \<equiv> Category graph_homomorphism graphtype (\<lambda> _ _ _ x y. x O y) (Id_on o vertices)"
   sublocale arrow_category_with_dual Graph_Cat
-    by(standard,auto dest:Id_on_vertices_is_identity)
+    by(standard,auto dest:Id_on_vertices_identity)
 
   lemma restrict_iso: (* TODO: move, or clean up 'restrict' altogether *)
         assumes "graphtype X" "graphtype (restrict X)"
@@ -87,13 +87,13 @@ locale pre_graph_pushout
   and L R G :: "('l,'v) labeled_graph"
   and graphtype :: "('l, 'v) labeled_graph \<Rightarrow> bool" +
   assumes gt [intro]:"graphtype L" "graphtype R" "graphtype G" "graphtype G'"
-      and hm [intro]: "is_graph_homomorphism L R f" "is_graph_homomorphism L G g"
+      and hm [intro]: "graph_homomorphism L R f" "graph_homomorphism L G g"
 begin
   lemma hm_uni:"univalent f" "univalent g" and
         hm_dom:"vertices L = Domain f" "vertices L = Domain g" and
         hm_img:"f `` vertices L \<subseteq> vertices R" "g `` vertices L \<subseteq> vertices G" and
         hm_edg:"edge_preserving f (edges L) (edges R)" "edge_preserving g (edges L) (edges G)"
-    using hm unfolding is_graph_homomorphism_def by blast+
+    using hm unfolding graph_homomorphism_def by blast+
   sublocale eq_domain using hm_dom by unfold_locales auto
   
   sublocale valid_unification_app unif eqs G_only_vertices R_only_vertices G_to_G' R_to_G'
@@ -102,21 +102,21 @@ begin
   lemma vertices_Domain [simp]: "vertices R = Domain R_to_G'" "vertices G = Domain G_to_G'"
     proof -
     { fix l x assume *:"(l, x) \<in> f"
-      hence **:"l \<in> Domain g" using hm(1,2)[unfolded is_graph_homomorphism_def] by auto
+      hence **:"l \<in> Domain g" using hm(1,2)[unfolded graph_homomorphism_def] by auto
       have "x \<in> Range (g\<inverse> O eqcc f g O f)"
         apply (intro Range.intros relcomp.intros)
         by (insert * **,auto intro:someI)
     } note [dest] = this
     { fix l x assume *:"(l, x) \<in> g"
-      hence **:"l \<in> Domain f" using hm(1,2)[unfolded is_graph_homomorphism_def] by auto
+      hence **:"l \<in> Domain f" using hm(1,2)[unfolded graph_homomorphism_def] by auto
       have "x \<in> Domain (g\<inverse> O eqcc f g O f)"
         apply (intro Domain.intros relcomp.intros)
         by (insert * **,auto intro:someI)
     } note [dest] = this
     show "vertices R = Domain R_to_G'" unfolding ran[symmetric]
-      using hm(1)[unfolded is_graph_homomorphism_def] by (auto simp:eq_class_from2_def)
+      using hm(1)[unfolded graph_homomorphism_def] by (auto simp:eq_class_from2_def)
     show "vertices G = Domain G_to_G'" unfolding dom[symmetric]
-      using hm(2)[unfolded is_graph_homomorphism_def] by (auto simp:eq_class_from2_def)
+      using hm(2)[unfolded graph_homomorphism_def] by (auto simp:eq_class_from2_def)
   qed
   
   lemma univalent_RG[intro]: "univalent R_to_G'" "univalent G_to_G'"
@@ -125,9 +125,14 @@ begin
 
   lemmas [intro] = gt[THEN gc.graphtype]
 
-  lemma is_hom[intro]:
-    shows "is_graph_homomorphism R G' R_to_G'" "is_graph_homomorphism G G' G_to_G'"
-    unfolding is_graph_homomorphism_def by (auto simp:G'_def)
+  lemma G'[intro]:
+  shows "R_to_G' `` vertices R \<subseteq> vertices G'"
+        "edge_preserving R_to_G' (edges R) (edges G')"
+  unfolding G'_def by auto
+
+  lemma hom[intro]:
+    shows "graph_homomorphism R G' R_to_G'" "graph_homomorphism G G' G_to_G'"
+    by (rule graph_homomorphismI;force)+
   (* The other direction does not hold: converse R_to_G' is not total or univalent *)
 
   lemma two_routes:
@@ -135,7 +140,7 @@ begin
     unfolding set_eq_iff relcomp_unfold
   proof(standard,standard,goal_cases)
     case (2 x) then obtain y where y:"(fst x, y) \<in> g \<and> (y, snd x) \<in> G_to_G'" by auto
-    then have "fst x \<in> Domain f" using hm(1,2)[unfolded is_graph_homomorphism_def] by auto
+    then have "fst x \<in> Domain f" using hm(1,2)[unfolded graph_homomorphism_def] by auto
     then obtain z where zf:"(fst x,z) \<in> f" by auto
     with y have zs: "(y,z) \<in> eqs" unfolding eq_class_from2_def by auto
     from y eqs_two_routes[OF zs]
@@ -143,7 +148,7 @@ begin
     with zf show ?case by auto
   next
     case (1 x) then obtain y where y:"(fst x, y) \<in> f \<and> (y, snd x) \<in> R_to_G'" by auto
-    then have "fst x \<in> Domain g" using hm(1,2)[unfolded is_graph_homomorphism_def] by auto
+    then have "fst x \<in> Domain g" using hm(1,2)[unfolded graph_homomorphism_def] by auto
     then obtain z where zf:"(fst x,z) \<in> g" by auto
     with y have zs: "(z,y) \<in> eqs" unfolding eq_class_from2_def by auto
     from y eqs_two_routes[OF zs]
@@ -172,13 +177,13 @@ begin
     case (10 D' h' k')
     hence two_ways:"f O h' = g O k'"
       and vo: "graphtype D'"
-      and va: "is_graph_homomorphism R D' h'" "is_graph_homomorphism G D' k'" by auto
+      and va: "graph_homomorphism R D' h'" "graph_homomorphism G D' k'" by auto
     let ?a = "converse G_to_G' O k' \<union> converse R_to_G' O h'"
     have vrg:"vertices R = Domain h'" "vertices G = Domain k'"
       and vimg:"h' `` vertices R \<subseteq> vertices D'" "k' `` vertices G \<subseteq> vertices D'"
       and ephk:"edge_preserving h' (edges R) (edges D')" "edge_preserving k' (edges G) (edges D')"
       and vuni:"univalent h'" "univalent k'"
-      using va unfolding is_graph_homomorphism_def by blast+
+      using va unfolding graph_homomorphism_def by blast+
     have vga[intro]: "vertices G' = Domain ?a" unfolding G'_def using vrg
       by fastforce
     have vgd_1:"(R_to_G'\<inverse> O h') `` vertices G' \<subseteq> vertices D'" using vimg(1) by auto
@@ -287,24 +292,24 @@ begin
           qed qed
     
     note [intro] = vo[THEN gc.graphtype]
-    have va_a:"is_graph_homomorphism G' D' ?a" (is ?va_a)
-      unfolding Category.sel using vga vgd epa by (intro is_graph_homomorphismI,auto)
+    have va_a:"graph_homomorphism G' D' ?a" (is ?va_a)
+      unfolding Category.sel using vga vgd epa by (intro graph_homomorphismI,auto)
      
     show ?case proof(standard)
       show "?va_a \<and> ?via_ah \<and> ?via_ak"
            using va_a via_ah via_ak by auto
-      fix u assume "is_graph_homomorphism G' D' u \<and> R_to_G' O u = h' \<and> G_to_G' O u = k'"
-      hence va_u:"is_graph_homomorphism G' D' u"
+      fix u assume "graph_homomorphism G' D' u \<and> R_to_G' O u = h' \<and> G_to_G' O u = k'"
+      hence va_u:"graph_homomorphism G' D' u"
         and via_uh:"R_to_G' O u = h'"
         and via_uk:"G_to_G' O u = k'" by auto
       show "u = ?a" proof
         have "G_to_G'\<inverse> O k' \<subseteq> u" "R_to_G'\<inverse> O h' \<subseteq> u" using via_uk via_uh univalent_RG by auto
         thus subs:"?a \<subseteq> u" by auto
-        have d:"Domain ?a = Domain u" using va_a va_u unfolding is_graph_homomorphism_def by auto
+        have d:"Domain ?a = Domain u" using va_a va_u unfolding graph_homomorphism_def by auto
         { fix x assume a:"x \<in> u" hence "fst x \<in> Domain ?a" using d by (cases x, auto)
           then obtain v where v:"(fst x,v) \<in> ?a" by auto
           hence "(fst x,v) \<in> u" using subs by auto
-          hence "v = snd x" using a va_u unfolding is_graph_homomorphism_def by (cases x, auto)
+          hence "v = snd x" using a va_u unfolding graph_homomorphism_def by (cases x, auto)
           hence "x \<in> ?a" using v by auto }
         thus "u \<subseteq> ?a" by auto
       qed
@@ -321,7 +326,7 @@ definition conflict_free where (* E is the set of conflict edges *)
     "conflict_free E G \<equiv> \<forall> k\<in>E. \<forall> v1 v2. v1 \<in> vertices G \<longrightarrow> v2 \<in> vertices G \<longrightarrow> (k,v1,v2) \<notin> edges G"
 
 lemma preserving_constant_respecting:
-  assumes "is_graph_homomorphism G\<^sub>1 G\<^sub>2 f"
+  assumes "graph_homomorphism G\<^sub>1 G\<^sub>2 f"
           "constant_exists K G\<^sub>1"
   shows "constant_exists K G\<^sub>2"
   unfolding constant_exists_def
@@ -329,22 +334,22 @@ proof(standard,goal_cases)
   case (1 k)
   with assms[unfolded constant_exists_def]
   obtain v where v:"v\<in>vertices G\<^sub>1" "(k, v, v) \<in> edges G\<^sub>1" by auto
-  with assms[unfolded is_graph_homomorphism_def edge_preserving_def]
+  with assms[unfolded graph_homomorphism_def edge_preserving_def]
   obtain u where u:"(k,u,u) \<in> edges G\<^sub>2" "(v,u) \<in> f" by auto
-  with assms[unfolded is_graph_homomorphism_def]
+  with assms[unfolded graph_homomorphism_def]
   have "u \<in> vertices G\<^sub>2" by auto
   with u show ?case by auto
 qed
 
 lemma copreserving_conflict_free:
-  assumes "is_graph_homomorphism G\<^sub>1 G\<^sub>2 f"
+  assumes "graph_homomorphism G\<^sub>1 G\<^sub>2 f"
           "conflict_free K G\<^sub>2"
   shows "conflict_free K G\<^sub>1"
 unfolding conflict_free_def proof(standard+,goal_cases)
   case (1 k v1 v2)
   then obtain u1 u2 where u:"(v1,u1) \<in> f" "(v2,u2) \<in> f"
-    using assms[unfolded is_graph_homomorphism_def] by auto
-  with assms[unfolded is_graph_homomorphism_def edge_preserving_def] 1
+    using assms[unfolded graph_homomorphism_def] by auto
+  with assms[unfolded graph_homomorphism_def edge_preserving_def] 1
     have "u1 \<in> vertices G\<^sub>2" "u2 \<in> vertices G\<^sub>2" "(k,u1,u2) \<in> edges G\<^sub>2" by auto
   with assms(2)[unfolded conflict_free_def,rule_format,OF 1(1)] show ?case by auto
 qed

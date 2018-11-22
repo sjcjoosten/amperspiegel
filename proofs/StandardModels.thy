@@ -1,5 +1,5 @@
 theory StandardModels
-imports LabeledGraphSemantics
+imports LabeledGraphSemantics Main
 begin
 
 abbreviation "a_bot \<equiv> A_Lbl S_Bot"
@@ -40,13 +40,13 @@ abbreviation standard' :: "'v set \<Rightarrow> ('v,'a) std_graph \<Rightarrow> 
 "standard' C \<equiv> standard ((\<lambda> c. (S_Const c,Inl c)) ` C) S_Bot S_Top S_Idt"
 
 definition model :: "'v set \<Rightarrow> ('v,'a) std_graph \<Rightarrow> ('v std_sentence) set \<Rightarrow> bool" where
-"model C G T \<equiv> standard' C G \<and> (\<forall> S \<in> T. G \<tturnstile> S)"
+"model C G T \<equiv> standard' C G \<and> (\<forall> S \<in> T. G \<Turnstile> S)"
 
 abbreviation consistent :: "'b itself \<Rightarrow> 'v set \<Rightarrow> ('v std_sentence) set \<Rightarrow> bool" where
 "consistent _ C T \<equiv> \<exists> (G::('v,'b) std_graph). model C G T"
 
 definition entails :: "'b itself \<Rightarrow> 'v set \<Rightarrow> ('v std_sentence) set \<Rightarrow> 'v std_sentence \<Rightarrow> bool"  where
-"entails _ C T S \<equiv> \<forall> (G::('v,'b) std_graph). model C G T \<longrightarrow> G \<tturnstile> S"
+"entails _ C T S \<equiv> \<forall> (G::('v,'b) std_graph). model C G T \<longrightarrow> G \<Turnstile> S"
 
 lemma standard_top_not_bot[intro]:
 "standard' C G \<Longrightarrow> :G:\<lbrakk>\<bottom>\<rbrakk> \<noteq> :G:\<lbrakk>\<top>\<rbrakk>"

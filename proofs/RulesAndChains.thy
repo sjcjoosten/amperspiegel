@@ -9,7 +9,7 @@ definition chain :: "('l, 'v) graph_seq \<Rightarrow> bool" where
 
 lemma chain_then_restrict:
   assumes "chain S" shows "S i = restrict (S i)"
-  using assms[unfolded chain_def is_graph_homomorphism_def] by auto
+  using assms[unfolded chain_def graph_homomorphism_def] by auto
 
 lemma chain:
   assumes "chain S"
@@ -44,9 +44,9 @@ lemma chain_sup_subgraph[intro]:
   shows "subgraph (S j) (chain_sup S)"
 proof -
   have c1: "S j = restrict (S j)" for j
-    using assms[unfolded chain_def,rule_format,of j] is_graph_homomorphism_def by auto
+    using assms[unfolded chain_def,rule_format,of j] graph_homomorphism_def by auto
   hence c2: "chain_sup S = restrict (chain_sup S)"
-    unfolding chain_sup_def by auto
+    unfolding chain_sup_def by fastforce
   have c3: "graph_union (S j) (chain_sup S) = chain_sup S"
     unfolding chain_sup_def graph_union_def by auto
   show ?thesis unfolding subgraph_def using c1 c2 c3 by auto
@@ -94,8 +94,16 @@ definition agree_on where
 
 lemma agree_on_empty[intro,simp]: "agree_on (LG {} {}) f g" unfolding agree_on_def by auto
 
+lemma agree_on_comm[intro]: "agree_on X f g = agree_on X g f" unfolding agree_on_def by auto
 lemma agree_on_refl[intro]:
   "agree_on R f f" unfolding agree_on_def by auto
+lemma agree_on_trans:
+  assumes "agree_on X f g" "agree_on X g h"
+  shows "agree_on X f h" using assms unfolding agree_on_def by auto
+
+lemma agree_on_equivp:
+  shows "equivp (agree_on G)"
+  by (auto intro:agree_on_trans intro!:equivpI simp:reflp_def symp_def transp_def agree_on_comm)
 
 lemma agree_on_subset:
   assumes "f \<subseteq> g" "vertices G \<subseteq> Domain f" "univalent g"
@@ -103,9 +111,9 @@ lemma agree_on_subset:
   using assms unfolding agree_on_def by auto
 
 lemma agree_iff_subset[simp]:
-  assumes "is_graph_homomorphism G X f" "univalent g"
+  assumes "graph_homomorphism G X f" "univalent g"
   shows "agree_on G f g \<longleftrightarrow> f \<subseteq> g"
-  using assms unfolding agree_on_def is_graph_homomorphism_def by auto
+  using assms unfolding agree_on_def graph_homomorphism_def by auto
 
 lemma agree_on_ext:
   assumes "agree_on G f\<^sub>1 f\<^sub>2"
@@ -130,61 +138,82 @@ lemma agree_on_subg_compose:
 
 definition extensible :: "('l,'x) Graph_PreRule \<Rightarrow> ('l,'v) labeled_graph \<Rightarrow> ('x \<times> 'v) set \<Rightarrow> bool"
   where
-"extensible R G f \<equiv> (\<exists> g. is_graph_homomorphism (snd R) G g \<and> agree_on (fst R) f g)"
+"extensible R G f \<equiv> (\<exists> g. graph_homomorphism (snd R) G g \<and> agree_on (fst R) f g)"
 
 lemma extensibleI[intro]: (* not nice as a standard rule, since obtained variables cannot be used *)
-  assumes "is_graph_homomorphism R2 G g" "agree_on R1 f g"
+  assumes "graph_homomorphism R2 G g" "agree_on R1 f g"
   shows "extensible (R1,R2) G f"
   using assms unfolding extensible_def by auto
 
+lemma extensibleD[elim]:
+  assumes "extensible R G f"
+          "\<And> g. graph_homomorphism (snd R) G g \<Longrightarrow> agree_on (fst R) f g \<Longrightarrow> thesis"
+  shows thesis using assms extensible_def by blast
+
 lemma extensible_refl_concr[simp]:
-  assumes "is_graph_homomorphism (LG e\<^sub>1 v) G f"
-  shows "extensible (LG e\<^sub>1 v, LG e\<^sub>2 v) G f \<longleftrightarrow> is_graph_homomorphism (LG e\<^sub>2 v) G f"
+  assumes "graph_homomorphism (LG e\<^sub>1 v) G f"
+  shows "extensible (LG e\<^sub>1 v, LG e\<^sub>2 v) G f \<longleftrightarrow> graph_homomorphism (LG e\<^sub>2 v) G f"
 proof
   assume "extensible (LG e\<^sub>1 v, LG e\<^sub>2 v) G f"
-  then obtain g where g: "is_graph_homomorphism (LG e\<^sub>2 v) G g" "agree_on (LG e\<^sub>1 v) f g"
+  then obtain g where g: "graph_homomorphism (LG e\<^sub>2 v) G g" "agree_on (LG e\<^sub>1 v) f g"
     unfolding extensible_def by auto
   hence d:"Domain f = Domain g" "univalent f" "univalent g" using assms
-    unfolding is_graph_homomorphism_def by auto
+    unfolding graph_homomorphism_def by auto
   from g have subs:"f \<subseteq> g"
-    by(subst agree_iff_subset[symmetric,OF assms],auto simp:is_graph_homomorphism_def)
+    by(subst agree_iff_subset[symmetric,OF assms],auto simp:graph_homomorphism_def)
   with d have "f = g" by auto
-  thus "is_graph_homomorphism (LG e\<^sub>2 v) G f" using g by auto
+  thus "graph_homomorphism (LG e\<^sub>2 v) G f" using g by auto
 qed (auto simp: assms extensible_def)
 
 lemma   extensible_chain_sup[intro]:
 assumes "chain S" "extensible R (S j) f"
 shows "extensible R (chain_sup S) f"
 proof -
-  from assms obtain g where g:"is_graph_homomorphism (snd R) (S j) g \<and> agree_on (fst R) f g"
+  from assms obtain g where g:"graph_homomorphism (snd R) (S j) g \<and> agree_on (fst R) f g"
     unfolding extensible_def by auto
-  have [simp]:"g O Id_on (vertices (S j)) = g" using g[unfolded is_graph_homomorphism_def] by auto
+  have [simp]:"g O Id_on (vertices (S j)) = g" using g[unfolded graph_homomorphism_def] by auto
   from g assms(1)
-  have "is_graph_homomorphism (snd R) (S j) g" "subgraph (S j) (chain_sup S)" by auto
-  from is_graph_homomorphism_composes[OF this]
-  have "is_graph_homomorphism (snd R) (chain_sup S) g" by auto
+  have "graph_homomorphism (snd R) (S j) g" "subgraph (S j) (chain_sup S)" by auto
+  from graph_homomorphism_composes[OF this]
+  have "graph_homomorphism (snd R) (chain_sup S) g" by auto
   thus ?thesis using g unfolding extensible_def by blast
 qed
 
 
 definition maintained :: "('l,'x) Graph_PreRule \<Rightarrow> ('l,'v) labeled_graph \<Rightarrow> bool"
-  where "maintained R G \<equiv> \<forall> f. is_graph_homomorphism (fst R) G f \<longrightarrow> extensible R G f"
+  where "maintained R G \<equiv> \<forall> f. graph_homomorphism (fst R) G f \<longrightarrow> extensible R G f"
 
 abbreviation maintainedA
   :: "('l,'x) Graph_PreRule set \<Rightarrow> ('l, 'v) labeled_graph \<Rightarrow> bool"
   where "maintainedA Rs G \<equiv> \<forall> R\<in>Rs. maintained R G"
 
 lemma maintainedI[intro]:
-  assumes "\<And> f. is_graph_homomorphism A G f \<Longrightarrow> extensible (A,B) G f"
+  assumes "\<And> f. graph_homomorphism A G f \<Longrightarrow> extensible (A,B) G f"
   shows "maintained (A,B) G"
   using assms unfolding maintained_def by auto
 lemma maintainedD[dest]:
-  assumes "maintained (A,B) G"
-  shows "\<And> f. is_graph_homomorphism A G f \<Longrightarrow> extensible (A,B) G f"
+  assumes "maintained (A,B) G" "graph_homomorphism A G f"
+  shows "extensible (A,B) G f"
   using assms unfolding maintained_def by auto
 
+lemma maintainedD2[dest]:
+  assumes "maintained (A,B) G" "graph_homomorphism A G f"
+          "\<And> g. graph_homomorphism B G g \<Longrightarrow> f \<subseteq> g \<Longrightarrow> thesis"
+        shows thesis
+  using maintainedD[OF assms(1,2),unfolded extensible_def]
+proof
+  fix g
+  assume "graph_homomorphism (snd (A, B)) G g \<and> agree_on (fst (A, B)) f g"
+  hence "graph_homomorphism B G g" "f \<subseteq> g"
+    using assms(2) unfolding graph_homomorphism_def2 agree_on_def by auto
+  from assms(3)[OF this] show thesis.
+qed
+
+
+  
+
 lemma extensible_refl[intro]:
-  "is_graph_homomorphism R G f \<Longrightarrow> extensible (R,R) G f"
+  "graph_homomorphism R G f \<Longrightarrow> extensible (R,R) G f"
   unfolding extensible_def by auto
 
 lemma maintained_refl[intro]:
@@ -195,14 +224,14 @@ definition fin_maintained :: "('l,'x) Graph_PreRule \<Rightarrow> ('l,'v) labele
 "fin_maintained R G \<equiv> \<forall> F f. finite_graph F
                          \<longrightarrow> subgraph F (fst R)
                          \<longrightarrow> extensible (F,fst R) G f
-                         \<longrightarrow> is_graph_homomorphism F G f
+                         \<longrightarrow> graph_homomorphism F G f
                          \<longrightarrow> extensible (F,snd R) G f"
 
 lemma fin_maintainedI [intro]:
   assumes "\<And> F f. finite_graph F
            \<Longrightarrow> subgraph F (fst R)
            \<Longrightarrow> extensible (F,fst R) G f
-           \<Longrightarrow> is_graph_homomorphism F G f
+           \<Longrightarrow> graph_homomorphism F G f
            \<Longrightarrow> extensible (F,snd R) G f"
   shows "fin_maintained R G" using assms unfolding fin_maintained_def by auto
 
@@ -212,15 +241,15 @@ lemma maintained_then_fin_maintained[simp]:
 proof
   fix F f
   assume subg:"subgraph F (fst R)"
-     and ext:"extensible (F, fst R) G f" and igh:"is_graph_homomorphism F G f"
+     and ext:"extensible (F, fst R) G f" and igh:"graph_homomorphism F G f"
   from ext[unfolded extensible_def prod.sel] obtain g where
-     g:"is_graph_homomorphism (fst R) G g" "agree_on F f g" by blast
+     g:"graph_homomorphism (fst R) G g" "agree_on F f g" by blast
   from maintained[unfolded maintained_def,rule_format,OF g(1)] g(2) subg
        agree_on_subg_compose
   show "extensible (F, snd R) G f" unfolding extensible_def prod.sel by blast
 qed
 
-lemma fin_maintained_is_maintained:
+lemma fin_maintained_maintained:
   assumes "finite_graph (fst R)"
   shows "fin_maintained R G \<longleftrightarrow> maintained R G" (is "?lhs = ?rhs")
 proof
@@ -230,14 +259,14 @@ proof
            "subgraph (fst R) (fst R)"
     unfolding subgraph_def graph_union_iff by auto
   assume ?lhs
-  with fin have "extensible (fst R, fst R) G f \<Longrightarrow> is_graph_homomorphism (fst R) G f
+  with fin have "extensible (fst R, fst R) G f \<Longrightarrow> graph_homomorphism (fst R) G f
          \<Longrightarrow> extensible R G f" for f unfolding fin_maintained_def by auto 
   thus ?rhs by (simp add: extensible_refl maintained_def)
 qed simp
 
 lemma extend_for_chain:
 assumes "g 0 = f"
-    and "\<And> i. is_graph_homomorphism (S i) C (g i)"
+    and "\<And> i. graph_homomorphism (S i) C (g i)"
     and "\<And> i. agree_on (S i) (g i) (g (i + 1))"
     and "chain S"
   shows "extensible (S 0, chain_sup S) C f"
@@ -249,7 +278,7 @@ proof
   { fix a b i
     assume a:"(a, b) \<in> g i"
     hence "a \<in> vertices (S i)" using assms(2)[of i]
-      unfolding is_graph_homomorphism_def2 by auto
+      unfolding graph_homomorphism_def2 by auto
     from assms(3)[unfolded agree_on_def,rule_format,OF this] a
     have "(a, b) \<in> g (Suc i)" by auto
   }
@@ -260,20 +289,20 @@ proof
   from assms(1) have f_subset:"f \<subseteq> ?g" by auto
   from assms(2)[of 0,unfolded assms(1)] have domf:"Domain f = vertices (S 0)"
     and grC:"graph C" and v_dom:"vertices (S i) = Domain (g i)" for i using assms(2)
-    unfolding is_graph_homomorphism_def by auto
+    unfolding graph_homomorphism_def by auto
   { fix x y z i j assume "(x, y) \<in> g i" "(x, z) \<in> g j"
     with gij[of i "max i j"] gij[of j "max i j"]
     have "(x,y) \<in> g (max i j)" "(x,z) \<in> g (max i j)" by auto
-    with assms(2)[unfolded is_graph_homomorphism_def]
+    with assms(2)[unfolded graph_homomorphism_def]
     have "y = z" by auto
   } note univ_strong = this
   hence univ:"univalent ?g" unfolding univalent_def by auto
   { fix xa x i
     assume "(xa, x) \<in> g i"
     hence "x \<in> vertices (map_graph (g i) (S i))"
-      using assms(2) unfolding is_graph_homomorphism_def by auto
+      using assms(2) unfolding graph_homomorphism_def by auto
     hence "x \<in> vertices C"
-      using assms(2) unfolding is_graph_homomorphism_def2 graph_union_iff by blast
+      using assms(2) unfolding graph_homomorphism_def2 graph_union_iff by blast
   } note eq_v = this
   { fix l x y x' y' j i
     assume "(l,x,y) \<in> edges (S j)" "(x, x') \<in> g i" "(y, y') \<in> g i"
@@ -283,18 +312,18 @@ proof
     have "(x,x') \<in> g (max i j)" "(y,y') \<in> g (max i j)"
          "(l,x,y) \<in> edges (S (max i j))" by auto
     hence "(l, x', y') \<in> edges C"
-      using assms(2)[unfolded is_graph_homomorphism_def2 graph_union_iff] by auto
+      using assms(2)[unfolded graph_homomorphism_def2 graph_union_iff] by auto
   } note eq_e = this
   have "graph_union (map_graph (g i) (chain_sup S)) C = C" for i
     unfolding graph_union_iff using eq_e eq_v
-    unfolding is_graph_homomorphism_def2 chain_sup_def by auto
+    unfolding graph_homomorphism_def2 chain_sup_def by auto
   hence subg:"graph_union (map_graph ?g (chain_sup S)) C = C"
     apply (rule graph_map_union) using gij by auto
   have "(\<Union>i. vertices (S i)) = (\<Union>i. Domain (g i))" using v_dom by auto
   hence vd:"vertices (chain_sup S) = Domain ?g"
     unfolding chain_sup_def by auto
-  show "is_graph_homomorphism (chain_sup S) C ?g"
-    unfolding is_graph_homomorphism_def2
+  show "graph_homomorphism (chain_sup S) C ?g"
+    unfolding graph_homomorphism_def2
     using univ chain_sup_graph[OF assms(4)] grC vd subg by auto
   show "agree_on (S 0) f ?g" using agree_on_subset[OF f_subset _ univ] domf by auto
 qed
@@ -351,18 +380,18 @@ assumes "consequence_graph Rs (G:: ('l, 'c) labeled_graph)"
 
 definition fair_chain where
   "fair_chain Rs S \<equiv> chain S \<and> 
-    (\<forall> R f i. (R \<in> Rs \<and> is_graph_homomorphism (fst R) (S i) f) \<longrightarrow> (\<exists> j. extensible R (S j) f))"
+    (\<forall> R f i. (R \<in> Rs \<and> graph_homomorphism (fst R) (S i) f) \<longrightarrow> (\<exists> j. extensible R (S j) f))"
 
 lemma fair_chainI[intro]:
   assumes "chain S"
-    "\<And> R f i. R \<in> Rs \<Longrightarrow> is_graph_homomorphism (fst R) (S i) f \<Longrightarrow> \<exists> j. extensible R (S j) f"
+    "\<And> R f i. R \<in> Rs \<Longrightarrow> graph_homomorphism (fst R) (S i) f \<Longrightarrow> \<exists> j. extensible R (S j) f"
   shows "fair_chain Rs S"
   using assms unfolding fair_chain_def by blast
 
 lemma fair_chainD:
   assumes "fair_chain Rs S"
   shows "chain S"
-        "R \<in> Rs \<Longrightarrow> is_graph_homomorphism (fst R) (S i) f \<Longrightarrow> \<exists> j. extensible R (S j) f"
+        "R \<in> Rs \<Longrightarrow> graph_homomorphism (fst R) (S i) f \<Longrightarrow> \<exists> j. extensible R (S j) f"
   using assms unfolding fair_chain_def by blast+
 
 lemma find_graph_occurence_vertices:
@@ -399,7 +428,7 @@ lemma find_graph_occurence_edges:
       shows "\<exists> i. on_triple f `` E \<subseteq> edges (S i)"
   using assms(2,4)
 proof(induct E)
-  case empty thus ?case unfolding is_graph_homomorphism_def by auto
+  case empty thus ?case unfolding graph_homomorphism_def by auto
 next
   case (insert e E)
   have univ:"univalent (on_triple f)" using assms(3) by auto
@@ -426,12 +455,12 @@ next
 qed
 
 lemma find_graph_occurence:
-  assumes "chain S" "finite E" "finite V" "is_graph_homomorphism (LG E V) (chain_sup S) f"
-  shows "\<exists> i. is_graph_homomorphism (LG E V) (S i) f"
+  assumes "chain S" "finite E" "finite V" "graph_homomorphism (LG E V) (chain_sup S) f"
+  shows "\<exists> i. graph_homomorphism (LG E V) (S i) f"
 proof -
   have [simp]:"restrict (S i) = S i" for i
     using chain[OF assms(1),unfolded subgraph_def,of i i] by auto
-  from assms[unfolded is_graph_homomorphism_def edge_preserving labeled_graph.sel]
+  from assms[unfolded graph_homomorphism_def edge_preserving labeled_graph.sel]
   have u:"univalent f" 
    and e:"on_triple f `` E \<subseteq> edges (chain_sup S)"
    and v:"f `` V \<subseteq> vertices (chain_sup S)"
@@ -445,9 +474,9 @@ proof -
   have e:"on_triple f `` E \<subseteq> edges (S (max i j))"
    and v:"f `` V \<subseteq> vertices (S (max i j))"
     using i j subgraph_subset(2)[OF sg(1)] subgraph_subset(1)[OF sg(2)] by auto
-  have "is_graph_homomorphism (LG E V) (S (max i j)) f"
-  proof
-    from assms[unfolded is_graph_homomorphism_def edge_preserving labeled_graph.sel] e v
+  have "graph_homomorphism (LG E V) (S (max i j)) f"
+  proof(rule graph_homomorphismI)
+    from assms[unfolded graph_homomorphism_def edge_preserving labeled_graph.sel] e v
     show "vertices (LG E V) = Domain f"
      and "univalent f"
      and "LG E V = restrict (LG E V)"
@@ -469,9 +498,9 @@ proof -
   { fix R assume a:"R \<in> Rs"
     have fin_v:"finite (vertices (fst R))" and fin_e: "finite (edges (fst R))"
       using assms(2)[OF a] by auto
-    { fix f assume "is_graph_homomorphism (LG (edges (fst R)) (vertices (fst R))) (chain_sup S) f"
+    { fix f assume "graph_homomorphism (LG (edges (fst R)) (vertices (fst R))) (chain_sup S) f"
       with find_graph_occurence[OF fair_chainD(1)[OF assms(1)] fin_e fin_v]  
-      obtain i where "is_graph_homomorphism (fst R) (S i) f" by auto
+      obtain i where "graph_homomorphism (fst R) (S i) f" by auto
       from fair_chainD(2)[OF assms(1) a this] obtain j
          where "extensible R (S j) f" by blast
       hence "extensible R (chain_sup S) f" using fair_chainD(1)[OF assms(1)] by auto
@@ -490,28 +519,28 @@ definition weak_universal ::
     "'x itself \<Rightarrow> ('a, 'c) Graph_PreRule \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow>
      ('c \<times> 'b) set \<Rightarrow> ('c \<times> 'b) set \<Rightarrow> bool" where
 "weak_universal _ R G\<^sub>1 G\<^sub>2 f\<^sub>1 f\<^sub>2 \<equiv> (\<forall> h\<^sub>1 h\<^sub>2 G::('a, 'x) labeled_graph.
-             (is_graph_homomorphism (snd R) G h\<^sub>1 \<and> is_graph_homomorphism G\<^sub>1 G h\<^sub>2 \<and> f\<^sub>1 O h\<^sub>2 \<subseteq> h\<^sub>1)
-         \<longrightarrow> (\<exists> h. is_graph_homomorphism G\<^sub>2 G h \<and> h\<^sub>2 \<subseteq> h))"
+             (graph_homomorphism (snd R) G h\<^sub>1 \<and> graph_homomorphism G\<^sub>1 G h\<^sub>2 \<and> f\<^sub>1 O h\<^sub>2 \<subseteq> h\<^sub>1)
+         \<longrightarrow> (\<exists> h. graph_homomorphism G\<^sub>2 G h \<and> h\<^sub>2 \<subseteq> h))"
 
 lemma weak_universalD[dest]:
   assumes "weak_universal (t:: 'x itself) R (G\<^sub>1::('a, 'b) labeled_graph) G\<^sub>2 f\<^sub>1 f\<^sub>2"
   shows "\<And>  h\<^sub>1 h\<^sub>2 G::('a, 'x) labeled_graph.
-         is_graph_homomorphism (snd R) G h\<^sub>1 \<Longrightarrow> is_graph_homomorphism G\<^sub>1 G h\<^sub>2 \<Longrightarrow> f\<^sub>1 O h\<^sub>2 \<subseteq> h\<^sub>1
-         \<Longrightarrow> (\<exists> h. is_graph_homomorphism G\<^sub>2 G h \<and> h\<^sub>2 \<subseteq> h)"
+         graph_homomorphism (snd R) G h\<^sub>1 \<Longrightarrow> graph_homomorphism G\<^sub>1 G h\<^sub>2 \<Longrightarrow> f\<^sub>1 O h\<^sub>2 \<subseteq> h\<^sub>1
+         \<Longrightarrow> (\<exists> h. graph_homomorphism G\<^sub>2 G h \<and> h\<^sub>2 \<subseteq> h)"
   using assms unfolding weak_universal_def by metis
 
 lemma weak_universalI[intro]:
   assumes "\<And> h\<^sub>1 h\<^sub>2 G::('a, 'x) labeled_graph.
-         is_graph_homomorphism (snd R) G h\<^sub>1 \<Longrightarrow> is_graph_homomorphism G\<^sub>1 G h\<^sub>2 \<Longrightarrow> f\<^sub>1 O h\<^sub>2 \<subseteq> h\<^sub>1
-         \<Longrightarrow> (\<exists> h. is_graph_homomorphism G\<^sub>2 G h \<and> h\<^sub>2 \<subseteq> h)"
+         graph_homomorphism (snd R) G h\<^sub>1 \<Longrightarrow> graph_homomorphism G\<^sub>1 G h\<^sub>2 \<Longrightarrow> f\<^sub>1 O h\<^sub>2 \<subseteq> h\<^sub>1
+         \<Longrightarrow> (\<exists> h. graph_homomorphism G\<^sub>2 G h \<and> h\<^sub>2 \<subseteq> h)"
   shows "weak_universal (t:: 'x itself) R (G\<^sub>1::('a, 'b) labeled_graph) G\<^sub>2 f\<^sub>1 f\<^sub>2"
   using assms unfolding weak_universal_def by force
 
 definition pushout_step ::
     "'x itself \<Rightarrow> ('a, 'c) Graph_PreRule \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> bool" where
 "pushout_step t R G\<^sub>1 G\<^sub>2 \<equiv> subgraph G\<^sub>1 G\<^sub>2 \<and> 
-  (\<exists> f\<^sub>1 f\<^sub>2. is_graph_homomorphism (fst R) G\<^sub>1 f\<^sub>1 \<and>
-           is_graph_homomorphism (snd R) G\<^sub>2 f\<^sub>2 \<and>
+  (\<exists> f\<^sub>1 f\<^sub>2. graph_homomorphism (fst R) G\<^sub>1 f\<^sub>1 \<and>
+           graph_homomorphism (snd R) G\<^sub>2 f\<^sub>2 \<and>
            f\<^sub>1 \<subseteq> f\<^sub>2 \<and>
            weak_universal t R G\<^sub>1 G\<^sub>2 f\<^sub>1 f\<^sub>2
   )"
@@ -554,27 +583,27 @@ inductive WPC ::
 
 lemma extensible_from_chainI:
   assumes ch:"chain S"
-  and igh:"is_graph_homomorphism (S 0) C f"
-  and ind:"\<And> f i. is_graph_homomorphism (S i) C f \<Longrightarrow>
-                \<exists>h. (is_graph_homomorphism (S (Suc i)) C h) \<and> agree_on (S i) f h"
+  and igh:"graph_homomorphism (S 0) C f"
+  and ind:"\<And> f i. graph_homomorphism (S i) C f \<Longrightarrow>
+                \<exists>h. (graph_homomorphism (S (Suc i)) C h) \<and> agree_on (S i) f h"
   shows "extensible (S 0,chain_sup S) C f"
 proof -
   have ch:"chain S" using assms by auto
-  hence r0:"\<exists>x. is_graph_homomorphism (S 0) C x \<and> (0 = 0 \<longrightarrow> x = f)"
+  hence r0:"\<exists>x. graph_homomorphism (S 0) C x \<and> (0 = 0 \<longrightarrow> x = f)"
     using igh by auto
   { fix i x
-    assume "is_graph_homomorphism (S i) C x \<and> (i = 0 \<longrightarrow> x = f)"
-    hence "is_graph_homomorphism (S i) C x" by auto
+    assume "graph_homomorphism (S i) C x \<and> (i = 0 \<longrightarrow> x = f)"
+    hence "graph_homomorphism (S i) C x" by auto
     from ind[OF this]
-    have "\<exists>y. (is_graph_homomorphism (S (Suc i)) C y \<and> (Suc i = 0 \<longrightarrow> y = f)) \<and> agree_on (S i) x y"
+    have "\<exists>y. (graph_homomorphism (S (Suc i)) C y \<and> (Suc i = 0 \<longrightarrow> y = f)) \<and> agree_on (S i) x y"
       by auto
   }
   with r0
-  have "\<exists> g. (\<forall> i. (is_graph_homomorphism (S i) C (g i) \<and> (i = 0 \<longrightarrow> g i = f))
+  have "\<exists> g. (\<forall> i. (graph_homomorphism (S i) C (g i) \<and> (i = 0 \<longrightarrow> g i = f))
                 \<and> agree_on (S i) (g i) (g (Suc i)) )" by (rule dependent_nat_choice)
   then obtain g where
        mtn:"g 0 = f"
-           "is_graph_homomorphism (S i) C (g i)"
+           "graph_homomorphism (S i) C (g i)"
            "agree_on (S i) (g i) (g (i + 1))" for i by auto
   from extend_for_chain[OF mtn ch] show ?thesis.
 qed
@@ -602,19 +631,19 @@ proof(induction S)
       next
         case False
         with ps[of i,unfolded pushout_step_def] obtain R f\<^sub>1 f\<^sub>2 where
-        R:"(fst R,snd R) \<in> Rs" and f\<^sub>1:"is_graph_homomorphism (fst R) (S i) f\<^sub>1"
+        R:"(fst R,snd R) \<in> Rs" and f\<^sub>1:"graph_homomorphism (fst R) (S i) f\<^sub>1"
         and wu:"weak_universal t R (S i) (S (i + 1)) f\<^sub>1 f\<^sub>2" by auto
-        from is_graph_homomorphism_composes[OF f\<^sub>1 3(2)]
-        have ih_comp:"is_graph_homomorphism (fst R) C (f\<^sub>1 O x)".
+        from graph_homomorphism_composes[OF f\<^sub>1 3(2)]
+        have ih_comp:"graph_homomorphism (fst R) C (f\<^sub>1 O x)".
         with maintainedD[OF consequence_graphD(1)[OF cgC R]]
         have "extensible (fst R, snd R) C (f\<^sub>1 O x)" by auto
         from this[unfolded extensible_def prod.sel]
-        obtain g where g:"is_graph_homomorphism (snd R) C g" "f\<^sub>1 O x \<subseteq> g"
-          using agree_iff_subset[OF ih_comp] unfolding is_graph_homomorphism_def by auto
+        obtain g where g:"graph_homomorphism (snd R) C g" "f\<^sub>1 O x \<subseteq> g"
+          using agree_iff_subset[OF ih_comp] unfolding graph_homomorphism_def by auto
         from weak_universalD[OF wu g(1) 3(2) g(2)] obtain h where
-          h:"is_graph_homomorphism (S (i + 1)) C h" "x \<subseteq> h" by auto
+          h:"graph_homomorphism (S (i + 1)) C h" "x \<subseteq> h" by auto
         hence "agree_on (S i) x h"
-          by(subst agree_iff_subset[OF 3(2)], auto simp:is_graph_homomorphism_def)
+          by(subst agree_iff_subset[OF 3(2)], auto simp:graph_homomorphism_def)
         then show ?thesis using h(1) by auto
       qed
     qed auto
@@ -638,7 +667,9 @@ next
       thus ?case unfolding extensible_def prod.sel.
     qed auto
   qed auto
-qed auto
+qed (auto intro!:graph_homomorphismI)
+
+term map_graph_fn
 
 (* Lemma 4 *)
 lemma wpc_least_consequence_graph:
