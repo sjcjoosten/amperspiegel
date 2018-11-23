@@ -1,32 +1,25 @@
+section \<open>Standard Rules\<close>
+text \<open>We define the standard rules here, and prove the relation to standard rules.
+      This means proving that the graph rules do what they say they do.\<close>
 theory StandardRules
 imports StandardModels RuleSemanticsConnection
 begin
 
-(* Remark at Definition 16*)
+
+text \<open>Definition 16 makes this remark. We don't have a specific version of Definition 16.\<close>
 lemma conflict_free:
 ":G:\<lbrakk>A_Lbl l\<rbrakk> = {} \<longleftrightarrow> (\<forall> (l',x,y)\<in>edges G. l' \<noteq> l)"
   by (auto simp:getRel_def)
 
+
+text \<open>Definition 17, abstractly.
+      It's unlikely that we wish to use the top rule for any symbol except top,
+      but stating it abstractly makes it consistent with the other rules.\<close>
 (* Definition 17 *)
-(* It's unlikely that we wish to use the top rule for any symbol except top,
-   but we give the relation symbol as an argument just for consistency with the identity rules *)
 definition top_rule :: "'l \<Rightarrow> ('l,nat) Graph_PreRule" where	
 "top_rule t = (LG {} {0,1},LG {(t,0,1)} {0,1})"	
-(* Definition 18 *)
-definition nonempty_rule :: "('l,nat) Graph_PreRule" where
-"nonempty_rule = (LG {} {},LG {} {0})"	
 
-lemma nonempty_rule[simp]:
-  assumes "graph G"
-  shows "maintained nonempty_rule G \<longleftrightarrow> vertices G \<noteq> {}"
-proof -
-  have "vertices G = {} \<Longrightarrow> graph_homomorphism (LG {} {0}) G x \<Longrightarrow> False"
-       "v \<in> vertices G \<Longrightarrow> graph_homomorphism (LG {} {0}) G {(0,v)}"
-       for v::"'b" and x::"(nat \<times> 'b) set"
-    unfolding graph_homomorphism_concr_graph[OF assms graph_empty_e] univalent_def by blast+
-  thus ?thesis unfolding nonempty_rule_def maintained_def extensible_def by (auto intro:assms)
-qed
-
+text \<open>Proof that definition 17 does what it says it does.\<close>
 lemma top_rule[simp]:
   assumes "graph G"
   shows "maintained (top_rule r) G \<longleftrightarrow> vertices G \<times> vertices G = getRel r G"
@@ -55,11 +48,27 @@ proof
   thus "maintained (top_rule r) G" unfolding maintained_def by auto
 qed
 
-(* Since the equivalence rules might be useful for other equivalence relations,
-   we give the relation symbol as an argument *)
-definition reflexivity_rule :: "'l \<Rightarrow> ('l,nat) Graph_PreRule" where
-"reflexivity_rule t = (LG {} {0},LG {(t,0,0)} {0})"	
+text \<open>Definition 18.\<close>
+(* Definition 18 *)
+definition nonempty_rule :: "('l,nat) Graph_PreRule" where
+"nonempty_rule = (LG {} {},LG {} {0})"	
 
+text \<open>Proof that definition 18 does what it says it does.\<close>
+lemma nonempty_rule[simp]:
+  assumes "graph G"
+  shows "maintained nonempty_rule G \<longleftrightarrow> vertices G \<noteq> {}"
+proof -
+  have "vertices G = {} \<Longrightarrow> graph_homomorphism (LG {} {0}) G x \<Longrightarrow> False"
+       "v \<in> vertices G \<Longrightarrow> graph_homomorphism (LG {} {0}) G {(0,v)}"
+       for v::"'b" and x::"(nat \<times> 'b) set"
+    unfolding graph_homomorphism_concr_graph[OF assms graph_empty_e] univalent_def by blast+
+  thus ?thesis unfolding nonempty_rule_def maintained_def extensible_def by (auto intro:assms)
+qed
+
+
+text \<open>Definition 19.\<close>
+definition reflexivity_rule :: "'l \<Rightarrow> ('l,nat) Graph_PreRule" where
+  "reflexivity_rule t = (LG {} {0},LG {(t,0,0)} {0})"	
 definition symmetry_rule :: "'l \<Rightarrow> ('l,nat) Graph_PreRule" where
 "symmetry_rule t = (transl_rule (A_Cnv (A_Lbl t) \<sqsubseteq> A_Lbl t))"
 definition transitive_rule :: "'l \<Rightarrow> ('l,nat) Graph_PreRule" where
@@ -77,44 +86,9 @@ lemma are_rules[intro]:
   unfolding reflexivity_rule_def top_rule_def nonempty_rule_def graph_homomorphism_def	
   by auto
 
-lemma non_empty_rule_non_empty[dest]:
-  assumes "maintained nonempty_rule G" "graph G" 
-  shows "\<exists> x. x \<in> vertices G"
-proof -
-  have "graph_homomorphism (fst nonempty_rule) G {}"
-    using assms(1,2) unfolding graph_homomorphism_def2 nonempty_rule_def by auto
-  with assms[unfolded maintained_def] have "extensible nonempty_rule G {}" by auto
-  then obtain g where hom:"graph_homomorphism (snd nonempty_rule) G g"
-    unfolding extensible_def by blast
-  hence "0 \<in> Domain g" unfolding graph_homomorphism_def nonempty_rule_def prod.sel by auto
-  then obtain y where "(0,y) \<in> g" by auto
-  with hom have "y\<in> vertices G" unfolding graph_homomorphism_def by auto
-  thus ?thesis by auto
-qed
 
-lemma top_rule_full[dest]:
-  assumes "maintained (top_rule t) G" "graph G"
-  shows "x \<in> vertices G \<and> y \<in> vertices G \<longleftrightarrow> (x,y) \<in> getRel t G"
-proof
-  assume a:"x \<in> vertices G \<and> y \<in> vertices G"
-  let ?f = "{(0,x),(1,y)}" let ?R = "top_rule t"
-  have "graph_homomorphism (fst ?R) G ?f"
-    using assms a unfolding graph_homomorphism_def top_rule_def
-    by (cases G,auto simp:univalent_def)
-  with assms[unfolded maintained_def] have "extensible ?R G ?f" by auto
-  then obtain g where hom:"graph_homomorphism (snd ?R) G g"
-    and agr:"agree_on (fst ?R) ?f g"
-    unfolding extensible_def by blast
-  with a have g:"(0,x) \<in> g" "(1,y) \<in> g" unfolding agree_on_def top_rule_def by auto
-  have "(t,0,1)\<in>edges (snd ?R)" unfolding top_rule_def by auto
-  with g have "(t,x,y)\<in>edges (map_graph g (snd ?R))" unfolding map_graph_def on_triple_def by auto
-  with hom[unfolded graph_homomorphism_def2 graph_union_iff] have "(t,x,y)\<in>edges G" by auto
-  thus "(x,y) \<in> getRel t G" by (auto simp: getRel_def) next
-  assume "(x, y) \<in> getRel t G"
-  with assms(2) show "x \<in> vertices G \<and> y \<in> vertices G" unfolding getRel_def by auto 
-qed
+text \<open>Just before Lemma 7, we remark that if I is an identity, it maintains the identity rules.\<close>
 
-(* Remark just before Lemma 7: if I is an identity, it maintains the identity rules *)
 lemma ident_rel_refl:
   assumes "graph G" "ident_rel idt G"
   shows "maintained (reflexivity_rule idt) G"
@@ -142,7 +116,7 @@ lemma
   unfolding transitive_rule_def symmetry_rule_def congruence_rule_def
   by(intro maintained_holds,insert assms,force)+
 
-(* Definition 19 *)
+text \<open>Definition 19.\<close>
 definition identity_rules ::
   "'a Standard_Constant set \<Rightarrow> (('a Standard_Constant, nat) Graph_PreRule) set" where
   "identity_rules L \<equiv> {reflexivity_rule S_Idt,transitive_rule S_Idt,symmetry_rule S_Idt}
@@ -161,7 +135,7 @@ proof -
     by cases fast+
 qed
 
-(* Implicit properties of Definition 19 *)
+text \<open>Definition 19, showing that the properties indeed do what they claim to do.\<close>
 lemma
   assumes g[intro]:"graph (G :: ('a, 'b) labeled_graph)"
   shows reflexivity_rule: "maintained (reflexivity_rule l) G \<Longrightarrow> refl_on (vertices G) (getRel l G)"
@@ -262,7 +236,9 @@ proof -
   thus ?g1 ?g2 unfolding congruent_def by force+
 qed
 
-lemma identity_rules: (* Lemma 7, strengthened *)
+
+text \<open>Lemma 7, strengthened with an extra property to make subsequent proofs easier to carry out.\<close>
+lemma identity_rules:
   assumes "graph G"
           "maintainedA (identity_rules L) G"
           "fst ` edges G \<subseteq> L"
@@ -377,6 +353,7 @@ proof -
   from idemp ident subg congr show ?thesis by auto
 qed
 
+text \<open>The idempotency property of Lemma 7 suffices to show that 'maintained' is preserved.\<close>
 lemma idemp_embedding_maintained_preserved:
   assumes subg:"subgraph (map_graph_fn G f) G" and f:"\<And> x. x\<in>vertices G \<Longrightarrow> (f o f) x = f x"
       and maint:"maintained r G"
@@ -406,6 +383,7 @@ proof -
   thus ?thesis unfolding maintained_def by blast
 qed
 
+text \<open>Definition 20.\<close>
 definition const_exists where
 "const_exists c \<equiv> transl_rule (\<top> \<sqsubseteq> A_Cmp (A_Cmp \<top> (A_Lbl (S_Const c))) \<top>)"
 definition const_exists_rev where
@@ -484,6 +462,7 @@ lemma constant_rules_empty[simp]:
   "constant_rules {} = {}"
   by (auto simp:constant_rules_def)
 
+text \<open>Definition 20, continued.\<close>
 definition standard_rules :: "'a set \<Rightarrow> 'a Standard_Constant set \<Rightarrow> (('a Standard_Constant, nat) labeled_graph \<times> ('a Standard_Constant, nat) labeled_graph) set"
   where
 "standard_rules C L \<equiv> constant_rules C \<union> identity_rules L \<union> {top_rule S_Top,nonempty_rule}"
@@ -600,6 +579,7 @@ proof fix R
           standard_maintains_identity_rules[OF assms] by (cases,auto simp:standard_def)
 qed
 
+text \<open>A case-split rule.\<close>
 lemma standard_rules_edges:
   assumes "(lhs, rhs) \<in> standard_rules C L" "(l, x, y) \<in> edges rhs"
   shows "(l = S_Bot \<Longrightarrow> thesis) \<Longrightarrow>
@@ -613,13 +593,15 @@ lemma standard_rules_edges:
    reflexivity_rule_def transitive_rule_def symmetry_rule_def congruence_rule_def
    top_rule_def nonempty_rule_def)
 
-(* Slightly stronger version of Lemma 8:
+text \<open>Lemma 8.
+
+   This is a slightly stronger version of Lemma 8:
    we reason about maintained rather than holds,
    and the quantification for maintained happens within the existential quantifier, rather than outside.
 
-   Due to the type system of Isabelle, we construct the concrete type 'std_graph' for G.
-     This is slightly stronger than showing the existence of 'a type large enough' as in the paper.
-   *)
+   Due to the type system of Isabelle, we construct the concrete type @{term std_graph} for G.
+   This in contrast to arguing that 'there exists a type large enough', as in the paper.\<close>
+
 lemma maintained_standard_noconstants:
   assumes mnt:"maintainedA (standard_rules C L) G'"
   and gr:"graph (G'::('V Standard_Constant, 'V') labeled_graph)"
@@ -640,8 +622,8 @@ proof -
   have mg:"\<And> r. maintained r G' \<Longrightarrow> maintained r (map_graph_fn G' h)"
    using idemp_embedding_maintained_preserved[OF h(3)] h(1) by auto
   from mnt have tr:"maintained (top_rule S_Top) G'" and ne:"maintained nonempty_rule G'" by auto
-  from non_empty_rule_non_empty[OF ne gr(1)] obtain x where x:"x \<in> vertices G'" by blast
-  from top_rule_full[OF tr gr(1)] x have top_nonempty:"(x, x) \<in> getRel S_Top G'" by metis
+  from nonempty_rule[OF gr(1)] ne obtain x where x:"x \<in> vertices G'" by blast
+  from tr[unfolded top_rule[OF gr(1)]] x have top_nonempty:"(x, x) \<in> getRel S_Top G'" by auto
   have "\<And> c. c \<in> C \<Longrightarrow> \<exists>v. (v, v) \<in> getRel (S_Const c) (map_graph_fn G' h)" proof(goal_cases)
     case (1 c)
     with mnt have cr5: "maintained (const_exists c) G'"
@@ -727,7 +709,7 @@ proof -
     thus ?case unfolding G_def by auto
   qed
 
-  from top_rule_full[OF tr gr(1)]
+  from tr[unfolded top_rule[OF gr(1)]]
   have tr0:"getRel S_Top (map_graph_fn G' h)
           = {(x,y). x \<in> vertices (map_graph_fn G' h) \<and> y \<in> vertices (map_graph_fn G' h)}"
     and tr:"getRel S_Top G = {(x, y). x \<in> vertices G \<and> y \<in> vertices G}"
@@ -793,7 +775,14 @@ proof -
     hence "(x,y) \<in> :G':\<lbrakk>e\<rbrakk>"
     proof(induct e arbitrary: x y)
       case (A_Cmp e1 e2)
-        have "(x, y) \<in> (:G':\<lbrakk>e1\<rbrakk>) O (:G':\<lbrakk>e2\<rbrakk>)" sorry
+        then obtain z where z:"(g (f x), z) \<in> :map_graph_fn (map_graph_fn G' f) g:\<lbrakk>e1\<rbrakk>"
+                              "(z, g (f y)) \<in> :map_graph_fn (map_graph_fn G' f) g:\<lbrakk>e2\<rbrakk>" by auto
+        hence "z \<in> vertices (map_graph_fn (map_graph_fn G' f) g)"
+          using semantics_in_vertices(1)[OF map_graph_fn_graphI] by metis
+        then obtain z' where z':"z = g (f z')" "z' \<in> vertices G'" by auto
+        with A_Cmp(1)[OF A_Cmp(3) z'(2) z(1)[unfolded z']]
+             A_Cmp(2)[OF z'(2) A_Cmp(4) z(2)[unfolded z']]
+        have "(x, y) \<in> (:G':\<lbrakk>e1\<rbrakk>) O (:G':\<lbrakk>e2\<rbrakk>)" by auto
         then show ?case by auto
       next
         case (A_Lbl l)

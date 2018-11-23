@@ -1,3 +1,8 @@
+section \<open>Combined correctness\<close>
+text \<open>This section does not correspond to any theorems in the paper.
+      However, the main correctness proof is not a theorem in the paper either.
+      As the paper sets out to prove that we can decide entailment and consistency,
+      this file shows how to combine the results so far and indeed establish those properties. \<close>
 theory CombinedCorrectness
   imports GraphRewriting StandardRules
 begin
@@ -78,8 +83,13 @@ proof -
       for r :: "('a Standard_Constant, nat) Graph_PreRule"
       by blast
     hence g:"graph G" unfolding standard_def by auto
-    have "(a,b)\<in>T \<Longrightarrow> G \<Turnstile> (a,b)" for a b apply(subst eq_as_subsets)
-      using cfg_m[unfolded transl_rules_def,THEN m] maintained_holds_iff[OF g] by blast
+    have "(a,b)\<in>T \<Longrightarrow> G \<Turnstile> (a,b)" for a b proof(subst eq_as_subsets,standard)
+      assume a:"(a,b)\<in>T"
+      from a cfg_m[unfolded transl_rules_def,THEN m]
+      show "G \<Turnstile> a \<sqsubseteq> b" by (subst maintained_holds_iff[OF g,symmetric]) blast
+      from a cfg_m[unfolded transl_rules_def,THEN m]
+      show "G \<Turnstile> b \<sqsubseteq> a" by (subst maintained_holds_iff[OF g,symmetric]) blast
+    qed
     hence h:"(\<forall>S\<in>T. G \<Turnstile> S)" by auto
     with G_std show ?rhs unfolding model_def by blast
   qed

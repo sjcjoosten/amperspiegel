@@ -69,6 +69,16 @@ lemma Id_on_int:
 lemma Domain_int_univ:
   "Domain (A \<times> UNIV \<inter> f) = A \<inter> Domain f" by auto
 
+lemma Domain_O:
+  assumes "a \<subseteq> Domain x" "x `` a \<subseteq> Domain y"
+  shows "a \<subseteq> Domain (x O y)"
+  proof fix xa assume xa:"xa \<in> a" hence "xa \<in> Domain x" using assms by auto
+    then obtain w where xaw:"(xa,w) \<in> x" by auto
+    with xa have "w \<in> Domain y" using assms by auto
+    then obtain v where "(w,v) \<in> y" by auto
+    with xaw have "(xa,v) \<in> x O y" by auto
+    thus "xa \<in> Domain (x O y)" by auto qed
+
 lemma fst_UNIV[intro]:
   "A \<subseteq> fst ` A \<times> UNIV" by force
 
@@ -254,5 +264,18 @@ lemma idempotent_subset:
   assumes "idempotent R" "S \<subseteq> R"
   shows "S O R \<subseteq> R" "R O S \<subseteq> R" "S O R O S \<subseteq> R"
   using assms by (auto simp:idempotent_def)
+
+(* not really about relations, but I need it in GraphRewriting.thy.
+   Renaming the entire file to 'preliminaries' just because this is here would be too much. *)
+lemma list_sorted_max[simp]:
+  shows "sorted list \<Longrightarrow> list = (x#xs) \<Longrightarrow> fold max xs x = (last list)"
+proof (induct list arbitrary:x xs)
+  case (Cons a list)
+  hence "xs = y # ys \<Longrightarrow> fold max ys y = last xs" "sorted (x # xs)" "sorted xs" for y ys 
+    using Cons.prems(1,2) by auto
+  hence "xs \<noteq> [] \<Longrightarrow> fold max xs x = last xs"
+    by (metis (full_types) fold_simps(2) max.orderE sorted.elims(2) sorted2)
+  thus ?case unfolding Cons by auto
+qed auto
 
 end

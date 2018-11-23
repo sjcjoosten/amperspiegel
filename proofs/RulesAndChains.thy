@@ -1,9 +1,13 @@
+section \<open>Rules, and the chains we can make with them\<close>
+text \<open>This describes graph rules, and the reasoning is fully on graphs here (no semantics).
+      The formalisation builds up to Lemma 4 in the paper.\<close>
 theory RulesAndChains
 imports LabeledGraphs
 begin
 
 type_synonym ('l,'v) graph_seq = "(nat \<Rightarrow> ('l, 'v) labeled_graph)"
 
+text \<open>Definition 8.\<close>
 definition chain :: "('l, 'v) graph_seq \<Rightarrow> bool" where
   "chain S \<equiv> \<forall> i. subgraph (S i) (S (i + 1))"
 
@@ -32,6 +36,7 @@ proof
   show "\<forall>i j. i \<le> j \<longrightarrow> subgraph (S i) (S j) \<Longrightarrow> chain S" unfolding chain_def by simp
 qed
 
+text \<open>Second part of definition 8.\<close>
 definition chain_sup :: "('l, 'v) graph_seq \<Rightarrow> ('l, 'v) labeled_graph" where
   "chain_sup S \<equiv> LG (\<Union> i. edges (S i)) (\<Union> i. vertices (S i))"
 
@@ -74,7 +79,7 @@ qed
 
 
 type_synonym ('l,'v) Graph_PreRule = "('l, 'v) labeled_graph \<times> ('l, 'v) labeled_graph"
-
+text \<open>Definition 9.\<close>
 abbreviation graph_rule :: "('l,'v) Graph_PreRule \<Rightarrow> bool" where
 "graph_rule R \<equiv> subgraph (fst R) (snd R) \<and> finite_graph (snd R)"
 
@@ -89,6 +94,7 @@ lemma set_of_graph_rulesD[dest]:
         rev_finite_subset[of "edges (snd R)"]
   unfolding subgraph_def graph_union_iff by auto
 
+text \<open>We define @{term agree_on} as an equivalence.\<close>
 definition agree_on where
 "agree_on G f\<^sub>1 f\<^sub>2 \<equiv> (\<forall> v \<in> vertices G. f\<^sub>1 `` {v} = f\<^sub>2 `` {v})"
 
@@ -179,7 +185,7 @@ proof -
   thus ?thesis using g unfolding extensible_def by blast
 qed
 
-
+text \<open>Definition 11.\<close>
 definition maintained :: "('l,'x) Graph_PreRule \<Rightarrow> ('l,'v) labeled_graph \<Rightarrow> bool"
   where "maintained R G \<equiv> \<forall> f. graph_homomorphism (fst R) G f \<longrightarrow> extensible R G f"
 
@@ -209,9 +215,6 @@ proof
   from assms(3)[OF this] show thesis.
 qed
 
-
-  
-
 lemma extensible_refl[intro]:
   "graph_homomorphism R G f \<Longrightarrow> extensible (R,R) G f"
   unfolding extensible_def by auto
@@ -219,6 +222,7 @@ lemma extensible_refl[intro]:
 lemma maintained_refl[intro]:
   "maintained (R,R) G" by auto
 
+text \<open>Alternate version of definition 8.\<close>
 definition fin_maintained :: "('l,'x) Graph_PreRule \<Rightarrow> ('l,'v) labeled_graph \<Rightarrow> bool"
   where
 "fin_maintained R G \<equiv> \<forall> F f. finite_graph F
@@ -328,6 +332,7 @@ proof
   show "agree_on (S 0) f ?g" using agree_on_subset[OF f_subset _ univ] domf by auto
 qed
 
+text \<open>Definition 8, second part.\<close>
 definition consequence_graph
   where "consequence_graph Rs G \<equiv> graph G \<and> (\<forall> R \<in> Rs. subgraph (fst R) (snd R) \<and> maintained R G)"
 
@@ -345,17 +350,14 @@ lemma consequence_graphD[dest]:
         "graph G"
   using assms unfolding consequence_graph_def fin_maintained_def by auto
 
-(* The paper states:
-   'If furthermore S is a subgraph of G,
+text \<open>Definition 8 states: If furthermore S is a subgraph of G,
     and (S, G) is maintained in each consequence graph maintaining Rs,
-    then G is a least consequence graph of S maintaining Rs.'
-   Note that the type of 'each consequence graph' isn't given here.
+    then G is a least consequence graph of S maintaining Rs.
+    Note that the type of 'each consequence graph' isn't given here.
    Taken literally, this should mean 'for every possible type'.
-   However, we use a single type here.
-   Thus, the property least_consequence_graph is weakened here.
-   
-*)
-definition least 
+   We avoid quantifying on types by making the type an argument.
+   Consequently, when proving 'least', the first argument should be free.\<close>
+definition least
   :: "'x itself \<Rightarrow> (('l, 'v) Graph_PreRule) set \<Rightarrow> ('l, 'c) labeled_graph \<Rightarrow> ('l, 'c) labeled_graph \<Rightarrow> bool"
   where "least _ Rs S G \<equiv> subgraph S G \<and> 
             (\<forall> C :: ('l, 'x) labeled_graph. consequence_graph Rs C \<longrightarrow> maintained (S,G) C)"
@@ -378,6 +380,7 @@ assumes "consequence_graph Rs (G:: ('l, 'c) labeled_graph)"
       shows "least_consequence_graph (t:: 'x itself) Rs S G"
   using assms unfolding least_consequence_graph_def least_def by auto
 
+text \<open>Definition 12.\<close>
 definition fair_chain where
   "fair_chain Rs S \<equiv> chain S \<and> 
     (\<forall> R f i. (R \<in> Rs \<and> graph_homomorphism (fst R) (S i) f) \<longrightarrow> (\<exists> j. extensible R (S j) f))"
@@ -487,11 +490,11 @@ proof -
   thus ?thesis by auto
 qed
 
+
+text \<open>Lemma 3.
+      Recall that in the paper, graph rules use finite graphs, i.e. both sides should be finite.
+      We strengthen lemma 3 by requiring only the left hand side to be a finite graph.\<close>
 lemma fair_chain_impl_consequence_graph:
-  (* Lemma 3 in paper.
-     Note that we don't quite require that Rs is a set of graph rules,
-       as only the lhs should be finite.
-     Perhaps an alternative for 'fair_chain' could further relax the finite_graph assumption. *)
   assumes "fair_chain Rs S" "\<And> R. R \<in> Rs \<Longrightarrow> subgraph (fst R) (snd R) \<and> finite_graph (fst R)"
   shows "consequence_graph Rs (chain_sup S)"
 proof -
@@ -511,10 +514,10 @@ proof -
   thus ?thesis unfolding consequence_graph_def using mnt assms(2) by blast
 qed
 
-(* In line with the definition of least_consequence_graph:
-          the paper allows for arbitrary types in the quantifier,
-          but we fix the type here in the definition that will be used in pushout_step.
-          The type used here should suffice (and we cannot quantify over types anyways) *)
+text \<open>We extract the weak universal property from the definition of weak pushout step.
+      Again, the paper allows for arbitrary types in the quantifier,
+          but we fix the type here in the definition that will be used in @{term pushout_step}.
+          The type used here should suffice (and we cannot quantify over types anyways)\<close>
 definition weak_universal ::
     "'x itself \<Rightarrow> ('a, 'c) Graph_PreRule \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow>
      ('c \<times> 'b) set \<Rightarrow> ('c \<times> 'b) set \<Rightarrow> bool" where
@@ -536,6 +539,8 @@ lemma weak_universalI[intro]:
   shows "weak_universal (t:: 'x itself) R (G\<^sub>1::('a, 'b) labeled_graph) G\<^sub>2 f\<^sub>1 f\<^sub>2"
   using assms unfolding weak_universal_def by force
 
+
+text \<open>Definition 13\<close>
 definition pushout_step ::
     "'x itself \<Rightarrow> ('a, 'c) Graph_PreRule \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph \<Rightarrow> bool" where
 "pushout_step t R G\<^sub>1 G\<^sub>2 \<equiv> subgraph G\<^sub>1 G\<^sub>2 \<and> 
@@ -545,6 +550,7 @@ definition pushout_step ::
            weak_universal t R G\<^sub>1 G\<^sub>2 f\<^sub>1 f\<^sub>2
   )"
 
+text \<open>Definition 14\<close>
 definition Simple_WPC ::
     "'x itself \<Rightarrow> (('a, 'b) Graph_PreRule) set \<Rightarrow> (('a, 'd) graph_seq) \<Rightarrow> bool" where
 "Simple_WPC t Rs S \<equiv> set_of_graph_rules Rs
@@ -571,14 +577,12 @@ proof -
   thus ?thesis unfolding chain_def by auto
 qed
 
-(* I split up the hard case into two.
-   This makes the easy part of the hard case a bit harder,
-   but hopefully the overall becomes easier to deal with. *)
+
+text \<open>Definition 14, second part. \<close>
 inductive WPC ::
     "'x itself \<Rightarrow> (('a, 'b) Graph_PreRule) set \<Rightarrow> (('a, 'd) graph_seq) \<Rightarrow> bool"
   where
     wpc_simpl [simp, intro]: "Simple_WPC t Rs S \<Longrightarrow> WPC t Rs S"
-  | wpc_empty [simp, intro]: "chain S \<Longrightarrow> (\<And> i. S i = chain_sup S) \<Longrightarrow> WPC t Rs S"
   | wpc_combo [simp, intro]: "chain S \<Longrightarrow> (\<And> i. \<exists> S'. S' 0 = S i \<and> chain_sup S' = S (Suc i) \<and> WPC t Rs S') \<Longrightarrow> WPC t Rs S"
 
 lemma extensible_from_chainI:
@@ -608,7 +612,7 @@ proof -
   from extend_for_chain[OF mtn ch] show ?thesis.
 qed
 
-(* Towards Lemma 4: key inductive property *)
+text \<open>Towards Lemma 4, this is the key inductive property.\<close>
 lemma wpc_least:
   assumes "WPC (t:: 'x itself) Rs S"
   shows "least t Rs (S 0) (chain_sup S)"
@@ -667,11 +671,9 @@ next
       thus ?case unfolding extensible_def prod.sel.
     qed auto
   qed auto
-qed (auto intro!:graph_homomorphismI)
+qed
 
-term map_graph_fn
-
-(* Lemma 4 *)
+text \<open>Lemma 4.\<close>
 lemma wpc_least_consequence_graph:
   assumes "WPC t Rs S" "consequence_graph Rs (chain_sup S)"
   shows "least_consequence_graph t Rs (S 0) (chain_sup S)"

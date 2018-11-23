@@ -1,3 +1,5 @@
+section \<open>Graph rewriting and saturation\<close>
+text \<open>Here we describe graph rewriting, again without connecting it to semantics.\<close>
 theory GraphRewriting
   imports RulesAndChains 
     "HOL-Library.Infinite_Set"
@@ -8,7 +10,7 @@ text \<open>To describe Algorithm 1, we give a single step instead of the recurs
 This allows us to reason about its effect without dealing with non-termination.
 We define a worklist, saying what work can be done.
 A valid selection needs to be made in order to ensure fairness.
-To do a step, we define the function extend, and use it in make_step.
+To do a step, we define the function extend, and use it in @{term make_step}.
 A function that always makes a valid selection is used in this step. \<close>
 
 abbreviation graph_of where
@@ -69,7 +71,8 @@ lemma valid_selectorD[dest]:
   using assms[unfolded valid_selector_def,rule_format,of G]
   by (cases "worklist G Rs = {}",auto)
 
-(* just to show the existence of a valid selector *)
+text \<open>The following gives a valid selector.
+      This selector is not useful as concrete implementation, because it used the choice operation.\<close>
 definition non_constructive_selector where
 "non_constructive_selector Rs G \<equiv> let wl = worklist G Rs in
    if wl = {} then None else Some (SOME (R,f). valid_selection Rs G R f) "
@@ -90,23 +93,15 @@ lemma non_constructive_selector:
   thus ?case unfolding non_constructive_selector_def Let_def using 1 by (auto simp:prod_eq_iff)
 qed (auto simp:non_constructive_selector_def)
 
+
+text \<open>The following is used to make a weak pushout step.
+      In the paper, we aren't too specific on how this should be done. Here we are.
+      We work on natural numbers in order to be able to pick fresh elements easily. \<close>
 definition extend ::
     "nat \<Rightarrow> ('b, 'a::linorder) Graph_PreRule  \<Rightarrow> ('a \<times> nat) set \<Rightarrow> ('a \<times> nat) set" where
 "extend n R f \<equiv> f \<union> 
    (let V_new = sorted_list_of_set (vertices (snd R) - vertices (fst R))
     in set (zip V_new [n..<(n+length V_new)]))"
-
-
-lemma list_sorted_max[simp]: (* TODO: move *)
-  shows "sorted list \<Longrightarrow> list = (x#xs) \<Longrightarrow> fold max xs x = (last list)"
-proof (induct list arbitrary:x xs)
-  case (Cons a list)
-  hence "xs = y # ys \<Longrightarrow> fold max ys y = last xs" "sorted (x # xs)" "sorted xs" for y ys 
-    using Cons.prems(1,2) by auto
-  hence "xs \<noteq> [] \<Longrightarrow> fold max xs x = last xs"
-    by (metis (full_types) fold_simps(2) max.orderE sorted.elims(2) sorted2)
-  thus ?case unfolding Cons by auto
-qed auto
 
 lemma nextMax_set[simp]:
   assumes "sorted xs"
@@ -262,6 +257,7 @@ proof -
   qed
 qed
 
+text \<open>Showing that the extend function indeed creates a valid pushout.\<close>
 lemma selector_pushout:
   assumes "valid_selector Rs selector" "selector G'' = Some (R,f)"
   defines "G \<equiv> graph_of G''"
@@ -283,8 +279,9 @@ proof -
   thus ?thesis unfolding pushout_step_def by auto
 qed
 
-(* Make step does a single step in the algorithm.
-   It needs a valid_selector as first argument. *)
+text \<open>Making a single step in Algorithm 1.
+  A prerequisite is that its first argument is a @{term valid_selector}.\<close>
+
 definition make_step where
 "make_step selector S \<equiv>
    case selector S of
@@ -491,6 +488,7 @@ proof
     by (induct i arbitrary:init,auto)
 qed
 
+text \<open>Algorithm 1, abstractly.\<close>
 abbreviation the_lcg where
 "the_lcg sel Rs init \<equiv> chain_sup (\<lambda>i. graph_of (mk_chain sel Rs init i))"
 
@@ -535,7 +533,7 @@ proof -
   thus ?thesis by auto
 qed
 
-(* Lemma 9 *)
+text \<open>Lemma 9.\<close>
 lemma lcg_through_make_step:
 assumes "finite Rs" "set_of_graph_rules Rs" "graph (graph_of init)"
         "valid_selector Rs sel"

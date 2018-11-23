@@ -1,9 +1,11 @@
+section \<open>Translating terms into Graphs\<close>
+text \<open>We define the translation function and its properties.\<close>
+
 theory RuleSemanticsConnection
 imports LabeledGraphSemantics RulesAndChains
 begin
 
-(* File contains Definition 15, Lemma 5 and Lemma 6 *)
-
+text \<open>Definition 15.\<close>
 fun translation :: "'c allegorical_term \<Rightarrow> ('c, nat) labeled_graph" where
 "translation (A_Lbl l) = LG {(l,0,1)} {0,1}" |
 "translation (A_Cnv e) = map_graph_fn (translation e) (\<lambda> x. if x<2 then (1-x) else x)" |
@@ -231,7 +233,8 @@ lemma translation_homomorphism:
   using translation_right_to_left[OF assms] assms[unfolded graph_homomorphism_def2]
         verts_in_translation_finite[of e] by auto
 
-lemma translation: (* Lemma 5 *)
+text \<open>Lemma 5.\<close>
+lemma translation:
   assumes "graph G"
   shows "(x, y) \<in> :G:\<lbrakk>e\<rbrakk> \<longleftrightarrow> (\<exists> f. graph_homomorphism (translation e) G f \<and> (0,x) \<in> f \<and> (1,y) \<in> f)"
 (is "?lhs = ?rhs")
@@ -372,7 +375,8 @@ abbreviation transl_rule ::
     "'a sentence \<Rightarrow> ('a, nat) labeled_graph \<times> ('a, nat) labeled_graph" where
 "transl_rule R \<equiv> (translation (fst R),translation (snd R))"
 
-lemma maintained_holds_iff: (* Lemma 6 *)
+text \<open>Lemma 6.\<close>
+lemma maintained_holds_iff:
   assumes "graph G"
   shows "maintained (translation e\<^sub>L,translation (A_Int e\<^sub>L e\<^sub>R)) G \<longleftrightarrow> G \<Turnstile> e\<^sub>L \<sqsubseteq> e\<^sub>R" (is "?rhs = ?lhs")
 proof
@@ -519,6 +523,8 @@ next
   show ?case using map_graph_in[OF translation_graph] by auto
 qed (simp add:getRel_def)
 
+text \<open>Lemma 6 is only used on rules of the form @{term "e\<^sub>L \<sqsubseteq> e\<^sub>R"}.
+      The requirement of G being a graph can be dropped for one direction.\<close>
 lemma maintained_holds[intro]:
   assumes ":G:\<lbrakk>e\<^sub>L\<rbrakk> \<subseteq> :G:\<lbrakk>e\<^sub>R\<rbrakk>" 
   shows "maintained (transl_rule (e\<^sub>L \<sqsubseteq> e\<^sub>R)) G"

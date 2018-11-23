@@ -1,3 +1,10 @@
+section \<open>Labeled Graphs\<close>
+text \<open>We define graphs as in the paper. Graph homomorphisms and subgraphs are defined slightly
+      differently.
+      Their correspondence to the definitions in the paper is given by separate lemmas.
+      After defining graphs, we only talk about the semantics until after defining homomorphisms.
+      The reason is that graph rewriting can be done without knowing about semantics.\<close>
+
 theory LabeledGraphs
 imports MissingRelation
 begin
@@ -8,6 +15,8 @@ datatype ('l,'v) labeled_graph
 definition restrict where
   "restrict G = LG {(l,v1,v2) \<in> edges G. v1 \<in> vertices G \<and> v2 \<in> vertices G } (vertices G)"
 
+text \<open>Definition 1. We define graphs and show that any graph with no edges (in particular
+       the empty graph) is indeed a graph.\<close>
 abbreviation graph where
   "graph X \<equiv> X = restrict X"
 
@@ -148,13 +157,11 @@ qed
 lemma edge_preserving_Id[intro]: "edge_preserving (Id_on y) x x"
 unfolding edge_preserving_def by auto
 
-(* We require vertices s = Domain h to ensure
-   that graph homomorphisms are sufficiently unique:
-   allowing verties s \<subseteq> Domain h would allow freedom
-   on h without influencing t.
+text \<open>This is an alternate version of definition 10. We require @term{vertices s = Domain h}
+   to ensure that graph homomorphisms are sufficiently unique:
    The partiality follows the definition in the paper, per the remark before Def. 7.
    but it means that we cannot use Isabelle's total functions for the homomorphisms.
-   We show that graph homomorphisms and embeddings coincide later. *)
+   We show that graph homomorphisms and embeddings coincide in a separate lemma.\<close>
 
 definition graph_homomorphism where
   "graph_homomorphism G\<^sub>1 G\<^sub>2 f 
@@ -172,16 +179,6 @@ lemma graph_homomorphismI:
           "edge_preserving h (edges s) (edges t)"
           "s = restrict s" "t = restrict t"
   shows "graph_homomorphism s t h" using assms unfolding graph_homomorphism_def by auto
-
-lemma Domain_O:
-  assumes "a \<subseteq> Domain x" "x `` a \<subseteq> Domain y"
-  shows "a \<subseteq> Domain (x O y)"
-  proof fix xa assume xa:"xa \<in> a" hence "xa \<in> Domain x" using assms by auto
-    then obtain w where xaw:"(xa,w) \<in> x" by auto
-    with xa have "w \<in> Domain y" using assms by auto
-    then obtain v where "(w,v) \<in> y" by auto
-    with xaw have "(xa,v) \<in> x O y" by auto
-    thus "xa \<in> Domain (x O y)" by auto qed
 
 lemma graph_homomorphism_composes[intro]:
   assumes "graph_homomorphism a b x"
@@ -211,6 +208,7 @@ lemma Id_on_vertices_identity:
         "(aa, ba) \<in> f O Id_on (vertices b)"
   using assms unfolding graph_homomorphism_def by auto
 
+text \<open>Alternate version of definition 7.\<close>
 abbreviation subgraph
   where "subgraph G\<^sub>1 G\<^sub>2 
   \<equiv> graph_homomorphism G\<^sub>1 G\<^sub>2 (Id_on (vertices G\<^sub>1))" 
@@ -225,6 +223,9 @@ proof-
   with graph_homomorphism_composes[OF assms] show ?thesis by auto
 qed
 
+text \<open> Just before Definition 7 in the paper, a notation is introduced for applying a function to
+       a graph. We use @{term map_graph} for this, and the version @{term map_graph_fn} in
+       case that its first argument is a total function rather than a partial one. \<close>
 (* Introducing the map notation just above Def 7 in the paper *)
 definition map_graph :: "('c \<times> 'b) set \<Rightarrow> ('a, 'c) labeled_graph \<Rightarrow> ('a, 'b) labeled_graph" where
   "map_graph f G = LG (on_triple f `` (edges G)) (f `` (vertices G))"
@@ -360,8 +361,9 @@ proof -
     using vrt by auto
 qed
 
+text \<open>Our definition of subgraph is equivalent to definition 7.\<close>
 lemma subgraph_def2:
-  assumes "G\<^sub>1 = restrict G\<^sub>1" "G\<^sub>2 = restrict G\<^sub>2"
+  assumes "graph G\<^sub>1" "graph G\<^sub>2"
   shows "subgraph G\<^sub>1 G\<^sub>2 \<longleftrightarrow> vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2 \<and> edges G\<^sub>1 \<subseteq> edges G\<^sub>2"
 proof
   assume "vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2 \<and> edges G\<^sub>1 \<subseteq> edges G\<^sub>2"
@@ -381,6 +383,12 @@ next
   thus "vertices G\<^sub>1 \<subseteq> vertices G\<^sub>2 \<and> edges G\<^sub>1 \<subseteq> edges G\<^sub>2"
     using vrt by auto
 qed
+
+text \<open>We also define @{term graph_union}. In contrast to the paper, our definition ignores the labels.
+      The corresponding definition in the paper is written just above Definition 7.
+      Adding labels to graphs would require a lot of unnecessary additional bookkeeping.
+      Nowhere in the paper is the union actually used on different sets of labels,
+      in which case these definitions coincide.\<close>
 
 (* Since the set of labels is an implicit type, the notion of graph_union does not completely correspond to the one in the paper *)
 definition graph_union where
@@ -459,7 +467,9 @@ proof
   show "vertices (map_graph (\<Union>i. g i) X) \<subseteq> vertices Y" using v by auto
 qed
 
-lemma subgraph_def: (* shows that subgraph matches the definition in the paper *)
+text \<open>We show that @{term subgraph} indeed matches the definition in the paper (Definition 7).\<close>
+
+lemma subgraph_def:
 "subgraph G\<^sub>1 G\<^sub>2 = (G\<^sub>1 = restrict G\<^sub>1 \<and> G\<^sub>2 = restrict G\<^sub>2 \<and> graph_union G\<^sub>1 G\<^sub>2 = G\<^sub>2)"
 proof
   assume assms:"subgraph G\<^sub>1 G\<^sub>2"
@@ -488,6 +498,7 @@ lemma subgraph_restrict[simp]:
   "subgraph G (restrict G) = graph G"
   using subgraph_refl subgraph_def by auto
 
+text \<open>Definition 10. We write @{term graph_homomorphism} instead of embedding.\<close>
 lemma graph_homomorphism_def2: (* Shows a graph homomorphism is an embedding as in the paper *)
   shows "graph_homomorphism G\<^sub>1 G\<^sub>2 f =
    (vertices G\<^sub>1 = Domain f \<and> univalent f \<and> G\<^sub>1 = restrict G\<^sub>1 \<and> G\<^sub>2 = restrict G\<^sub>2 \<and> graph_union (map_graph f G\<^sub>1) G\<^sub>2 = G\<^sub>2)"

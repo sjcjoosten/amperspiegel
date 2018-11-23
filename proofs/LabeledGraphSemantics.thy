@@ -1,6 +1,11 @@
+section \<open>Semantics in labeled graphs\<close>
+
 theory LabeledGraphSemantics
 imports LabeledGraphs
 begin
+
+
+text \<open>GetRel describes the main way we interpret graphs: as describing a set of binary relations.\<close>
 
 definition getRel where
 "getRel l G = {(x,y). (l,x,y) \<in> edges G}"
@@ -25,7 +30,7 @@ lemma getRel_hom[intro]: (* faster proofs in the common case *)
   shows "(f y, f z) \<in> getRel l (map_graph_fn G f)"
   using assms by (auto intro!:getRel_homR)
 
-lemma getRel_hom_map[simp]: (* two-way proofs *)
+lemma getRel_hom_map[simp]:
   assumes "graph G"
   shows "getRel l (map_graph_fn G f) = map_prod f f ` (getRel l G)"
 proof
@@ -37,6 +42,9 @@ proof
   then show "map_prod f f ` getRel l G \<subseteq> getRel l (map_graph_fn G f)" by auto
 qed (cases G,auto simp:getRel_def)
 
+
+text \<open>The thing called term in the paper is called @{term alligorical_term} here.
+      This naming is chosen because an allegory has precisely these operations, plus identity. \<close>
 (* Deviating from the paper in having a constant constructor.
    We'll use that constructor for top, bottom, etc.. *)
 datatype 'v allegorical_term
@@ -45,6 +53,8 @@ datatype 'v allegorical_term
  | A_Cnv "'v allegorical_term"
  | A_Lbl (a_lbl : 'v)
 
+
+text \<open>The interpretation of terms, Definition 2.\<close>
 fun semantics where
 "semantics G (A_Int a b) = semantics G a \<inter> semantics G b" |
 "semantics G (A_Cmp a b) = semantics G a O semantics G b" |
@@ -57,6 +67,7 @@ type_synonym 'v sentence = "'v allegorical_term \<times> 'v allegorical_term"
 
 datatype 'v Standard_Constant = S_Top | S_Bot | S_Idt | S_Const 'v
 
+text \<open>Definition 3. We don't define sentences but instead simply work with pairs of terms.\<close>
 abbreviation holds where
 "holds G S \<equiv> :G:\<lbrakk>fst S\<rbrakk> = :G:\<lbrakk>snd S\<rbrakk>"
 notation holds (infix "\<Turnstile>" 55)
@@ -66,7 +77,8 @@ abbreviation subset_sentence where
 
 notation subset_sentence (infix "\<sqsubseteq>" 60)
 
-lemma sentence_iff[simp]: (* Lemma 1 *)
+text \<open>Lemma 1.\<close>
+lemma sentence_iff[simp]:
   "G \<Turnstile> e\<^sub>1 \<sqsubseteq> e\<^sub>2 = (:G:\<lbrakk>e\<^sub>1\<rbrakk> \<subseteq> :G:\<lbrakk>e\<^sub>2\<rbrakk>)" and
   eq_as_subsets:
   "G \<Turnstile> (e\<^sub>1, e\<^sub>2) = (G \<Turnstile> e\<^sub>1 \<sqsubseteq> e\<^sub>2 \<and> G \<Turnstile> e\<^sub>2 \<sqsubseteq> e\<^sub>1)"
